@@ -36,6 +36,7 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF', 'VENDOR')")
     @Operation(summary = "List products (admin view — all statuses)")
     public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> list(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -44,6 +45,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF', 'VENDOR')")
     @Operation(summary = "Get product by ID")
     public ResponseEntity<ApiResponse<ProductResponse>> get(
             @PathVariable UUID id,
@@ -52,7 +54,7 @@ public class ProductController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'STAFF', 'VENDOR', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF', 'VENDOR')")
     @Operation(summary = "Create a new product")
     public ResponseEntity<ApiResponse<ProductResponse>> create(
             @Valid @RequestBody CreateProductRequest request,
@@ -62,7 +64,7 @@ public class ProductController {
     }
 
     @PatchMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'STAFF', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
     @Operation(summary = "Publish (activate) a product")
     public ResponseEntity<ApiResponse<ProductResponse>> publish(
             @PathVariable UUID id,
@@ -71,7 +73,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN')")
     @Operation(summary = "Delete a product")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable UUID id,

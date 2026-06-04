@@ -60,6 +60,8 @@ Fill in `backend/.env`:
 - `POSTGRES_*`, `REDIS_*`
 - `APP_JWT_SECRET` (use a long random value, ≥ 32 chars)
 - `CLOUDINARY_*`
+- `EMAIL_*` (SMTP — transactional mail; for Gmail use an App Password). Optional in
+  dev: if unset, email is skipped (logged) and nothing breaks.
 
 > Secrets are environment-only and git-ignored. Never commit `.env` files.
 > Rotate any secret that is exposed.
@@ -102,6 +104,10 @@ make lint            # both
 
 - Self-hosted JWT auth (HMAC-signed), bcrypt password hashing.
 - Change-password with current-password verification, complexity rules, reuse check.
+- Forgot-password / reset: single-use, time-limited tokens stored only as SHA-256
+  hashes; no account enumeration; reset + confirmation emails.
+- Tenant-scoped audit log of security/account activity (logins incl. failures,
+  password changes/resets, onboarding); owner-only, append-only.
 - Per-request trace IDs and structured logging (`logback-spring.xml`); no secrets logged.
 - Roadmap: RLS/tenant filter, permission-based RBAC, audit log, 2FA, rate limiting.
 

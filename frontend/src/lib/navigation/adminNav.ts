@@ -110,7 +110,7 @@ export const ADMIN_NAV: NavSection[] = [
     title: 'Security & Access',
     items: [
       { label: 'Roles & Permissions', href: '/admin/roles', icon: ShieldCheck, roles: OWNER_ROLES, status: 'soon' },
-      { label: 'Audit Log', href: '/admin/audit', icon: ScrollText, roles: OWNER_ROLES, status: 'soon' },
+      { label: 'Audit Log', href: '/admin/audit', icon: ScrollText, roles: OWNER_ROLES, status: 'available' },
       { label: 'API Keys', href: '/admin/api-keys', icon: KeyRound, roles: OWNER_ROLES, status: 'soon' },
     ],
   },

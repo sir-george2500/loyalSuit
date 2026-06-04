@@ -24,4 +24,10 @@ export const authApi = {
 
   changePassword: (payload: ChangePasswordPayload) =>
     apiClient.post<ApiResponse<null>>('/api/v1/auth/change-password', payload),
+
+  forgotPassword: (email: string) =>
+    apiClient.post<ApiResponse<null>>('/api/v1/auth/forgot-password', { email }),
+
+  resetPassword: (token: string, newPassword: string) =>
+    apiClient.post<ApiResponse<null>>('/api/v1/auth/reset-password', { token, newPassword }),
 }

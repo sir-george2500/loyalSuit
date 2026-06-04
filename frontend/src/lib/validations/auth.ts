@@ -50,6 +50,29 @@ export const changePasswordSchema = yup.object({
     .oneOf([yup.ref('newPassword')], 'Passwords do not match'),
 })
 
+export const forgotPasswordSchema = yup.object({
+  email: yup
+    .string()
+    .required('Email is required')
+    .email('Enter a valid email address'),
+})
+
+export const resetPasswordSchema = yup.object({
+  newPassword: yup
+    .string()
+    .required('New password is required')
+    .min(8, 'Must be at least 8 characters')
+    .matches(/[A-Z]/, 'Must include at least one uppercase letter')
+    .matches(/[0-9]/, 'Must include at least one number')
+    .matches(/[@$!%*?&#]/, 'Must include at least one special character (@$!%*?&#)'),
+  confirmPassword: yup
+    .string()
+    .required('Please confirm your new password')
+    .oneOf([yup.ref('newPassword')], 'Passwords do not match'),
+})
+
 export type LoginFormData = yup.InferType<typeof loginSchema>
 export type RegisterFormData = yup.InferType<typeof registerSchema>
 export type ChangePasswordFormData = yup.InferType<typeof changePasswordSchema>
+export type ForgotPasswordFormData = yup.InferType<typeof forgotPasswordSchema>
+export type ResetPasswordFormData = yup.InferType<typeof resetPasswordSchema>

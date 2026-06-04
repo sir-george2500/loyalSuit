@@ -8,6 +8,9 @@ import com.loyalsuit.modules.auth.application.dto.ChangePasswordRequest;
 import com.loyalsuit.modules.auth.application.dto.LoginRequest;
 import com.loyalsuit.modules.auth.application.dto.RegisterRequest;
 import com.loyalsuit.modules.auth.application.dto.UserProfile;
+import com.loyalsuit.modules.audit.application.AuditActor;
+import com.loyalsuit.modules.audit.application.AuditService;
+import com.loyalsuit.modules.audit.domain.AuditAction;
 import com.loyalsuit.modules.tenants.domain.Tenant;
 import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
 import com.loyalsuit.modules.users.domain.AppUser;
@@ -34,6 +37,7 @@ public class AuthService {
     private final TenantRepository tenantRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuditService auditService;
 
     /**
      * Registers a new business owner: provisions a tenant and a TENANT_ADMIN user,
@@ -64,6 +68,8 @@ public class AuthService {
         user = userRepository.save(user);
 
         log.info("New tenant registered: tenant='{}' admin={}", businessName, email);
+        auditService.recordSuccess(AuditAction.USER_REGISTERED, actorOf(user),
+                "USER", user.getId().toString(), "Registered tenant '" + businessName + "'");
         return buildAuthResponse(user);
     }
 
@@ -74,20 +80,28 @@ public class AuthService {
         AppUser user = userRepository.findByEmail(email)
                 .orElseThrow(() -> {
                     log.warn("Failed login: no account for email={}", email);
+                    auditService.recordFailure(AuditAction.LOGIN_FAILED, AuditActor.email(null, email),
+                            "USER", null, "No account for that email");
                     return new BusinessException("Invalid email or password", HttpStatus.UNAUTHORIZED);
                 });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             log.warn("Failed login: bad password for email={}", email);
+            auditService.recordFailure(AuditAction.LOGIN_FAILED, actorOf(user),
+                    "USER", user.getId().toString(), "Invalid password");
             throw new BusinessException("Invalid email or password", HttpStatus.UNAUTHORIZED);
         }
 
         if (!user.isActive()) {
             log.warn("Failed login: deactivated account email={}", email);
+            auditService.recordFailure(AuditAction.LOGIN_FAILED, actorOf(user),
+                    "USER", user.getId().toString(), "Account is deactivated");
             throw new BusinessException("This account has been deactivated", HttpStatus.FORBIDDEN);
         }
 
         log.info("Login success: email={} role={}", email, user.getRole());
+        auditService.recordSuccess(AuditAction.LOGIN_SUCCEEDED, actorOf(user),
+                "USER", user.getId().toString(), "Login succeeded");
         return buildAuthResponse(user);
     }
 
@@ -112,6 +126,8 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         log.info("Password changed for email={}", user.getEmail());
+        auditService.recordSuccess(AuditAction.PASSWORD_CHANGED, actorOf(user),
+                "USER", user.getId().toString(), "Password changed");
     }
 
     @Transactional(readOnly = true)
@@ -119,6 +135,10 @@ public class AuthService {
         return userRepository.findById(userId)
                 .map(UserProfile::new)
                 .orElseThrow(() -> new NotFoundException("User", userId));
+    }
+
+    private static AuditActor actorOf(AppUser user) {
+        return AuditActor.of(user.getTenantId(), user.getId(), user.getEmail(), user.getRole().name());
     }
 
     private AuthResponse buildAuthResponse(AppUser user) {

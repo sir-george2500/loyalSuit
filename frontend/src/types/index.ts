@@ -103,6 +103,25 @@ export interface AuthResponse {
   user: UserProfile
 }
 
+export interface OnboardingStatus {
+  onboarded: boolean
+  businessName: string
+  currency: string
+  country?: string | null
+  timezone: string
+  phone?: string | null
+}
+
+export interface CompleteOnboardingRequest {
+  businessName: string
+  phone?: string
+  country?: string
+  currency: string
+  timezone: string
+  warehouseName: string
+  warehouseAddress?: string
+}
+
 export interface KpiMetric {
   current: number
   previous: number
@@ -139,6 +158,31 @@ export interface DashboardStats {
   revenueTrend: RevenuePoint[]
   ordersByStatus: StatusCount[]
   recentOrders: RecentOrder[]
+}
+
+export type AuditAction =
+  | 'USER_REGISTERED'
+  | 'LOGIN_SUCCEEDED'
+  | 'LOGIN_FAILED'
+  | 'PASSWORD_CHANGED'
+  | 'PASSWORD_RESET_REQUESTED'
+  | 'PASSWORD_RESET_COMPLETED'
+  | 'TENANT_ONBOARDED'
+
+export type AuditOutcome = 'SUCCESS' | 'FAILURE'
+
+export interface AuditLog {
+  id: string
+  action: AuditAction
+  outcome: AuditOutcome
+  actorId?: string | null
+  actorEmail?: string | null
+  actorRole?: string | null
+  resourceType?: string | null
+  resourceId?: string | null
+  ipAddress?: string | null
+  detail?: string | null
+  occurredAt: string
 }
 
 export interface PageResponse<T> {

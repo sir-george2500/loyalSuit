@@ -9,6 +9,7 @@ import { Eye, EyeOff, Loader2, ShoppingCart, CheckCircle2, XCircle } from 'lucid
 import type { AxiosError } from 'axios'
 import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/authStore'
+import { homeForRole } from '@/lib/auth/roles'
 import { registerSchema, type RegisterFormData } from '@/lib/validations/auth'
 
 function PasswordStrengthIndicator({ password }: { password: string }) {
@@ -67,7 +68,9 @@ export default function RegisterPage() {
       })
       const { token, expiresIn, user } = res.data.data
       signIn(token, expiresIn, user)
-      router.push('/admin/dashboard')
+      // Registration provisions a tenant + TENANT_ADMIN, so this lands in /admin —
+      // routing by role keeps it correct if that ever changes.
+      router.push(homeForRole(user.role))
       router.refresh()
     } catch (err) {
       const axiosErr = err as AxiosError<{ message?: string }>

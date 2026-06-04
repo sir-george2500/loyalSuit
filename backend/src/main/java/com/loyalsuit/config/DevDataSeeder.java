@@ -48,6 +48,16 @@ public class DevDataSeeder implements CommandLineRunner {
         Tenant tenant = tenantRepository.findBySlug(DEMO_TENANT_SLUG)
                 .orElseGet(() -> tenantRepository.save(new Tenant("Demo Store", DEMO_TENANT_SLUG)));
 
+        // The demo store ships pre-configured, so seeded owner accounts land on the
+        // dashboard instead of the setup wizard. Idempotent — also backfills a demo
+        // tenant created before onboarding existed.
+        if (!tenant.isOnboarded()) {
+            tenant.setCurrency("USD");
+            tenant.setTimezone("UTC");
+            tenant.setOnboardedAt(java.time.Instant.now());
+            tenant = tenantRepository.save(tenant);
+        }
+
         String hash = passwordEncoder.encode(DEFAULT_PASSWORD);
         int created = 0;
 

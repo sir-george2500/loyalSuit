@@ -42,8 +42,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
-                // Authentication endpoints (register / login) are public.
-                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                // Authentication endpoints (register / login / password reset) are public.
+                .requestMatchers(
+                        "/api/v1/auth/register",
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/forgot-password",
+                        "/api/v1/auth/reset-password").permitAll()
                 // Public storefront endpoints (these resolve tenant from the URL/host,
                 // NOT from a JWT principal — see StoreController in Phase 2).
                 .requestMatchers(HttpMethod.GET, "/api/v1/store/**").permitAll()
