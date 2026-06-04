@@ -10,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "tenants")
 @Getter
@@ -36,8 +38,28 @@ public class Tenant extends AuditableEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
+    @Column(nullable = false, length = 3)
+    private String currency = "USD";
+
+    @Column(length = 2)
+    private String country;
+
+    @Column(nullable = false, length = 64)
+    private String timezone = "UTC";
+
+    @Column
+    private String phone;
+
+    /** Timestamp the setup wizard was completed; null until onboarded. */
+    @Column(name = "onboarded_at")
+    private Instant onboardedAt;
+
     public Tenant(String name, String slug) {
         this.name = name;
         this.slug = slug;
+    }
+
+    public boolean isOnboarded() {
+        return onboardedAt != null;
     }
 }

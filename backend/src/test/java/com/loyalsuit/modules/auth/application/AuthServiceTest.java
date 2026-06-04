@@ -2,6 +2,7 @@ package com.loyalsuit.modules.auth.application;
 
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
+import com.loyalsuit.modules.audit.application.AuditService;
 import com.loyalsuit.modules.auth.application.dto.ChangePasswordRequest;
 import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
 import com.loyalsuit.modules.users.domain.AppUser;
@@ -15,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +35,7 @@ class AuthServiceTest {
     @Mock private TenantRepository tenantRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
+    @Mock private AuditService auditService;
 
     @InjectMocks private AuthService authService;
 
@@ -43,6 +46,7 @@ class AuthServiceTest {
     void setUp() {
         userId = UUID.randomUUID();
         user = new AppUser(UUID.randomUUID(), "owner@store.dev", "HASHED_CURRENT", "Owner", UserRole.TENANT_ADMIN);
+        ReflectionTestUtils.setField(user, "id", userId);
     }
 
     @Test

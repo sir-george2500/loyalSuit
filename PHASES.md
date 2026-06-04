@@ -30,7 +30,7 @@ into another's tables — they collaborate through application services / events
 | Context | Owns | Status |
 |---|---|---|
 | **identity** (`auth`, `users`) | accounts, credentials, JWT issuance, sessions | ✅ live |
-| **tenancy** (`tenants`) | tenant lifecycle, subscription tier, feature gates | 🟡 entity only |
+| **tenancy** (`tenants`) | tenant lifecycle, subscription tier, feature gates | 🟡 onboarding live; feature gates pending |
 | **catalog** | products, variants, categories, media | 🟡 CRUD skeleton |
 | **inventory** | warehouses, stock, transfers, low-stock alerts | 🟡 schema only |
 | **marketplace** | vendors, commissions, payouts | 🟡 entity only |
@@ -40,7 +40,7 @@ into another's tables — they collaborate through application services / events
 | **fulfilment** | delivery agents, pickup points, tracking | ⬜ planned |
 | **hrm** | employees, attendance, payroll | ⬜ planned |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
-| **notifications** | email, SMS, push, in-app | ⬜ planned |
+| **notifications** | email, SMS, push, in-app | 🟡 transactional email live (onboarding, password reset) |
 
 ---
 
@@ -48,9 +48,10 @@ into another's tables — they collaborate through application services / events
 
 These are built up incrementally and must never regress:
 
-- **Observability** — structured logging w/ per-request trace IDs ✅; metrics
-  (Micrometer) ⬜; error tracking (Sentry) ⬜; audit log ⬜.
-- **Security** — JWT auth ✅; method-level RBAC (`@PreAuthorize`) 🟡; rate limiting ⬜;
+- **Observability** — structured logging w/ per-request trace IDs ✅; audit log ✅
+  (tenant-scoped, append-only); metrics (Micrometer) ⬜; error tracking (Sentry) ⬜.
+- **Security** — JWT auth ✅; method-level RBAC (`@PreAuthorize` on all endpoints,
+  role-matrix tested) ✅; rate limiting ⬜;
   2FA ⬜; secret management ⬜; OWASP pass before GA ⬜.
 - **Data** — Flyway migrations ✅; tenant-scoped base entities ✅; soft-delete &
   audit columns ✅ (created/updated); RLS-style guarantees enforced in repo layer.
@@ -75,7 +76,7 @@ talk to each other, CI-able locally.
 
 ---
 
-## Phase 1 — Identity, tenancy & the admin shell 🔄 IN PROGRESS
+## Phase 1 — Identity, tenancy & the admin shell ✅ COMPLETE
 **Goal:** a real account can sign up (provisioning a tenant), sign in, manage its
 own security, and land in a role-appropriate admin shell with live analytics.
 **Exit criteria:** all 6 roles route correctly; password lifecycle works; dashboard
@@ -90,12 +91,36 @@ reflects real tenant data; zero cross-tenant leakage in any Phase-1 endpoint.
 - [x] DaisyUI design system (`loyalsuit` theme)
 - [x] **Deep dashboard read-model** — period-over-period KPIs, 14-day revenue trend,
       order-status breakdown, recent orders, low-stock — all real tenant-scoped SQL
-- [ ] **Method-level RBAC** — `@PreAuthorize` on every controller, role matrix test
-- [ ] **Page-level authZ** — SUPER_ADMIN-only routes enforced server-side (not just nav)
-- [ ] Seller dashboard shell (VENDOR landing)
-- [ ] Tenant onboarding wizard (company, currency, first warehouse)
-- [ ] Forgot-password / reset (email token) — depends on notifications email
-- [ ] Audit log (who did what, when) — foundational for everything after
+- [x] **Method-level RBAC** — `@PreAuthorize` on every controller endpoint
+      (dashboard, products, categories); auth endpoints scoped correctly
+      (register/login public, `/me` + change-password any authenticated). Three
+      privilege tiers — read/create (store roles + VENDOR), store-write (no VENDOR),
+      admin-only (delete). Role-matrix integration tests mint real JWTs and assert
+      all 6 roles against each endpoint (67 cells), so any unguarded route or
+      widened role set fails the build.
+- [x] **Role-based routing & page-level authZ** — single source of truth
+      (`lib/auth/roles.ts`); enforced at three layers: edge middleware, server-side
+      layout guards (`guardArea`), and post-login redirect (`homeForRole`). A role
+      can never enter another's shell (CUSTOMER → /store, VENDOR → /seller, admin → /admin).
+- [x] Seller dashboard shell (VENDOR landing) — DaisyUI shell, role-scoped nav,
+      honest onboarding state (no fabricated metrics; marketplace data is Phase 5)
+- [x] **Tenant onboarding wizard** (company → localization → first warehouse) —
+      one-time, idempotent-by-rejection (`tenants.onboarded_at`); provisions a
+      default warehouse; server-gated so owners can't reach the admin shell until
+      complete. Multi-step validated UI; backend role-matrix + service tested.
+- [x] **Transactional email infrastructure** — `EmailService` (best-effort, no-op
+      when SMTP absent), `@Async` after-commit delivery; welcome email on onboarding.
+      Unblocks password-reset.
+- [x] **Forgot-password / reset (email token)** — random 256-bit token, only its
+      SHA-256 hash stored, single-use + time-limited (30 min), prior tokens
+      invalidated on reissue. No account enumeration; generic failures. Public
+      endpoints; reset + confirmation emails sent after-commit. Service + API tested.
+- [x] **Audit log (who did what, when)** — append-only, tenant-scoped trail.
+      Each write runs in its own transaction (`REQUIRES_NEW`) and is best-effort, so
+      **failed attempts and rolled-back operations are still recorded** (e.g. bad
+      logins). Captures actor, action, outcome, resource, IP + user-agent. Wired into
+      register / login (success + failure) / change-password / password-reset /
+      onboarding. Owner-only read endpoint + admin UI (filter, pagination). Tested.
 
 ---
 

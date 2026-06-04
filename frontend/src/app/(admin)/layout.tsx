@@ -1,10 +1,11 @@
-import { redirect } from 'next/navigation'
-import { isAuthenticated } from '@/lib/auth/server'
+import { guardArea, requireOnboarded } from '@/lib/auth/server'
 import AdminSidebar from '@/components/layout/AdminSidebar'
 import AuthHydrator from '@/components/auth/AuthHydrator'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  if (!(await isAuthenticated())) redirect('/login?next=/admin/dashboard')
+  const role = await guardArea('/admin')
+  // Owners must finish setup before reaching the admin shell.
+  await requireOnboarded(role)
 
   return (
     <div className="flex h-screen bg-base-200">

@@ -34,6 +34,7 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF', 'VENDOR')")
     @Operation(summary = "List all categories for the current tenant")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> list(
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -41,6 +42,7 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF', 'VENDOR')")
     @Operation(summary = "Get category by ID")
     public ResponseEntity<ApiResponse<CategoryResponse>> get(
             @PathVariable UUID id,
@@ -49,7 +51,7 @@ public class CategoryController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'STAFF', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
     @Operation(summary = "Create a new category")
     public ResponseEntity<ApiResponse<CategoryResponse>> create(
             @Valid @RequestBody CreateCategoryRequest request,
@@ -59,7 +61,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'STAFF', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
     @Operation(summary = "Update a category")
     public ResponseEntity<ApiResponse<CategoryResponse>> update(
             @PathVariable UUID id,
@@ -69,7 +71,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN')")
     @Operation(summary = "Delete a category")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable UUID id,

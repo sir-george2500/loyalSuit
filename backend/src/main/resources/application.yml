@@ -55,6 +55,21 @@ spring:
     redis:
       time-to-live: 600000
 
+  mail:
+    host: ${EMAIL_HOST:}
+    port: ${EMAIL_PORT:587}
+    username: ${EMAIL_USER:}
+    password: ${EMAIL_PASS:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: ${EMAIL_STARTTLS:true}
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
   jackson:
     default-property-inclusion: non_null
     serialization:
@@ -76,6 +91,11 @@ cloudinary:
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  mail:
+    # Transactional email sender identity. Sending is best-effort: a missing or
+    # failing SMTP config logs a warning but never breaks the request.
+    from: ${EMAIL_FROM:no-reply@loyalsuit.local}
+    from-name: ${EMAIL_FROM_NAME:LoyalSuit}
   jwt:
     # Self-contained auth: the platform signs its own tokens. Use a long random
     # value (>= 32 chars) in production via the APP_JWT_SECRET env var.

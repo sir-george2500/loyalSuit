@@ -9,12 +9,13 @@ import { Eye, EyeOff, Loader2, ShoppingCart } from 'lucide-react'
 import type { AxiosError } from 'axios'
 import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/authStore'
+import { homeForRole } from '@/lib/auth/roles'
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth'
 
 // Only allow internal redirect targets — prevents open-redirect via ?next=https://evil.com
-function safeNext(raw: string | null): string {
+function safeNext(raw: string | null): string | null {
   if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw
-  return '/admin/dashboard'
+  return null
 }
 
 function LoginForm() {
@@ -44,7 +45,8 @@ function LoginForm() {
       const res = await authApi.login(data.email, data.password)
       const { token, expiresIn, user } = res.data.data
       signIn(token, expiresIn, user)
-      router.push(next)
+      // Honor an explicit, safe return target; otherwise land where the role belongs.
+      router.push(next ?? homeForRole(user.role))
       router.refresh()
     } catch (err) {
       const axiosErr = err as AxiosError<{ message?: string }>

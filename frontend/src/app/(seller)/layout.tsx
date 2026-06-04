@@ -1,15 +1,17 @@
-import { redirect } from 'next/navigation'
-import { isAuthenticated } from '@/lib/auth/server'
+import { guardArea } from '@/lib/auth/server'
+import SellerSidebar from '@/components/layout/SellerSidebar'
+import AuthHydrator from '@/components/auth/AuthHydrator'
 
 export default async function SellerLayout({ children }: { children: React.ReactNode }) {
-  if (!(await isAuthenticated())) redirect('/login?next=/seller/dashboard')
+  await guardArea('/seller')
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <aside className="w-60 bg-white border-r border-gray-200 p-4">
-        <h2 className="font-bold text-gray-900 mb-4">Seller Dashboard</h2>
-      </aside>
-      <main className="flex-1 overflow-y-auto p-8">{children}</main>
+    <div className="flex h-screen bg-base-200">
+      <AuthHydrator />
+      <SellerSidebar />
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-6 lg:p-8">{children}</div>
+      </main>
     </div>
   )
 }

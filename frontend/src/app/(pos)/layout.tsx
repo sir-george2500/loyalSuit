@@ -1,8 +1,7 @@
-import { redirect } from 'next/navigation'
-import { isAuthenticated } from '@/lib/auth/server'
+import { guardArea } from '@/lib/auth/server'
 
 export default async function PosLayout({ children }: { children: React.ReactNode }) {
-  if (!(await isAuthenticated())) redirect('/login?next=/pos')
+  await guardArea('/pos')
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
