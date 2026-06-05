@@ -31,7 +31,7 @@ into another's tables — they collaborate through application services / events
 |---|---|---|
 | **identity** (`auth`, `users`) | accounts, credentials, JWT issuance, sessions | ✅ live |
 | **tenancy** (`tenants`) | tenant lifecycle, subscription tier, feature gates | 🟡 onboarding live; feature gates pending |
-| **catalog** | products, variants, categories, media | 🟡 CRUD skeleton |
+| **catalog** | products, variants, categories, media | 🟡 categories live (tenant-safe tree); products WIP |
 | **inventory** | warehouses, stock, transfers, low-stock alerts | 🟡 schema only |
 | **marketplace** | vendors, commissions, payouts | 🟡 entity only |
 | **orders** | cart, orders, order items, returns | 🟡 schema only |
@@ -124,15 +124,27 @@ reflects real tenant data; zero cross-tenant leakage in any Phase-1 endpoint.
 
 ---
 
-## Phase 2 — Catalog & inventory (the sellable core)
+## Phase 2 — Catalog & inventory (the sellable core) 🔄 IN PROGRESS
 **Goal:** an admin/vendor can build a real catalog and track stock across warehouses.
 **Exit criteria:** product lifecycle (draft→active→archived) works; stock decrements
 are correct under concurrency; storefront can read published products.
 
-- [ ] Category tree CRUD (UI + API), slug uniqueness per tenant
+> **Pre-Phase-2 review found** (now being addressed slice by slice): catalog
+> writes accepted `parentId`/`categoryId`/`vendorId` without verifying same-tenant
+> ownership (cross-tenant reference leak); no category cycle prevention; `update`
+> ignored `parentId`; delete silently orphaned children/products; and stock is
+> modeled twice (`product_variants.stock_quantity` vs the `stock` table) — to be
+> consolidated in the multi-warehouse slice with `@Version` optimistic locking.
+
+- [x] **Category tree CRUD (UI + API)** — slug uniqueness per tenant; **tenant-safe
+      parent validation** (same-tenant existence) with **cycle prevention**;
+      re-parenting; delete refuses to orphan (blocks when subcategories/products
+      exist). Admin tree UI (create/edit/delete). Service tested (12 cases, AAA).
 - [ ] Product CRUD: variants, attributes, pricing, SKU/barcode, digital flag
+      (tenant-safe category/vendor references)
 - [ ] Media upload pipeline (Cloudinary signed uploads, not raw secrets in client)
-- [ ] Multi-warehouse stock; **atomic stock adjustments** (optimistic locking)
+- [ ] Multi-warehouse stock; **atomic stock adjustments** (optimistic locking);
+      consolidate the dual stock model
 - [ ] Low-stock thresholds → dashboard + (later) notifications
 - [ ] Bulk CSV import/export with row-level validation + error report
 - [ ] Public storefront read API (`/store/**`) resolving tenant by host/slug
