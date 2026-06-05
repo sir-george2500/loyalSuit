@@ -48,6 +48,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
+    public boolean existsByCategoryIdAndTenantId(UUID categoryId, UUID tenantId) {
+        return jpa.existsByCategoryIdAndTenantId(categoryId, tenantId);
+    }
+
+    @Override
     public void deleteById(UUID id) {
         jpa.deleteById(id);
     }

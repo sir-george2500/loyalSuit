@@ -15,4 +15,5 @@ interface ProductJpaRepository extends JpaRepository<Product, UUID> {
     Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable);
     Page<Product> findByCategoryIdAndTenantId(UUID categoryId, UUID tenantId, Pageable pageable);
     boolean existsBySlugAndTenantId(String slug, UUID tenantId);
+    boolean existsByCategoryIdAndTenantId(UUID categoryId, UUID tenantId);
 }

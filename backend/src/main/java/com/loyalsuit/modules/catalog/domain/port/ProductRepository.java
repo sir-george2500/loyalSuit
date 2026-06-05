@@ -15,5 +15,6 @@ public interface ProductRepository {
     Page<Product> findByTenantId(UUID tenantId, Pageable pageable);
     Page<Product> findByCategoryIdAndTenantId(UUID categoryId, UUID tenantId, Pageable pageable);
     boolean existsBySlugAndTenantId(String slug, UUID tenantId);
+    boolean existsByCategoryIdAndTenantId(UUID categoryId, UUID tenantId);
     void deleteById(UUID id);
 }
