@@ -201,7 +201,7 @@ export interface ApiResponse<T> {
   data: T
 }
 
-export interface CreateProductRequest {
+export interface ProductWriteRequest {
   name: string
   slug: string
   description?: string
@@ -210,9 +210,13 @@ export interface CreateProductRequest {
   sku?: string
   barcode?: string
   categoryId?: string
-  vendorId?: string
   digital?: boolean
 }
+
+// vendorId is never sent by the client — the backend derives ownership from the
+// authenticated principal. Create and update share the same writable shape.
+export type CreateProductRequest = ProductWriteRequest
+export type UpdateProductRequest = ProductWriteRequest
 
 export interface CreateCategoryRequest {
   name: string

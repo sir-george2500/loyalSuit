@@ -109,8 +109,34 @@ class CatalogAuthorizationTest {
 
     @ParameterizedTest
     @EnumSource(UserRole.class)
+    void updateProduct(UserRole role) throws Exception {
+        mvc.perform(put("/api/v1/catalog/products/" + UUID.randomUUID())
+                        .header("Authorization", bearer(role))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(PRODUCT_BODY))
+                .andExpect(expected(STORE_WRITE, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
     void publishProduct(UserRole role) throws Exception {
         mvc.perform(patch("/api/v1/catalog/products/" + UUID.randomUUID() + "/publish")
+                        .header("Authorization", bearer(role)))
+                .andExpect(expected(STORE_WRITE, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void unpublishProduct(UserRole role) throws Exception {
+        mvc.perform(patch("/api/v1/catalog/products/" + UUID.randomUUID() + "/unpublish")
+                        .header("Authorization", bearer(role)))
+                .andExpect(expected(STORE_WRITE, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void archiveProduct(UserRole role) throws Exception {
+        mvc.perform(patch("/api/v1/catalog/products/" + UUID.randomUUID() + "/archive")
                         .header("Authorization", bearer(role)))
                 .andExpect(expected(STORE_WRITE, role));
     }

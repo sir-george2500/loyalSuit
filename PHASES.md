@@ -140,8 +140,12 @@ are correct under concurrency; storefront can read published products.
       parent validation** (same-tenant existence) with **cycle prevention**;
       re-parenting; delete refuses to orphan (blocks when subcategories/products
       exist). Admin tree UI (create/edit/delete). Service tested (12 cases, AAA).
-- [ ] Product CRUD: variants, attributes, pricing, SKU/barcode, digital flag
-      (tenant-safe category/vendor references)
+- [x] **Product CRUD** (create/update/delete, status lifecycle
+      draft→active→inactive→archived), pricing, SKU/barcode, digital flag.
+      **Security-hardened**: `categoryId` validated as same-tenant; `vendorId`
+      derived from the authenticated principal (never trusted from the client).
+      Admin UI with status actions + pagination. Service + role-matrix tested.
+- [ ] Product variants (sub-slice 2b): per-variant SKU/price/attributes
 - [ ] Media upload pipeline (Cloudinary signed uploads, not raw secrets in client)
 - [ ] Multi-warehouse stock; **atomic stock adjustments** (optimistic locking);
       consolidate the dual stock model

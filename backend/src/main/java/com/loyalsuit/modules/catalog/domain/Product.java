@@ -71,4 +71,8 @@ public class Product extends TenantScopedEntity {
     public void deactivate() {
         this.status = ProductStatus.INACTIVE;
     }
+
+    public void archive() {
+        this.status = ProductStatus.ARCHIVED;
+    }
 }

@@ -5,6 +5,7 @@ import com.loyalsuit.common.response.PageResponse;
 import com.loyalsuit.modules.catalog.application.ProductService;
 import com.loyalsuit.modules.catalog.application.dto.CreateProductRequest;
 import com.loyalsuit.modules.catalog.application.dto.ProductResponse;
+import com.loyalsuit.modules.catalog.application.dto.UpdateProductRequest;
 import com.loyalsuit.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -59,8 +61,19 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductResponse>> create(
             @Valid @RequestBody CreateProductRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        ProductResponse response = productService.create(request, principal.getTenantId());
+        ProductResponse response = productService.create(
+                request, principal.getTenantId(), principal.getUserId(), principal.getRole());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
+    @Operation(summary = "Update a product")
+    public ResponseEntity<ApiResponse<ProductResponse>> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateProductRequest request,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(productService.update(id, request, principal.getTenantId())));
     }
 
     @PatchMapping("/{id}/publish")
@@ -70,6 +83,24 @@ public class ProductController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(ApiResponse.ok(productService.publish(id, principal.getTenantId())));
+    }
+
+    @PatchMapping("/{id}/unpublish")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
+    @Operation(summary = "Unpublish (deactivate) a product")
+    public ResponseEntity<ApiResponse<ProductResponse>> unpublish(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(productService.unpublish(id, principal.getTenantId())));
+    }
+
+    @PatchMapping("/{id}/archive")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
+    @Operation(summary = "Archive a product")
+    public ResponseEntity<ApiResponse<ProductResponse>> archive(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(ApiResponse.ok(productService.archive(id, principal.getTenantId())));
     }
 
     @DeleteMapping("/{id}")

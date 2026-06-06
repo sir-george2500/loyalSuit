@@ -62,7 +62,7 @@ export const ADMIN_NAV: NavSection[] = [
   {
     title: 'Catalog',
     items: [
-      { label: 'Products', href: '/admin/products', icon: Package, roles: STORE_ROLES, status: 'soon' },
+      { label: 'Products', href: '/admin/products', icon: Package, roles: STORE_ROLES, status: 'available' },
       { label: 'Categories', href: '/admin/categories', icon: Tags, roles: STORE_ROLES, status: 'available' },
       { label: 'Inventory', href: '/admin/inventory', icon: Boxes, roles: STORE_ROLES, status: 'soon' },
     ],
