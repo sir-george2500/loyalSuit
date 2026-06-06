@@ -3,6 +3,8 @@ package com.loyalsuit.modules.orders.application;
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.modules.inventory.application.StockService;
+import com.loyalsuit.modules.marketplace.application.CommissionLine;
+import com.loyalsuit.modules.marketplace.application.CommissionService;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
 import com.loyalsuit.modules.orders.domain.Order;
 import com.loyalsuit.modules.orders.domain.OrderItem;
@@ -13,6 +15,7 @@ import com.loyalsuit.modules.orders.domain.port.OrderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +41,7 @@ class OrderManagementServiceTest {
     @Mock private OrderRepository orderRepository;
     @Mock private OrderItemRepository orderItemRepository;
     @Mock private StockService stockService;
+    @Mock private CommissionService commissionService;
 
     @InjectMocks private OrderManagementService service;
 
@@ -145,6 +150,32 @@ class OrderManagementServiceTest {
 
         // Assert
         assertThat(response.paymentStatus()).isEqualTo("PAID");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void markPaid_settlesCommissionForVendorLinesOnly() {
+        // Arrange — a delivered order with one vendor line and one house (no-vendor) line
+        Order order = order(OrderStatus.DELIVERED, PaymentStatus.UNPAID);
+        UUID vendorId = UUID.randomUUID();
+        OrderItem vendorItem = item(2);
+        vendorItem.setVendorId(vendorId);
+        ReflectionTestUtils.setField(vendorItem, "id", UUID.randomUUID());
+        OrderItem houseItem = item(1); // no vendor — excluded from settlement
+        when(orderRepository.findByIdAndTenantId(orderId, tenantId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(orderItemRepository.findByOrderId(orderId)).thenReturn(List.of(vendorItem, houseItem));
+
+        // Act
+        service.markPaid(orderId, tenantId);
+
+        // Assert — only the vendor line is handed to the commission engine
+        ArgumentCaptor<List<CommissionLine>> captor = ArgumentCaptor.forClass(List.class);
+        verify(commissionService).settleOrder(eq(tenantId), eq(orderId), eq("ORD-1"), captor.capture());
+        assertThat(captor.getValue()).singleElement().satisfies(line -> {
+            assertThat(line.vendorId()).isEqualTo(vendorId);
+            assertThat(line.grossAmount()).isEqualByComparingTo("10");
+        });
     }
 
     @Test

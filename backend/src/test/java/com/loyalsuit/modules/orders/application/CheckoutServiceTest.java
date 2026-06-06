@@ -5,8 +5,11 @@ import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.modules.cart.application.CartService;
 import com.loyalsuit.modules.cart.application.dto.CartItemView;
 import com.loyalsuit.modules.cart.application.dto.CartView;
+import com.loyalsuit.modules.catalog.domain.Product;
+import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
 import com.loyalsuit.modules.inventory.application.StockService;
 import com.loyalsuit.modules.orders.application.dto.CheckoutRequest;
+import com.loyalsuit.modules.orders.domain.OrderItem;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
 import com.loyalsuit.modules.orders.domain.Order;
 import com.loyalsuit.modules.orders.domain.PaymentMethod;
@@ -18,6 +21,7 @@ import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -45,6 +49,7 @@ class CheckoutServiceTest {
     @Mock private StockService stockService;
     @Mock private OrderRepository orderRepository;
     @Mock private OrderItemRepository orderItemRepository;
+    @Mock private ProductRepository productRepository;
 
     @InjectMocks private CheckoutService checkoutService;
 
@@ -123,6 +128,33 @@ class CheckoutServiceTest {
 
         // Assert — the order is stamped with the customer id
         verify(orderRepository).save(org.mockito.ArgumentMatchers.argThat(o -> userId.equals(o.getCustomerId())));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void checkout_snapshotsTheSellingVendorOntoTheOrderLine() {
+        // Arrange — the line's product belongs to a vendor
+        UUID vendorId = UUID.randomUUID();
+        Product product = new Product(tenantId, "Widget", "widget", BigDecimal.valueOf(20));
+        product.setVendorId(vendorId);
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(store(true)));
+        when(cartService.view("acme", TOKEN)).thenReturn(cartWithOneLine());
+        when(orderRepository.existsByOrderNumber(any())).thenReturn(false);
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            ReflectionTestUtils.setField(o, "id", UUID.randomUUID());
+            return o;
+        });
+        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product));
+
+        // Act
+        checkoutService.checkout("acme", TOKEN, request(), null, null, null);
+
+        // Assert — the persisted line carries the vendor id
+        ArgumentCaptor<List<OrderItem>> captor = ArgumentCaptor.forClass(List.class);
+        verify(orderItemRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).singleElement()
+                .satisfies(item -> assertThat(item.getVendorId()).isEqualTo(vendorId));
     }
 
     // ---- guards -------------------------------------------------------------

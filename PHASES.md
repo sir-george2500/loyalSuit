@@ -271,7 +271,15 @@ never exceed settled balance.
       tested. _Deferred: vendor order views; vendor management of variants/media/
       stock sub-resources (still STORE_WRITE-only); suspend doesn't yet revoke the
       VENDOR role._
-- [ ] Commission engine (per-vendor / per-category rates), ledger
+- [x] **Commission engine + ledger** (slice 5c) — commission is earned when an
+      order's cash is collected (marked paid) and reversed if the order is later
+      refunded. Each order line snapshots its selling vendor at checkout; settlement
+      writes one auditable ledger entry per vendor line, snapshotting the rate and
+      the computed commission/net (HALF_UP to cents). Settlement and reversal are
+      both idempotent (unique on order_item; settle skips an already-settled order).
+      A vendor's owed balance is the sum of EARNED net. Vendor earnings + ledger UI
+      (VENDOR-only) and an owner-only tenant-wide ledger UI. Service + role-matrix
+      tested. _Deferred: per-category commission rates (per-vendor only for now)._
 - [ ] Payout requests against settled balance, with audit trail
 
 ---

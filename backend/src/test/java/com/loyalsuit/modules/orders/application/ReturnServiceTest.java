@@ -4,6 +4,7 @@ import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.ConflictException;
 import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.modules.inventory.application.StockService;
+import com.loyalsuit.modules.marketplace.application.CommissionService;
 import com.loyalsuit.modules.orders.application.dto.CreateReturnRequest;
 import com.loyalsuit.modules.orders.application.dto.ReturnResponse;
 import com.loyalsuit.modules.orders.domain.Order;
@@ -46,6 +47,7 @@ class ReturnServiceTest {
     @Mock private OrderItemRepository orderItemRepository;
     @Mock private ReturnRequestRepository returnRepository;
     @Mock private StockService stockService;
+    @Mock private CommissionService commissionService;
 
     @InjectMocks private ReturnService service;
 
@@ -178,6 +180,7 @@ class ReturnServiceTest {
         verify(orderRepository).save(ArgumentMatchers.argThat(o ->
                 o.getStatus() == OrderStatus.REFUNDED && o.getPaymentStatus() == PaymentStatus.REFUNDED));
         verify(stockService).release(tenantId, productId, null, 2);
+        verify(commissionService).reverseOrder(tenantId, orderId);
     }
 
     @Test
