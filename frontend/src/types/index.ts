@@ -417,3 +417,25 @@ export interface VendorEarnings {
   earnedBalance: number
   reversedTotal: number
 }
+
+export type PayoutStatus = 'PENDING' | 'PAID' | 'REJECTED'
+
+export interface Payout {
+  id: string
+  vendorId: string
+  amount: number
+  status: PayoutStatus
+  reference?: string | null
+  resolutionNote?: string | null
+  decidedBy?: string | null
+  decidedAt?: string | null
+  createdAt: string
+}
+
+export interface PayoutBalance {
+  vendorId: string
+  earned: number
+  pending: number
+  paid: number
+  available: number
+}

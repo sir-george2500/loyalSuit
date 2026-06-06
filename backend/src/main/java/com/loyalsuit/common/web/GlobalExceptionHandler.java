@@ -3,6 +3,7 @@ package com.loyalsuit.common.web;
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,6 +64,15 @@ public class GlobalExceptionHandler {
         // A concurrent write changed the row first (e.g. two stock edits at once).
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error("This record was changed concurrently — please retry"));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        // A unique/constraint violation lost a race (e.g. two concurrent requests that a
+        // partial unique index guards against). Surface a retryable conflict, not a 500.
+        log.debug("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("That request conflicts with an existing record — please retry"));
     }
 
     @ExceptionHandler(Exception.class)

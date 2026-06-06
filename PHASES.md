@@ -251,7 +251,7 @@ refunds reconcile.
 
 ---
 
-## Phase 5 — Marketplace (multi-vendor) 🔄 IN PROGRESS
+## Phase 5 — Marketplace (multi-vendor) ✅ COMPLETE
 **Goal:** third-party sellers operate inside a tenant's store.
 **Exit criteria:** vendor data is isolated; commission math is auditable; payouts
 never exceed settled balance.
@@ -280,7 +280,18 @@ never exceed settled balance.
       A vendor's owed balance is the sum of EARNED net. Vendor earnings + ledger UI
       (VENDOR-only) and an owner-only tenant-wide ledger UI. Service + role-matrix
       tested. _Deferred: per-category commission rates (per-vendor only for now)._
-- [ ] Payout requests against settled balance, with audit trail
+- [x] **Payout requests + audit trail** (slice 5d) — a vendor requests a payout up
+      to their available balance (earned net, less pending + paid payouts); an admin
+      pays it (cash, with a reference) or rejects it with a reason. **Payouts can never
+      exceed settled balance**: the request is validated against available, capped at
+      one pending request per vendor (partial unique index as the concurrency
+      backstop), and the pay/reject decision is version-guarded against double-payment.
+      Every action (request/pay/reject) is written to the audit log. Seller payouts UI
+      (balance + request + history) and an owner-only admin review UI. Service +
+      role-matrix tested. Added a DataIntegrityViolation→409 handler.
+
+**Phase 5 exit criteria met:** vendor data is isolated (5b), commission math is
+auditable (5c), payouts never exceed settled balance (5d).
 
 ---
 
