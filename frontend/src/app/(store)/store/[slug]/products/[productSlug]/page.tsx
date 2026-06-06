@@ -4,6 +4,8 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { Package, ArrowLeft, Check, X } from 'lucide-react'
 import { getStore, getStoreProduct } from '@/lib/api/storefront'
+import AddToCart from '@/components/store/AddToCart'
+import CartLink from '@/components/store/CartLink'
 
 type Params = { slug: string; productSlug: string }
 
@@ -23,9 +25,12 @@ export default async function ProductDetailPage({ params }: { params: Promise<Pa
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <Link href={`/store/${slug}`} className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
-        <ArrowLeft className="h-4 w-4" /> Back to {store.name}
-      </Link>
+      <div className="mb-6 flex items-center justify-between">
+        <Link href={`/store/${slug}`} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
+          <ArrowLeft className="h-4 w-4" /> Back to {store.name}
+        </Link>
+        <CartLink slug={slug} />
+      </div>
 
       <div className="grid gap-8 md:grid-cols-2">
         {/* Gallery */}
@@ -85,22 +90,15 @@ export default async function ProductDetailPage({ params }: { params: Promise<Pa
             )}
           </div>
 
-          {product.description && (
-            <p className="mt-5 whitespace-pre-line text-gray-700">{product.description}</p>
-          )}
+          <AddToCart
+            slug={slug}
+            productId={product.id}
+            variants={product.variants}
+            inStock={product.inStock}
+          />
 
-          {product.variants.length > 0 && (
-            <div className="mt-6">
-              <h2 className="mb-2 text-sm font-medium text-gray-900">Options</h2>
-              <ul className="space-y-1">
-                {product.variants.map((v, i) => (
-                  <li key={i} className="flex justify-between rounded border border-gray-200 px-3 py-2 text-sm">
-                    <span>{v.name}</span>
-                    <span className="font-medium">{money.format(v.price)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {product.description && (
+            <p className="mt-6 whitespace-pre-line text-gray-700">{product.description}</p>
           )}
         </div>
       </div>
