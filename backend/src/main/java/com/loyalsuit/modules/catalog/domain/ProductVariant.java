@@ -30,8 +30,8 @@ public class ProductVariant extends AuditableEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "stock_quantity", nullable = false)
-    private int stockQuantity = 0;
+    // Stock is tracked per-warehouse in the inventory module's `stock` table, not
+    // on the variant — there is no denormalized quantity here.
 
     public ProductVariant(UUID productId, String name, BigDecimal price) {
         this.productId = productId;

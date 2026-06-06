@@ -7,13 +7,14 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import type { AxiosError } from 'axios'
 import {
   Plus, Pencil, Trash2, Package, AlertCircle, Loader2,
-  ChevronLeft, ChevronRight, MoreVertical, Layers, ImageIcon,
+  ChevronLeft, ChevronRight, MoreVertical, Layers, ImageIcon, Boxes,
 } from 'lucide-react'
 import { categoryApi, productApi } from '@/lib/api/catalog'
 import { productSchema, slugify, type ProductFormData } from '@/lib/validations/catalog'
 import type { Category, Product, ProductStatus } from '@/types'
 import VariantsModal from './VariantsModal'
 import ImagesModal from './ImagesModal'
+import StockModal from './StockModal'
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -35,6 +36,7 @@ export default function ProductsView() {
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [variantsTarget, setVariantsTarget] = useState<Product | null>(null)
   const [imagesTarget, setImagesTarget] = useState<Product | null>(null)
+  const [stockTarget, setStockTarget] = useState<Product | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const { data, isLoading, isError, isFetching } = useQuery({
@@ -161,6 +163,14 @@ export default function ProductsView() {
                         <Layers className="h-3.5 w-3.5" /> Variants
                       </button>
 
+                      <button
+                        className="btn btn-ghost btn-xs gap-1"
+                        onClick={() => setStockTarget(p)}
+                        aria-label={`Stock of ${p.name}`}
+                      >
+                        <Boxes className="h-3.5 w-3.5" /> Stock
+                      </button>
+
                       <div className="dropdown dropdown-end">
                         <button tabIndex={0} className="btn btn-ghost btn-xs" aria-label="Status actions">
                           <MoreVertical className="h-3.5 w-3.5" />
@@ -238,6 +248,10 @@ export default function ProductsView() {
 
       {imagesTarget && (
         <ImagesModal product={imagesTarget} onClose={() => setImagesTarget(null)} />
+      )}
+
+      {stockTarget && (
+        <StockModal product={stockTarget} onClose={() => setStockTarget(null)} />
       )}
 
       {variantsTarget && (

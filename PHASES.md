@@ -160,11 +160,14 @@ are correct under concurrency; storefront can read published products.
       single-default invariant (first is auto-default; promoting one demotes the
       rest); delete refuses to remove the default or the last warehouse. Admin UI;
       service + role-matrix tested.
-- [ ] **Stock levels + atomic adjustments** (slice 4b): per-warehouse/variant
-      quantities with `@Version` optimistic locking; **consolidate the dual stock
-      model** (drop `product_variants.stock_quantity`); add a "warehouse has stock"
-      delete guard; low-stock thresholds.
-- [ ] Low-stock thresholds → dashboard + (later) notifications
+- [x] **Stock levels + atomic adjustments** (slice 4b) — per-warehouse/variant
+      quantities. Absolute `setLevel` uses `@Version` optimistic locking (concurrent
+      edit → 409); delta `adjust` uses an atomic conditional UPDATE that is
+      lost-update safe and cannot go negative. Consolidated the dual stock model
+      (dropped `product_variants.stock_quantity`); added the warehouse-has-stock
+      delete guard; low-stock thresholds + `/stock/low` query. Per-product Stock UI
+      (set level + ± adjust). Service + role-matrix tested.
+- [ ] Surface low-stock on the dashboard + (later) notifications
 - [ ] Bulk CSV import/export with row-level validation + error report
 - [ ] Public storefront read API (`/store/**`) resolving tenant by host/slug
 - [ ] List/detail performance: pagination, indexes, cache-aside for hot listings
