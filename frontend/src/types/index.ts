@@ -241,6 +241,21 @@ export interface ProductMedia {
   sortOrder: number
 }
 
+export interface Warehouse {
+  id: string
+  name: string
+  address?: string | null
+  isDefault: boolean
+  active: boolean
+  createdAt: string
+}
+
+export interface WarehouseRequest {
+  name: string
+  address?: string
+  isDefault?: boolean
+}
+
 export interface CreateCategoryRequest {
   name: string
   slug: string
