@@ -274,6 +274,48 @@ export interface SetStockRequest {
   lowStockThreshold?: number
 }
 
+// ---- Public storefront (customer-facing read model) ----
+export interface StoreView {
+  name: string
+  slug: string
+  currency: string
+  logoUrl?: string | null
+}
+
+export interface StoreCategory {
+  name: string
+  slug: string
+}
+
+export interface StoreProductSummary {
+  id: string
+  name: string
+  slug: string
+  price: number
+  compareAtPrice?: number | null
+  imageUrl?: string | null
+  categoryName?: string | null
+}
+
+export interface StoreVariant {
+  name: string
+  price: number
+}
+
+export interface StoreProductDetail {
+  id: string
+  name: string
+  slug: string
+  description?: string | null
+  price: number
+  compareAtPrice?: number | null
+  digital: boolean
+  categoryName?: string | null
+  images: string[]
+  variants: StoreVariant[]
+  inStock: boolean
+}
+
 export interface CreateCategoryRequest {
   name: string
   slug: string

@@ -8,5 +8,6 @@ import java.util.UUID;
 
 interface ProductMediaJpaRepository extends JpaRepository<ProductMedia, UUID> {
     List<ProductMedia> findByProductIdOrderBySortOrderAsc(UUID productId);
+    List<ProductMedia> findByProductIdInAndPrimaryTrue(List<UUID> productIds);
     int countByProductId(UUID productId);
 }

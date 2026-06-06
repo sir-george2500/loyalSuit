@@ -31,6 +31,11 @@ public class ProductMediaRepositoryAdapter implements ProductMediaRepository {
     }
 
     @Override
+    public List<ProductMedia> findByProductIdInAndPrimaryTrue(List<UUID> productIds) {
+        return productIds.isEmpty() ? List.of() : jpa.findByProductIdInAndPrimaryTrue(productIds);
+    }
+
+    @Override
     public int countByProductId(UUID productId) {
         return jpa.countByProductId(productId);
     }
