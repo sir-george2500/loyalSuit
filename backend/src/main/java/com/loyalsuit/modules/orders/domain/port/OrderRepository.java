@@ -1,6 +1,9 @@
 package com.loyalsuit.modules.orders.domain.port;
 
 import com.loyalsuit.modules.orders.domain.Order;
+import com.loyalsuit.modules.orders.domain.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -10,4 +13,6 @@ public interface OrderRepository {
     Optional<Order> findByIdAndTenantId(UUID id, UUID tenantId);
     Optional<Order> findByTenantIdAndIdempotencyKey(UUID tenantId, String idempotencyKey);
     boolean existsByOrderNumber(String orderNumber);
+    Page<Order> findByTenantId(UUID tenantId, Pageable pageable);
+    Page<Order> findByTenantIdAndStatus(UUID tenantId, OrderStatus status, Pageable pageable);
 }

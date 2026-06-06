@@ -83,6 +83,12 @@ public class Order extends TenantScopedEntity {
     @Column(name = "idempotency_key", updatable = false)
     private String idempotencyKey;
 
+    /** Optimistic lock so concurrent status changes (e.g. two cancels) can't both
+     *  apply — the second writer fails with a 409 instead of double-releasing stock. */
+    @jakarta.persistence.Version
+    @Column(nullable = false)
+    private long version;
+
     // Order items are loaded via OrderItemRepository by orderId — consistent with the
     // UUID-FK approach used across all modules (no bidirectional JPA associations).
 }

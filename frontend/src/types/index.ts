@@ -344,17 +344,34 @@ export interface OrderItemResponse {
   total: number
 }
 
+export type PaymentStatus = 'UNPAID' | 'PAID' | 'REFUNDED'
+
 export interface OrderResponse {
   id: string
   orderNumber: string
-  status: string
+  status: OrderStatus
   paymentMethod: string
-  paymentStatus: string
+  paymentStatus: PaymentStatus
   customerName: string
+  customerEmail?: string | null
+  customerPhone?: string | null
+  shippingAddress?: Record<string, string> | null
+  notes?: string | null
   subtotal: number
   total: number
   currency: string
   items: OrderItemResponse[]
+  createdAt: string
+}
+
+export interface OrderSummary {
+  id: string
+  orderNumber: string
+  status: OrderStatus
+  paymentStatus: PaymentStatus
+  customerName: string
+  total: number
+  currency: string
   createdAt: string
 }
 
