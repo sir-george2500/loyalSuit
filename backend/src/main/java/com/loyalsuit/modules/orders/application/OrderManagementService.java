@@ -4,6 +4,8 @@ import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.common.response.PageResponse;
 import com.loyalsuit.modules.inventory.application.StockService;
+import com.loyalsuit.modules.marketplace.application.CommissionLine;
+import com.loyalsuit.modules.marketplace.application.CommissionService;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
 import com.loyalsuit.modules.orders.application.dto.OrderSummaryResponse;
 import com.loyalsuit.modules.orders.domain.Order;
@@ -33,6 +35,7 @@ public class OrderManagementService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final StockService stockService;
+    private final CommissionService commissionService;
 
     public PageResponse<OrderSummaryResponse> list(UUID tenantId, OrderStatus status, Pageable pageable) {
         var page = status == null
@@ -75,7 +78,19 @@ public class OrderManagementService {
         }
         order.setPaymentStatus(PaymentStatus.PAID);
         Order saved = orderRepository.save(order);
-        return OrderResponse.from(saved, orderItemRepository.findByOrderId(saved.getId()));
+
+        // Cash is in: earn commission for every vendor line of the order (idempotent).
+        List<OrderItem> items = orderItemRepository.findByOrderId(saved.getId());
+        commissionService.settleOrder(tenantId, saved.getId(), saved.getOrderNumber(), vendorLines(items));
+        return OrderResponse.from(saved, items);
+    }
+
+    /** Maps the order's vendor lines (house products excluded) into commission lines. */
+    private static List<CommissionLine> vendorLines(List<OrderItem> items) {
+        return items.stream()
+                .filter(item -> item.getVendorId() != null)
+                .map(item -> new CommissionLine(item.getVendorId(), item.getId(), item.getTotal()))
+                .toList();
     }
 
     private Order load(UUID id, UUID tenantId) {

@@ -395,3 +395,25 @@ export interface CreateCategoryRequest {
   parentId?: string
   sortOrder?: number
 }
+
+export type CommissionStatus = 'EARNED' | 'REVERSED'
+
+export interface CommissionEntry {
+  id: string
+  vendorId: string
+  orderId: string
+  orderItemId: string
+  orderNumber: string
+  grossAmount: number
+  commissionRate: number
+  commissionAmount: number
+  netAmount: number
+  status: CommissionStatus
+  createdAt: string
+}
+
+export interface VendorEarnings {
+  vendorId: string
+  earnedBalance: number
+  reversedTotal: number
+}

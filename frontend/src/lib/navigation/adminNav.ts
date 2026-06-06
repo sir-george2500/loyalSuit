@@ -80,7 +80,7 @@ export const ADMIN_NAV: NavSection[] = [
     items: [
       { label: 'Vendors', href: '/admin/vendors', icon: Store, roles: OWNER_ROLES, status: 'available' },
       { label: 'Payouts', href: '/admin/payouts', icon: Wallet, roles: OWNER_ROLES, status: 'soon' },
-      { label: 'Commissions', href: '/admin/commissions', icon: Percent, roles: OWNER_ROLES, status: 'soon' },
+      { label: 'Commissions', href: '/admin/commissions', icon: Percent, roles: OWNER_ROLES, status: 'available' },
     ],
   },
   {

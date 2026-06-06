@@ -5,6 +5,8 @@ import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.modules.cart.application.CartService;
 import com.loyalsuit.modules.cart.application.dto.CartItemView;
 import com.loyalsuit.modules.cart.application.dto.CartView;
+import com.loyalsuit.modules.catalog.domain.Product;
+import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
 import com.loyalsuit.modules.inventory.application.StockService;
 import com.loyalsuit.modules.orders.application.dto.CheckoutRequest;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
@@ -54,6 +56,7 @@ public class CheckoutService {
     private final StockService stockService;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ProductRepository productRepository;
 
     @Transactional
     public OrderResponse checkout(String storeSlug, String cartToken, CheckoutRequest request,
@@ -106,6 +109,7 @@ public class CheckoutService {
             item.setOrderId(saved.getId());
             item.setProductId(line.productId());
             item.setVariantId(line.variantId());
+            item.setVendorId(vendorIdOf(line.productId(), tenant.getId()));
             item.setQuantity(line.quantity());
             item.setUnitPrice(line.unitPrice());
             item.setTotal(line.lineTotal());
@@ -115,6 +119,13 @@ public class CheckoutService {
 
         cartService.clear(storeSlug, cartToken);
         return OrderResponse.from(saved, items);
+    }
+
+    /** The selling vendor for a product (their user id), snapshotted onto the order line. */
+    private UUID vendorIdOf(UUID productId, UUID tenantId) {
+        return productRepository.findByIdAndTenantId(productId, tenantId)
+                .map(Product::getVendorId)
+                .orElse(null);
     }
 
     /** Link an authenticated customer of this store; otherwise the order is a guest order. */

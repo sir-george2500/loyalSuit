@@ -4,6 +4,7 @@ import {
   Package,
   ShoppingCart,
   Wallet,
+  Banknote,
   Star,
   Settings,
 } from 'lucide-react'
@@ -27,7 +28,8 @@ export const SELLER_NAV: SellerNavItem[] = [
   { label: 'Dashboard', href: '/seller/dashboard', icon: LayoutDashboard, status: 'available' },
   { label: 'Products', href: '/seller/products', icon: Package, status: 'available' },
   { label: 'Orders', href: '/seller/orders', icon: ShoppingCart, status: 'soon' },
-  { label: 'Payouts', href: '/seller/payouts', icon: Wallet, status: 'soon' },
+  { label: 'Earnings', href: '/seller/earnings', icon: Wallet, status: 'available' },
+  { label: 'Payouts', href: '/seller/payouts', icon: Banknote, status: 'soon' },
   { label: 'Reviews', href: '/seller/reviews', icon: Star, status: 'soon' },
   { label: 'Settings', href: '/seller/settings', icon: Settings, status: 'soon' },
 ]

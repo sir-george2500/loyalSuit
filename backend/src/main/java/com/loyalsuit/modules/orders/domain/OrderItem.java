@@ -24,6 +24,11 @@ public class OrderItem extends AuditableEntity {
     @Column(name = "product_id", nullable = false)
     private UUID productId;
 
+    // The selling vendor (their user id), snapshotted at checkout so commission
+    // settlement is immune to a later product re-assignment. Null = house product.
+    @Column(name = "vendor_id")
+    private UUID vendorId;
+
     @Column(name = "variant_id")
     private UUID variantId;
 
