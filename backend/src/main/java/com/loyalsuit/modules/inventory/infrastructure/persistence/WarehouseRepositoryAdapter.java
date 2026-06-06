@@ -26,6 +26,11 @@ public class WarehouseRepositoryAdapter implements WarehouseRepository {
     }
 
     @Override
+    public Optional<Warehouse> findDefault(UUID tenantId) {
+        return jpa.findDefault(tenantId);
+    }
+
+    @Override
     public List<Warehouse> findByTenantIdOrderByName(UUID tenantId) {
         return jpa.findByTenantIdOrderByName(tenantId);
     }

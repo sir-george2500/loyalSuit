@@ -85,6 +85,28 @@ public class StockService {
                 .orElseThrow(() -> new NotFoundException("Stock", stockId));
     }
 
+    /**
+     * Reserves stock for an order line by atomically decrementing the default
+     * warehouse's stock row. No-op when the store doesn't track stock for the item
+     * (no default warehouse or no stock row) — so untracked products can still be
+     * ordered. Throws if a tracked item has insufficient stock. Runs in the caller's
+     * transaction, so a failure rolls back the whole checkout.
+     */
+    @Transactional
+    public void reserve(UUID tenantId, UUID productId, UUID variantId, int quantity) {
+        var warehouse = warehouseRepository.findDefault(tenantId);
+        if (warehouse.isEmpty()) {
+            return; // store isn't tracking stock
+        }
+        var stock = stockRepository.findExisting(productId, variantId, warehouse.get().getId(), tenantId);
+        if (stock.isEmpty()) {
+            return; // item not stocked at the default warehouse → not tracked
+        }
+        if (stockRepository.applyDelta(stock.get().getId(), tenantId, -quantity) == 0) {
+            throw new BusinessException("Not enough stock to fulfil that order");
+        }
+    }
+
     private void requireWarehouse(UUID warehouseId, UUID tenantId) {
         warehouseRepository.findByIdAndTenantId(warehouseId, tenantId)
                 .orElseThrow(() -> new BusinessException("Warehouse does not exist in this store"));

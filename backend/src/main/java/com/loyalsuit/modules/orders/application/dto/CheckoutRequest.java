@@ -1,0 +1,44 @@
+package com.loyalsuit.modules.orders.application.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+/** Guest checkout details. Payment is cash, so no card data is collected. */
+@Data
+public class CheckoutRequest {
+
+    @NotBlank(message = "Your name is required")
+    @Size(max = 255)
+    private String customerName;
+
+    @Email(message = "Enter a valid email address")
+    private String customerEmail;
+
+    @Size(max = 40)
+    private String customerPhone;
+
+    @NotBlank(message = "A delivery address is required")
+    @Size(max = 255)
+    private String addressLine1;
+
+    @Size(max = 255)
+    private String addressLine2;
+
+    @NotBlank(message = "City is required")
+    @Size(max = 120)
+    private String city;
+
+    @Size(max = 120)
+    private String state;
+
+    @Size(max = 20)
+    private String postalCode;
+
+    @Size(max = 120)
+    private String country;
+
+    @Size(max = 1000)
+    private String notes;
+}

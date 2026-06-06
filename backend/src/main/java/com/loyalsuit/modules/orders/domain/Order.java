@@ -26,8 +26,18 @@ public class Order extends TenantScopedEntity {
     @Column(name = "order_number", nullable = false, unique = true)
     private String orderNumber;
 
-    @Column(name = "customer_id", nullable = false)
+    // Null for guest orders; set when an authenticated customer checks out.
+    @Column(name = "customer_id")
     private UUID customerId;
+
+    @Column(name = "customer_name")
+    private String customerName;
+
+    @Column(name = "customer_email")
+    private String customerEmail;
+
+    @Column(name = "customer_phone")
+    private String customerPhone;
 
     @Column(name = "vendor_id")
     private UUID vendorId;
@@ -35,6 +45,14 @@ public class Order extends TenantScopedEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false)
+    private PaymentMethod paymentMethod = PaymentMethod.CASH;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
@@ -60,6 +78,10 @@ public class Order extends TenantScopedEntity {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    /** Client-supplied key making a double-submitted checkout idempotent. */
+    @Column(name = "idempotency_key", updatable = false)
+    private String idempotencyKey;
 
     // Order items are loaded via OrderItemRepository by orderId — consistent with the
     // UUID-FK approach used across all modules (no bidirectional JPA associations).

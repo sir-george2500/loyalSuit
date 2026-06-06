@@ -185,28 +185,51 @@ are correct under concurrency; storefront can read published products.
 **Exit criteria:** an order cannot be placed for out-of-stock items; totals are
 recomputed server-side (never trusted from client); state machine is enforced.
 
+> **Payment is cash-only for now** (Cash on Delivery / pay-on-pickup) — no online
+> gateway is available yet. Checkout places the order immediately with
+> `payment_method = CASH` and `payment_status = UNPAID`; an admin marks it paid when
+> the money is collected. Online gateways (Phase 4) are deferred until available;
+> the order already carries `payment_method`/`payment_status` so adding gateways
+> later is additive, not a rewrite. Guest checkout (no account) is supported, which
+> suits a local cash shop.
+
 - [x] **Cart (Redis-backed)** (slice 3a) — anonymous, store resolved by slug, cart
       by an opaque `X-Cart-Token`. Stores only product/variant refs + quantities;
       **line prices are always recomputed server-side** from current catalog (a
       stale/tampered cart can't set the price). Only ACTIVE products addable; invalid
       lines dropped on view. Storefront add-to-cart + cart page. Service + public-
       access tested. (Guest→authenticated merge deferred to the auth-integration step.)
-- [ ] Checkout: address, shipping selection, server-side total recomputation
-- [ ] Order state machine (PENDING→…→DELIVERED / CANCELLED / REFUNDED) with guards
-- [ ] Idempotent order creation (no double-submit duplicate orders)
-- [ ] Stock reservation on checkout, release on cancel/expiry
-- [ ] Admin order management + customer order history
+- [x] **Cash checkout** (slice 3b) — guest contact + shipping address; totals
+      recomputed server-side from the cart; **atomic stock reservation** (decrements
+      the default warehouse via the lost-update-safe `applyDelta`; a shortfall rolls
+      back the whole checkout → no partial orders, can't oversell); **idempotent**
+      order creation (idempotency key: DB pre-check + partial unique index). Order
+      placed `PENDING` / `CASH` / `UNPAID`; cart cleared. Storefront checkout form +
+      cash-on-delivery confirmation. Service + public-access tested.
+      (Shipping-cost selection and multi-warehouse allocation deferred.)
+- [ ] Order state machine (PENDING→…→DELIVERED / CANCELLED / REFUNDED) with guards;
+      admin marks payment received (`UNPAID → PAID`)
+- [ ] Stock release on cancel (compensating re-increment)
+- [ ] Admin order management + customer order history (by email/phone for guests)
 - [ ] Returns/refunds request flow
 
 ---
 
-## Phase 4 — Payments
+## Phase 4 — Payments (DEFERRED — no gateway available yet)
 **Goal:** money moves, safely.
-**Exit criteria:** every gateway path is idempotent and webhook-verified; no order
-is marked paid without a verified gateway event; refunds reconcile.
+**Status:** Online payment gateways are deferred until one is available. For now
+the platform is **cash-only**: orders are placed with `payment_method = CASH` /
+`payment_status = UNPAID` in Phase 3, and an admin records payment on collection.
+The order schema already carries `payment_method`/`payment_status`, so introducing
+gateways later is additive.
 
-- [ ] PaymentService abstraction over gateways (Strategy pattern)
-- [ ] Stripe (cards) sandbox → live; PayPal; Cash on Delivery; manual transfer
+**Exit criteria (when resumed):** every gateway path is idempotent and
+webhook-verified; no order is marked paid without a verified gateway event;
+refunds reconcile.
+
+- [x] Cash on Delivery / pay-on-pickup (recorded on the order) — done in Phase 3
+- [ ] PaymentService abstraction over gateways (Strategy pattern) — when a gateway exists
+- [ ] Stripe (cards) sandbox → live; PayPal; manual bank transfer
 - [ ] Signed webhook handlers (idempotency keys, replay protection)
 - [ ] Payment ↔ order reconciliation; partial captures/refunds
 - [ ] Tenant subscription billing (plan tiers gate features in `tenancy`)

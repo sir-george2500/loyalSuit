@@ -54,6 +54,9 @@ public class SecurityConfig {
                 // Guest carts are anonymous: cart mutations resolve tenant by slug and
                 // a client cart token (no DB persistence, prices recomputed server-side).
                 .requestMatchers("/api/v1/store/*/cart", "/api/v1/store/*/cart/**").permitAll()
+                // Guest cash checkout is anonymous; an authenticated customer (if any) is
+                // linked to the order. Totals + stock are validated server-side.
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/store/*/checkout").permitAll()
                 // NOTE: /api/v1/catalog/** is tenant-admin scoped and stays authenticated.
                 // Its controllers dereference principal.getTenantId(), so they must never
                 // be public or they NPE on anonymous requests.
