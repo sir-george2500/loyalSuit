@@ -13,6 +13,7 @@ interface ProductJpaRepository extends JpaRepository<Product, UUID> {
     Optional<Product> findByIdAndTenantId(UUID id, UUID tenantId);
     Optional<Product> findBySlugAndTenantId(String slug, UUID tenantId);
     Page<Product> findByTenantId(UUID tenantId, Pageable pageable);
+    Page<Product> findByTenantIdAndVendorId(UUID tenantId, UUID vendorId, Pageable pageable);
     Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable);
     Page<Product> findByTenantIdAndStatusAndCategoryId(
             UUID tenantId, ProductStatus status, UUID categoryId, Pageable pageable);

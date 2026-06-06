@@ -262,8 +262,15 @@ never exceed settled balance.
       (admin/owner-only, tenant-safe — only a user of the same tenant is elevated);
       admin can set the per-vendor commission rate. Admin vendors UI + a "become a
       seller" application page. Service + role-matrix tested.
-- [ ] Vendor-scoped product/order views (sub-tenant isolation); enforce
-      suspended/active vendor status on selling (suspend doesn't yet revoke the role)
+- [x] **Vendor-scoped product views** (slice 5b) — vendors create/manage only
+      their own products (list/get/update/publish/unpublish/archive scoped to
+      `vendorId`; the service 404s a vendor on another vendor's product). Active
+      status is enforced on selling — a suspended/pending vendor is blocked with
+      "Your vendor account is not active". Ownership is derived from the JWT
+      principal (never client-supplied). Seller products UI; service + role-matrix
+      tested. _Deferred: vendor order views; vendor management of variants/media/
+      stock sub-resources (still STORE_WRITE-only); suspend doesn't yet revoke the
+      VENDOR role._
 - [ ] Commission engine (per-vendor / per-category rates), ledger
 - [ ] Payout requests against settled balance, with audit trail
 

@@ -53,6 +53,16 @@ public class VendorService {
                 .orElseThrow(() -> new NotFoundException("Vendor", userId));
     }
 
+    /**
+     * Collaboration API: is this user an active (approved, not suspended) vendor?
+     * Used by catalog to block a suspended/pending vendor from selling.
+     */
+    public boolean isActiveVendor(UUID userId) {
+        return vendorRepository.findByUserId(userId)
+                .map(v -> v.getStatus() == VendorStatus.ACTIVE)
+                .orElse(false);
+    }
+
     public PageResponse<VendorResponse> list(UUID tenantId, VendorStatus status, Pageable pageable) {
         var page = status == null
                 ? vendorRepository.findByTenantId(tenantId, pageable)
