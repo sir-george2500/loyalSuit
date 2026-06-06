@@ -1,0 +1,140 @@
+package com.loyalsuit.modules.marketplace.application;
+
+import com.loyalsuit.common.exception.BusinessException;
+import com.loyalsuit.common.exception.ConflictException;
+import com.loyalsuit.common.exception.NotFoundException;
+import com.loyalsuit.common.response.PageResponse;
+import com.loyalsuit.modules.marketplace.application.dto.ApplyVendorRequest;
+import com.loyalsuit.modules.marketplace.application.dto.VendorResponse;
+import com.loyalsuit.modules.marketplace.domain.Vendor;
+import com.loyalsuit.modules.marketplace.domain.VendorStatus;
+import com.loyalsuit.modules.marketplace.domain.port.VendorRepository;
+import com.loyalsuit.modules.users.domain.AppUser;
+import com.loyalsuit.modules.users.domain.UserRole;
+import com.loyalsuit.modules.users.domain.port.AppUserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.text.Normalizer;
+import java.util.Locale;
+import java.util.UUID;
+
+/**
+ * Vendor onboarding and the admin approval lifecycle. A user applies once; an admin
+ * runs a guarded status machine. Approving a vendor grants the user the VENDOR role
+ * so they can start selling — a deliberate, admin-only capability grant, applied
+ * only to a user who belongs to the same tenant.
+ */
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class VendorService {
+
+    private final VendorRepository vendorRepository;
+    private final AppUserRepository appUserRepository;
+
+    @Transactional
+    public VendorResponse apply(UUID tenantId, UUID userId, ApplyVendorRequest request) {
+        if (vendorRepository.findByUserId(userId).isPresent()) {
+            throw new ConflictException("You already have a vendor application");
+        }
+        Vendor vendor = new Vendor(tenantId, userId, request.getStoreName().trim(),
+                uniqueSlug(request.getStoreName()));
+        vendor.setDescription(trimToNull(request.getDescription()));
+        return VendorResponse.from(vendorRepository.save(vendor));
+    }
+
+    public VendorResponse getMine(UUID userId) {
+        return vendorRepository.findByUserId(userId)
+                .map(VendorResponse::from)
+                .orElseThrow(() -> new NotFoundException("Vendor", userId));
+    }
+
+    public PageResponse<VendorResponse> list(UUID tenantId, VendorStatus status, Pageable pageable) {
+        var page = status == null
+                ? vendorRepository.findByTenantId(tenantId, pageable)
+                : vendorRepository.findByTenantIdAndStatus(tenantId, status, pageable);
+        return new PageResponse<>(page.map(VendorResponse::from));
+    }
+
+    @Transactional
+    public VendorResponse approve(UUID id, UUID tenantId) {
+        Vendor vendor = transition(id, tenantId, VendorStatus.ACTIVE);
+        grantVendorRole(vendor.getUserId(), tenantId);
+        return VendorResponse.from(vendor);
+    }
+
+    @Transactional
+    public VendorResponse reject(UUID id, UUID tenantId) {
+        return VendorResponse.from(transition(id, tenantId, VendorStatus.REJECTED));
+    }
+
+    @Transactional
+    public VendorResponse suspend(UUID id, UUID tenantId) {
+        return VendorResponse.from(transition(id, tenantId, VendorStatus.SUSPENDED));
+    }
+
+    @Transactional
+    public VendorResponse reinstate(UUID id, UUID tenantId) {
+        return VendorResponse.from(transition(id, tenantId, VendorStatus.ACTIVE));
+    }
+
+    @Transactional
+    public VendorResponse setCommission(UUID id, UUID tenantId, BigDecimal rate) {
+        Vendor vendor = load(id, tenantId);
+        vendor.setCommissionRate(rate);
+        return VendorResponse.from(vendorRepository.save(vendor));
+    }
+
+    private Vendor transition(UUID id, UUID tenantId, VendorStatus target) {
+        Vendor vendor = load(id, tenantId);
+        if (!vendor.getStatus().canTransitionTo(target)) {
+            throw new BusinessException("Can't move a vendor from " + vendor.getStatus() + " to " + target);
+        }
+        vendor.setStatus(target);
+        return vendorRepository.save(vendor);
+    }
+
+    /** Elevate the applicant to the VENDOR role. Only a user of this tenant is touched. */
+    private void grantVendorRole(UUID userId, UUID tenantId) {
+        AppUser user = appUserRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User", userId));
+        if (!tenantId.equals(user.getTenantId())) {
+            throw new BusinessException("That user does not belong to this store");
+        }
+        user.setRole(UserRole.VENDOR);
+        appUserRepository.save(user);
+    }
+
+    private Vendor load(UUID id, UUID tenantId) {
+        return vendorRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new NotFoundException("Vendor", id));
+    }
+
+    private String uniqueSlug(String base) {
+        String slug = Normalizer.normalize(base, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+        if (slug.isBlank()) {
+            slug = "vendor";
+        }
+        String candidate = slug;
+        while (vendorRepository.existsBySlug(candidate)) {
+            candidate = slug + "-" + UUID.randomUUID().toString().substring(0, 6);
+        }
+        return candidate;
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+}
