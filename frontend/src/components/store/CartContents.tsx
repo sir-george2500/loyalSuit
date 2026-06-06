@@ -115,13 +115,12 @@ export default function CartContents({ slug }: { slug: string }) {
             <span className="text-xl font-bold text-gray-900">{money.format(cart.subtotal)}</span>
           </div>
 
-          <button
-            disabled
-            title="Checkout arrives next"
-            className="mt-4 w-full cursor-not-allowed rounded-lg bg-gray-900 px-4 py-3 font-medium text-white opacity-60"
+          <Link
+            href={`/store/${slug}/checkout`}
+            className="mt-4 block w-full rounded-lg bg-gray-900 px-4 py-3 text-center font-medium text-white hover:bg-gray-800"
           >
-            Checkout (coming soon)
-          </button>
+            Proceed to checkout
+          </Link>
         </>
       ) : (
         <div className="flex flex-col items-center gap-3 py-20 text-center text-gray-400">

@@ -193,4 +193,65 @@ class StockServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).lowStock()).isTrue();
     }
+
+    // ---- reserve (checkout) -------------------------------------------------
+
+    private Warehouse defaultWarehouse() {
+        Warehouse w = warehouse();
+        ReflectionTestUtils.setField(w, "id", warehouseId);
+        return w;
+    }
+
+    @Test
+    void reserve_decrementsDefaultWarehouseStock() {
+        // Arrange
+        when(warehouseRepository.findDefault(tenantId)).thenReturn(Optional.of(defaultWarehouse()));
+        when(stockRepository.findExisting(productId, null, warehouseId, tenantId))
+                .thenReturn(Optional.of(stock(10)));
+        when(stockRepository.applyDelta(stockId, tenantId, -3)).thenReturn(1);
+
+        // Act
+        stockService.reserve(tenantId, productId, null, 3);
+
+        // Assert
+        verify(stockRepository).applyDelta(stockId, tenantId, -3);
+    }
+
+    @Test
+    void reserve_throwsWhenStockIsInsufficient() {
+        // Arrange — the atomic decrement updates zero rows
+        when(warehouseRepository.findDefault(tenantId)).thenReturn(Optional.of(defaultWarehouse()));
+        when(stockRepository.findExisting(productId, null, warehouseId, tenantId))
+                .thenReturn(Optional.of(stock(1)));
+        when(stockRepository.applyDelta(stockId, tenantId, -3)).thenReturn(0);
+
+        // Act & Assert
+        assertThatThrownBy(() -> stockService.reserve(tenantId, productId, null, 3))
+                .isInstanceOf(com.loyalsuit.common.exception.BusinessException.class);
+    }
+
+    @Test
+    void reserve_isNoOpWhenStoreHasNoDefaultWarehouse() {
+        // Arrange — store isn't tracking stock at all
+        when(warehouseRepository.findDefault(tenantId)).thenReturn(Optional.empty());
+
+        // Act
+        stockService.reserve(tenantId, productId, null, 3);
+
+        // Assert
+        verify(stockRepository, never()).applyDelta(any(), any(), anyInt());
+    }
+
+    @Test
+    void reserve_isNoOpWhenItemIsNotStocked() {
+        // Arrange — default warehouse exists but no stock row for the item
+        when(warehouseRepository.findDefault(tenantId)).thenReturn(Optional.of(defaultWarehouse()));
+        when(stockRepository.findExisting(productId, null, warehouseId, tenantId)).thenReturn(Optional.empty());
+
+        // Act
+        stockService.reserve(tenantId, productId, null, 3);
+
+        // Assert
+        verify(stockRepository, never()).applyDelta(any(), any(), anyInt());
+    }
 }

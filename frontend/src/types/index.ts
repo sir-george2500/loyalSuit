@@ -336,6 +336,28 @@ export interface CartView {
   currency: string
 }
 
+export interface OrderItemResponse {
+  productId: string
+  variantId?: string | null
+  quantity: number
+  unitPrice: number
+  total: number
+}
+
+export interface OrderResponse {
+  id: string
+  orderNumber: string
+  status: string
+  paymentMethod: string
+  paymentStatus: string
+  customerName: string
+  subtotal: number
+  total: number
+  currency: string
+  items: OrderItemResponse[]
+  createdAt: string
+}
+
 export interface CreateCategoryRequest {
   name: string
   slug: string
