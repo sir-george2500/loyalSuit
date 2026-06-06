@@ -251,13 +251,19 @@ refunds reconcile.
 
 ---
 
-## Phase 5 — Marketplace (multi-vendor)
+## Phase 5 — Marketplace (multi-vendor) 🔄 IN PROGRESS
 **Goal:** third-party sellers operate inside a tenant's store.
 **Exit criteria:** vendor data is isolated; commission math is auditable; payouts
 never exceed settled balance.
 
-- [ ] Vendor onboarding + admin approval workflow
-- [ ] Vendor-scoped product/order views (sub-tenant isolation)
+- [x] **Vendor onboarding + admin approval** (slice 5a) — a signed-in user applies
+      to sell (one application per user); admin runs a guarded status machine
+      (PENDING→ACTIVE/REJECTED, ACTIVE↔SUSPENDED). **Approval grants the VENDOR role**
+      (admin/owner-only, tenant-safe — only a user of the same tenant is elevated);
+      admin can set the per-vendor commission rate. Admin vendors UI + a "become a
+      seller" application page. Service + role-matrix tested.
+- [ ] Vendor-scoped product/order views (sub-tenant isolation); enforce
+      suspended/active vendor status on selling (suspend doesn't yet revoke the role)
 - [ ] Commission engine (per-vendor / per-category rates), ledger
 - [ ] Payout requests against settled balance, with audit trail
 
