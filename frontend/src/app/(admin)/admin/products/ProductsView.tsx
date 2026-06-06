@@ -7,12 +7,13 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import type { AxiosError } from 'axios'
 import {
   Plus, Pencil, Trash2, Package, AlertCircle, Loader2,
-  ChevronLeft, ChevronRight, MoreVertical, Layers,
+  ChevronLeft, ChevronRight, MoreVertical, Layers, ImageIcon,
 } from 'lucide-react'
 import { categoryApi, productApi } from '@/lib/api/catalog'
 import { productSchema, slugify, type ProductFormData } from '@/lib/validations/catalog'
 import type { Category, Product, ProductStatus } from '@/types'
 import VariantsModal from './VariantsModal'
+import ImagesModal from './ImagesModal'
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -33,6 +34,7 @@ export default function ProductsView() {
   const [editing, setEditing] = useState<Product | 'new' | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [variantsTarget, setVariantsTarget] = useState<Product | null>(null)
+  const [imagesTarget, setImagesTarget] = useState<Product | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const { data, isLoading, isError, isFetching } = useQuery({
@@ -145,6 +147,14 @@ export default function ProductsView() {
 
                       <button
                         className="btn btn-ghost btn-xs gap-1"
+                        onClick={() => setImagesTarget(p)}
+                        aria-label={`Images of ${p.name}`}
+                      >
+                        <ImageIcon className="h-3.5 w-3.5" /> Images
+                      </button>
+
+                      <button
+                        className="btn btn-ghost btn-xs gap-1"
                         onClick={() => setVariantsTarget(p)}
                         aria-label={`Variants of ${p.name}`}
                       >
@@ -224,6 +234,10 @@ export default function ProductsView() {
             </button>
           </div>
         </div>
+      )}
+
+      {imagesTarget && (
+        <ImagesModal product={imagesTarget} onClose={() => setImagesTarget(null)} />
       )}
 
       {variantsTarget && (

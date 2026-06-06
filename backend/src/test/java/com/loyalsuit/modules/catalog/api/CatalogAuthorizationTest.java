@@ -1,10 +1,12 @@
 package com.loyalsuit.modules.catalog.api;
 
 import com.loyalsuit.modules.catalog.application.CategoryService;
+import com.loyalsuit.modules.catalog.application.MediaUploadService;
 import com.loyalsuit.modules.catalog.application.ProductService;
 import com.loyalsuit.modules.catalog.application.ProductVariantService;
 import com.loyalsuit.modules.users.domain.UserRole;
 import com.loyalsuit.security.JwtService;
+import org.springframework.mock.web.MockMultipartFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -23,6 +25,7 @@ import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -71,6 +74,9 @@ class CatalogAuthorizationTest {
 
     @MockitoBean
     private ProductVariantService productVariantService;
+
+    @MockitoBean
+    private MediaUploadService mediaUploadService;
 
     private String bearer(UserRole role) {
         return "Bearer " + jwtService.issueToken(
@@ -233,6 +239,34 @@ class CatalogAuthorizationTest {
     @EnumSource(UserRole.class)
     void deleteVariant(UserRole role) throws Exception {
         mvc.perform(delete("/api/v1/catalog/products/" + UUID.randomUUID() + "/variants/" + UUID.randomUUID())
+                        .header("Authorization", bearer(role)))
+                .andExpect(expected(STORE_WRITE, role));
+    }
+
+    // ---- Media -------------------------------------------------------------
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void listMedia(UserRole role) throws Exception {
+        mvc.perform(get("/api/v1/catalog/products/" + UUID.randomUUID() + "/media")
+                        .header("Authorization", bearer(role)))
+                .andExpect(expected(READ, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void uploadMedia(UserRole role) throws Exception {
+        var file = new MockMultipartFile("file", "x.png", "image/png", new byte[]{1, 2, 3});
+        mvc.perform(multipart("/api/v1/catalog/products/" + UUID.randomUUID() + "/media")
+                        .file(file)
+                        .header("Authorization", bearer(role)))
+                .andExpect(expected(STORE_WRITE, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void deleteMedia(UserRole role) throws Exception {
+        mvc.perform(delete("/api/v1/catalog/products/" + UUID.randomUUID() + "/media/" + UUID.randomUUID())
                         .header("Authorization", bearer(role)))
                 .andExpect(expected(STORE_WRITE, role));
     }

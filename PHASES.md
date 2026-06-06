@@ -150,7 +150,12 @@ are correct under concurrency; storefront can read published products.
       to the caller's tenant, and update/delete verify the variant belongs to that
       product (NotFound, not Forbidden, to avoid leaking existence). Variants modal
       in the product UI. Service + role-matrix tested. Stock stays out (slice 4).
-- [ ] Media upload pipeline (Cloudinary signed uploads, not raw secrets in client)
+- [x] **Media upload pipeline** (Cloudinary) — server-proxied so no credential or
+      signature ever reaches the client. Uploads validated by **magic bytes** (not
+      the client MIME type), size-capped at the multipart boundary *and* in the
+      service, stored in per-tenant/per-product folders. Product image gallery
+      (primary + ordering, auto-promote on delete). Mockable `MediaStorage` port;
+      service + role-matrix tested. 413 handler for oversize files.
 - [ ] Multi-warehouse stock; **atomic stock adjustments** (optimistic locking);
       consolidate the dual stock model
 - [ ] Low-stock thresholds → dashboard + (later) notifications

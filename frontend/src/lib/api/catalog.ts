@@ -5,6 +5,7 @@ import type {
   CreateCategoryRequest,
   PageResponse,
   Product,
+  ProductMedia,
   ProductVariant,
   ProductWriteRequest,
   VariantRequest,
@@ -44,4 +45,18 @@ export const variantApi = {
     apiClient.put<ApiResponse<ProductVariant>>(`${PRODUCTS}/${productId}/variants/${variantId}`, payload),
   remove: (productId: string, variantId: string) =>
     apiClient.delete<ApiResponse<null>>(`${PRODUCTS}/${productId}/variants/${variantId}`),
+}
+
+export const mediaApi = {
+  list: (productId: string) =>
+    apiClient.get<ApiResponse<ProductMedia[]>>(`${PRODUCTS}/${productId}/media`),
+  upload: (productId: string, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return apiClient.post<ApiResponse<ProductMedia>>(`${PRODUCTS}/${productId}/media`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+  remove: (productId: string, mediaId: string) =>
+    apiClient.delete<ApiResponse<null>>(`${PRODUCTS}/${productId}/media/${mediaId}`),
 }

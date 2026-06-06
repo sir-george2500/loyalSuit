@@ -233,6 +233,14 @@ export interface VariantRequest {
   price: number
 }
 
+export interface ProductMedia {
+  id: string
+  productId: string
+  url: string
+  primary: boolean
+  sortOrder: number
+}
+
 export interface CreateCategoryRequest {
   name: string
   slug: string
