@@ -256,6 +256,24 @@ export interface WarehouseRequest {
   isDefault?: boolean
 }
 
+export interface Stock {
+  id: string
+  productId: string
+  variantId?: string | null
+  warehouseId: string
+  quantity: number
+  lowStockThreshold: number
+  lowStock: boolean
+}
+
+export interface SetStockRequest {
+  productId: string
+  variantId?: string
+  warehouseId: string
+  quantity: number
+  lowStockThreshold?: number
+}
+
 export interface CreateCategoryRequest {
   name: string
   slug: string

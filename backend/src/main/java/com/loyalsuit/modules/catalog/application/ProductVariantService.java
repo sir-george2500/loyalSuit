@@ -34,6 +34,19 @@ public class ProductVariantService {
                 .toList();
     }
 
+    /**
+     * Collaboration API for other modules (e.g. inventory): asserts the product is
+     * in the tenant and, when a variant id is given, that it belongs to that
+     * product. Throws {@link NotFoundException} otherwise. Lets callers reference a
+     * product/variant without reaching into catalog tables directly.
+     */
+    public void assertProductAndVariant(UUID productId, UUID variantId, UUID tenantId) {
+        requireOwnedProduct(productId, tenantId);
+        if (variantId != null) {
+            requireVariantOfProduct(variantId, productId);
+        }
+    }
+
     @Transactional
     public VariantResponse create(UUID productId, UUID tenantId, VariantRequest request) {
         requireOwnedProduct(productId, tenantId);

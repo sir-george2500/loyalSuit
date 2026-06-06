@@ -5,6 +5,7 @@ import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.modules.inventory.application.dto.WarehouseRequest;
 import com.loyalsuit.modules.inventory.application.dto.WarehouseResponse;
 import com.loyalsuit.modules.inventory.domain.Warehouse;
+import com.loyalsuit.modules.inventory.domain.port.StockRepository;
 import com.loyalsuit.modules.inventory.domain.port.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class WarehouseService {
 
     private final WarehouseRepository warehouseRepository;
+    private final StockRepository stockRepository;
 
     public List<WarehouseResponse> list(UUID tenantId) {
         return warehouseRepository.findByTenantIdOrderByName(tenantId).stream()
@@ -69,6 +71,9 @@ public class WarehouseService {
         }
         if (warehouseRepository.countByTenantId(tenantId) <= 1) {
             throw new ConflictException("A store must keep at least one warehouse");
+        }
+        if (stockRepository.existsByWarehouseId(id)) {
+            throw new ConflictException("Move or clear this warehouse's stock before deleting it");
         }
         warehouseRepository.deleteById(id);
     }

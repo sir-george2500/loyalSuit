@@ -5,6 +5,7 @@ import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.modules.inventory.application.dto.WarehouseRequest;
 import com.loyalsuit.modules.inventory.application.dto.WarehouseResponse;
 import com.loyalsuit.modules.inventory.domain.Warehouse;
+import com.loyalsuit.modules.inventory.domain.port.StockRepository;
 import com.loyalsuit.modules.inventory.domain.port.WarehouseRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.when;
 class WarehouseServiceTest {
 
     @Mock private WarehouseRepository warehouseRepository;
+    @Mock private StockRepository stockRepository;
     @InjectMocks private WarehouseService warehouseService;
 
     private UUID tenantId;
@@ -162,12 +164,28 @@ class WarehouseServiceTest {
         when(warehouseRepository.findByIdAndTenantId(warehouseId, tenantId))
                 .thenReturn(Optional.of(warehouse("Annex", false, warehouseId)));
         when(warehouseRepository.countByTenantId(tenantId)).thenReturn(3);
+        when(stockRepository.existsByWarehouseId(warehouseId)).thenReturn(false);
 
         // Act
         warehouseService.delete(warehouseId, tenantId);
 
         // Assert
         verify(warehouseRepository).deleteById(warehouseId);
+    }
+
+    @Test
+    void delete_isBlockedWhenWarehouseStillHoldsStock() {
+        // Arrange
+        when(warehouseRepository.findByIdAndTenantId(warehouseId, tenantId))
+                .thenReturn(Optional.of(warehouse("Annex", false, warehouseId)));
+        when(warehouseRepository.countByTenantId(tenantId)).thenReturn(3);
+        when(stockRepository.existsByWarehouseId(warehouseId)).thenReturn(true);
+
+        // Act & Assert
+        assertThatThrownBy(() -> warehouseService.delete(warehouseId, tenantId))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("stock");
+        verify(warehouseRepository, never()).deleteById(any());
     }
 
     @Test

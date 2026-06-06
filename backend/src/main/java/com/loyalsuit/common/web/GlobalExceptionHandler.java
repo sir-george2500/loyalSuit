@@ -3,6 +3,7 @@ package com.loyalsuit.common.web;
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -55,6 +56,13 @@ public class GlobalExceptionHandler {
         // Multipart resolver rejected the file before it reached a controller.
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
                 .body(ApiResponse.error("File is too large (max 5 MB)"));
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(OptimisticLockingFailureException ex) {
+        // A concurrent write changed the row first (e.g. two stock edits at once).
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("This record was changed concurrently — please retry"));
     }
 
     @ExceptionHandler(Exception.class)
