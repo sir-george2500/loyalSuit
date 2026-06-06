@@ -41,6 +41,11 @@ public class StockRepositoryAdapter implements StockRepository {
     }
 
     @Override
+    public boolean hasStock(UUID productId, UUID tenantId) {
+        return jpa.existsByProductIdAndTenantIdAndQuantityGreaterThan(productId, tenantId, 0);
+    }
+
+    @Override
     public Optional<Stock> findExisting(UUID productId, UUID variantId, UUID warehouseId, UUID tenantId) {
         return variantId == null
                 ? jpa.findByProductIdAndWarehouseIdAndVariantIdIsNullAndTenantId(productId, warehouseId, tenantId)

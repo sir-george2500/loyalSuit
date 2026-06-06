@@ -169,7 +169,13 @@ are correct under concurrency; storefront can read published products.
       (set level + ± adjust). Service + role-matrix tested.
 - [ ] Surface low-stock on the dashboard + (later) notifications
 - [ ] Bulk CSV import/export with row-level validation + error report
-- [ ] Public storefront read API (`/store/**`) resolving tenant by host/slug
+- [x] **Public storefront read API** (`/store/{slug}/**`) — anonymous, resolves the
+      active tenant by slug. Exposes only ACTIVE products / active categories and a
+      customer-facing DTO (no SKU/barcode/status/vendor; stock as an `inStock`
+      boolean, never quantities). Batch lookups avoid N+1 in listings. Next.js
+      Server Components render the storefront (store home + product detail) with
+      ISR caching. Read-model aggregator (`storefront` module) + public-access tests.
+      (Host/subdomain resolution and server-side cache-aside deferred.)
 - [ ] List/detail performance: pagination, indexes, cache-aside for hot listings
 
 ---

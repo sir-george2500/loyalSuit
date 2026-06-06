@@ -26,6 +26,11 @@ public class CategoryRepositoryAdapter implements CategoryRepository {
     }
 
     @Override
+    public Optional<Category> findBySlugAndTenantId(String slug, UUID tenantId) {
+        return jpa.findBySlugAndTenantId(slug, tenantId);
+    }
+
+    @Override
     public List<Category> findAllByTenantId(UUID tenantId) {
         return jpa.findAllByTenantId(tenantId);
     }

@@ -28,8 +28,19 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
+    public Optional<Product> findBySlugAndTenantId(String slug, UUID tenantId) {
+        return jpa.findBySlugAndTenantId(slug, tenantId);
+    }
+
+    @Override
     public Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable) {
         return jpa.findByTenantIdAndStatus(tenantId, status, pageable);
+    }
+
+    @Override
+    public Page<Product> findByTenantIdAndStatusAndCategoryId(
+            UUID tenantId, ProductStatus status, UUID categoryId, Pageable pageable) {
+        return jpa.findByTenantIdAndStatusAndCategoryId(tenantId, status, categoryId, pageable);
     }
 
     @Override

@@ -18,6 +18,8 @@ interface StockJpaRepository extends JpaRepository<Stock, UUID> {
 
     boolean existsByWarehouseId(UUID warehouseId);
 
+    boolean existsByProductIdAndTenantIdAndQuantityGreaterThan(UUID productId, UUID tenantId, int quantity);
+
     // Explicit nullable-variant finders avoid fragile ":param IS NULL" JPQL.
     Optional<Stock> findByProductIdAndWarehouseIdAndVariantIdIsNullAndTenantId(
             UUID productId, UUID warehouseId, UUID tenantId);

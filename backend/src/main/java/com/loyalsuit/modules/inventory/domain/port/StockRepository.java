@@ -12,6 +12,8 @@ public interface StockRepository {
     List<Stock> findByProductIdAndTenantId(UUID productId, UUID tenantId);
     List<Stock> findLowStock(UUID tenantId);
     boolean existsByWarehouseId(UUID warehouseId);
+    /** True if any warehouse holds a positive quantity of the product (storefront use). */
+    boolean hasStock(UUID productId, UUID tenantId);
 
     /** Locate the row for an exact product/variant/warehouse triple (variant may be null). */
     Optional<Stock> findExisting(UUID productId, UUID variantId, UUID warehouseId, UUID tenantId);
