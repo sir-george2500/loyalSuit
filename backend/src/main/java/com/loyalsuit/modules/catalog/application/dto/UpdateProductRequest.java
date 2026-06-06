@@ -9,8 +9,13 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+/**
+ * Editable product fields. Ownership ({@code vendorId}) and lifecycle
+ * ({@code status}) are deliberately not editable here — status changes go through
+ * the dedicated publish/unpublish/archive endpoints.
+ */
 @Data
-public class CreateProductRequest {
+public class UpdateProductRequest {
 
     @NotBlank(message = "Product name is required")
     @Size(max = 255)
@@ -34,7 +39,5 @@ public class CreateProductRequest {
 
     private BigDecimal compareAtPrice;
     private UUID categoryId;
-    // vendorId is intentionally NOT accepted from the client — ownership is derived
-    // from the authenticated principal so a caller cannot assign products to others.
     private boolean digital = false;
 }

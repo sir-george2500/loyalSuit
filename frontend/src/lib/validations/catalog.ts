@@ -17,6 +17,34 @@ export const categorySchema = yup.object({
   description: yup.string().trim().max(2000).optional(),
 })
 
+export const productSchema = yup.object({
+  name: yup.string().trim().required('Name is required').max(255),
+  slug: yup
+    .string()
+    .trim()
+    .required('Slug is required')
+    .matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers, and hyphens'),
+  price: yup
+    .number()
+    .typeError('Price is required')
+    .positive('Price must be greater than 0')
+    .required('Price is required'),
+  compareAtPrice: yup
+    .number()
+    .typeError('Must be a number')
+    .min(0, 'Cannot be negative')
+    .nullable()
+    .transform((v, o) => (o === '' ? null : v))
+    .optional(),
+  sku: yup.string().trim().max(100).optional(),
+  barcode: yup.string().trim().max(100).optional(),
+  categoryId: yup.string().optional(),
+  digital: yup.boolean().default(false),
+  description: yup.string().trim().max(2000).optional(),
+})
+
+export type ProductFormData = yup.InferType<typeof productSchema>
+
 export type CategoryFormData = yup.InferType<typeof categorySchema>
 
 /** Turn a free-text name into a URL-safe slug (lowercase, hyphenated). */
