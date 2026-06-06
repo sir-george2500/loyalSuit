@@ -5,7 +5,9 @@ import type {
   CreateCategoryRequest,
   PageResponse,
   Product,
+  ProductVariant,
   ProductWriteRequest,
+  VariantRequest,
 } from '@/types'
 
 const CATEGORIES = '/api/v1/catalog/categories'
@@ -31,4 +33,15 @@ export const productApi = {
   publish: (id: string) => apiClient.patch<ApiResponse<Product>>(`${PRODUCTS}/${id}/publish`),
   unpublish: (id: string) => apiClient.patch<ApiResponse<Product>>(`${PRODUCTS}/${id}/unpublish`),
   archive: (id: string) => apiClient.patch<ApiResponse<Product>>(`${PRODUCTS}/${id}/archive`),
+}
+
+export const variantApi = {
+  list: (productId: string) =>
+    apiClient.get<ApiResponse<ProductVariant[]>>(`${PRODUCTS}/${productId}/variants`),
+  create: (productId: string, payload: VariantRequest) =>
+    apiClient.post<ApiResponse<ProductVariant>>(`${PRODUCTS}/${productId}/variants`, payload),
+  update: (productId: string, variantId: string, payload: VariantRequest) =>
+    apiClient.put<ApiResponse<ProductVariant>>(`${PRODUCTS}/${productId}/variants/${variantId}`, payload),
+  remove: (productId: string, variantId: string) =>
+    apiClient.delete<ApiResponse<null>>(`${PRODUCTS}/${productId}/variants/${variantId}`),
 }

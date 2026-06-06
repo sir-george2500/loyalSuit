@@ -218,6 +218,21 @@ export interface ProductWriteRequest {
 export type CreateProductRequest = ProductWriteRequest
 export type UpdateProductRequest = ProductWriteRequest
 
+export interface ProductVariant {
+  id: string
+  productId: string
+  name: string
+  sku?: string | null
+  price: number
+  createdAt: string
+}
+
+export interface VariantRequest {
+  name: string
+  sku?: string
+  price: number
+}
+
 export interface CreateCategoryRequest {
   name: string
   slug: string
