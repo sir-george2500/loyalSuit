@@ -2,6 +2,13 @@ spring:
   application:
     name: loyalsuit-backend
 
+  servlet:
+    multipart:
+      # Hard boundary for uploads — rejects oversized requests before they reach
+      # any controller. The media service additionally re-checks size and content.
+      max-file-size: 5MB
+      max-request-size: 6MB
+
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST}:5432/${POSTGRES_DATABASE}?sslmode=require
     username: ${POSTGRES_USER}
