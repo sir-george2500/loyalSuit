@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import type { AxiosError } from 'axios'
-import { ArrowLeft, Loader2, PackageSearch } from 'lucide-react'
+import { ArrowLeft, Loader2, PackageSearch, Undo2, CheckCircle2 } from 'lucide-react'
 import { orderTrackingApi } from '@/lib/api/orderTracking'
+import { returnsApi } from '@/lib/api/returns'
 import type { OrderResponse } from '@/types'
 
 interface LookupForm {
@@ -28,7 +29,7 @@ export default function TrackOrder({ slug }: { slug: string }) {
   const [order, setOrder] = useState<OrderResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const { register, handleSubmit } = useForm<LookupForm>()
+  const { register, handleSubmit, getValues } = useForm<LookupForm>()
 
   const lookup = useMutation({
     mutationFn: (form: LookupForm) => orderTrackingApi.track(slug, form.orderNumber.trim(), form.email.trim()),
@@ -103,6 +104,61 @@ export default function TrackOrder({ slug }: { slug: string }) {
             <span>Total</span>
             <span>{money.format(order.total)}</span>
           </div>
+
+          {order.status === 'DELIVERED' && (
+            <ReturnRequestPanel slug={slug} orderNumber={order.orderNumber} email={getValues('email').trim()} />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReturnRequestPanel({ slug, orderNumber, email }: { slug: string; orderNumber: string; email: string }) {
+  const [open, setOpen] = useState(false)
+  const [reason, setReason] = useState('')
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const submit = useMutation({
+    mutationFn: () => returnsApi.request(slug, orderNumber, { email, reason: reason.trim() }),
+    onSuccess: () => { setDone(true); setError(null) },
+    onError: (err) =>
+      setError((err as AxiosError<{ message?: string }>)?.response?.data?.message ?? 'Could not submit the return.'),
+  })
+
+  if (done) {
+    return (
+      <div className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+        <CheckCircle2 className="h-4 w-4" /> Return requested. The store will review it.
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-4 border-t border-gray-100 pt-3">
+      {!open ? (
+        <button onClick={() => setOpen(true)} className="inline-flex items-center gap-1 text-sm text-gray-600 underline">
+          <Undo2 className="h-4 w-4" /> Request a return
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={2}
+            placeholder="Why are you returning this order?"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <button
+            onClick={() => submit.mutate()}
+            disabled={submit.isPending || reason.trim().length === 0}
+            className="flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+          >
+            {submit.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            Submit return request
+          </button>
         </div>
       )}
     </div>

@@ -57,6 +57,8 @@ public class SecurityConfig {
                 // Guest cash checkout is anonymous; an authenticated customer (if any) is
                 // linked to the order. Totals + stock are validated server-side.
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/store/*/checkout").permitAll()
+                // Guest return requests are anonymous, verified by order number + email.
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/store/*/orders/*/returns").permitAll()
                 // NOTE: /api/v1/catalog/** is tenant-admin scoped and stays authenticated.
                 // Its controllers dereference principal.getTenantId(), so they must never
                 // be public or they NPE on anonymous requests.

@@ -375,6 +375,18 @@ export interface OrderSummary {
   createdAt: string
 }
 
+export type ReturnStatus = 'REQUESTED' | 'APPROVED' | 'REJECTED'
+
+export interface ReturnResponse {
+  id: string
+  orderId: string
+  orderNumber: string
+  status: ReturnStatus
+  reason: string
+  resolutionNote?: string | null
+  createdAt: string
+}
+
 export interface CreateCategoryRequest {
   name: string
   slug: string

@@ -71,7 +71,7 @@ export const ADMIN_NAV: NavSection[] = [
     title: 'Sales',
     items: [
       { label: 'Orders', href: '/admin/orders', icon: ShoppingCart, roles: STORE_ROLES, status: 'available' },
-      { label: 'Returns', href: '/admin/returns', icon: Undo2, roles: STORE_ROLES, status: 'soon' },
+      { label: 'Returns', href: '/admin/returns', icon: Undo2, roles: STORE_ROLES, status: 'available' },
       { label: 'POS Terminal', href: '/pos', icon: MonitorSmartphone, roles: STORE_ROLES, status: 'available' },
     ],
   },

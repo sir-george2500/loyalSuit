@@ -180,7 +180,7 @@ are correct under concurrency; storefront can read published products.
 
 ---
 
-## Phase 3 — Orders, cart & checkout 🔄 IN PROGRESS
+## Phase 3 — Orders, cart & checkout ✅ COMPLETE (cash-only; gateways deferred)
 **Goal:** a customer can buy; an admin can fulfil.
 **Exit criteria:** an order cannot be placed for out-of-stock items; totals are
 recomputed server-side (never trusted from client); state machine is enforced.
@@ -218,7 +218,15 @@ recomputed server-side (never trusted from client); state machine is enforced.
       be probed). Storefront "track order" page. Service tested.
       (Authenticated-account order history deferred — needs the customer-account /
       storefront-login integration.)
-- [ ] Returns/refunds request flow
+- [x] **Returns / refunds** (slice 3d) — guest requests a return on a DELIVERED
+      order (enumeration-safe, order number + email); admin approves (order +
+      payment → `REFUNDED`, items restocked, all in one transaction) or rejects with
+      a note. Duplicate-pending and double-resolve guarded; concurrent approval
+      blocked by the order's `@Version`. Storefront request UI + admin returns page.
+      Service + role-matrix tested.
+
+**Deferred from Phase 3:** authenticated customer-account order history (needs
+storefront customer login), shipping-cost selection, multi-warehouse allocation.
 
 ---
 
