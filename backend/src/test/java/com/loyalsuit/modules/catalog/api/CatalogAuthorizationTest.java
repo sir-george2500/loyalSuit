@@ -2,6 +2,7 @@ package com.loyalsuit.modules.catalog.api;
 
 import com.loyalsuit.modules.catalog.application.CategoryService;
 import com.loyalsuit.modules.catalog.application.ProductService;
+import com.loyalsuit.modules.catalog.application.ProductVariantService;
 import com.loyalsuit.modules.users.domain.UserRole;
 import com.loyalsuit.security.JwtService;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,7 @@ class CatalogAuthorizationTest {
 
     private static final String PRODUCT_BODY = "{\"name\":\"Widget\",\"slug\":\"widget\",\"price\":9.99}";
     private static final String CATEGORY_BODY = "{\"name\":\"Tools\",\"slug\":\"tools\"}";
+    private static final String VARIANT_BODY = "{\"name\":\"Large\",\"price\":9.99}";
 
     @Autowired
     private MockMvc mvc;
@@ -66,6 +68,9 @@ class CatalogAuthorizationTest {
 
     @MockitoBean
     private CategoryService categoryService;
+
+    @MockitoBean
+    private ProductVariantService productVariantService;
 
     private String bearer(UserRole role) {
         return "Bearer " + jwtService.issueToken(
@@ -192,6 +197,44 @@ class CatalogAuthorizationTest {
         mvc.perform(delete("/api/v1/catalog/categories/" + UUID.randomUUID())
                         .header("Authorization", bearer(role)))
                 .andExpect(expected(ADMIN_ONLY, role));
+    }
+
+    // ---- Variants ----------------------------------------------------------
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void listVariants(UserRole role) throws Exception {
+        mvc.perform(get("/api/v1/catalog/products/" + UUID.randomUUID() + "/variants")
+                        .header("Authorization", bearer(role)))
+                .andExpect(expected(READ, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void createVariant(UserRole role) throws Exception {
+        mvc.perform(post("/api/v1/catalog/products/" + UUID.randomUUID() + "/variants")
+                        .header("Authorization", bearer(role))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VARIANT_BODY))
+                .andExpect(expected(STORE_WRITE, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void updateVariant(UserRole role) throws Exception {
+        mvc.perform(put("/api/v1/catalog/products/" + UUID.randomUUID() + "/variants/" + UUID.randomUUID())
+                        .header("Authorization", bearer(role))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VARIANT_BODY))
+                .andExpect(expected(STORE_WRITE, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void deleteVariant(UserRole role) throws Exception {
+        mvc.perform(delete("/api/v1/catalog/products/" + UUID.randomUUID() + "/variants/" + UUID.randomUUID())
+                        .header("Authorization", bearer(role)))
+                .andExpect(expected(STORE_WRITE, role));
     }
 
     // ---- Anonymous ---------------------------------------------------------

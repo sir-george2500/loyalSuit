@@ -45,6 +45,18 @@ export const productSchema = yup.object({
 
 export type ProductFormData = yup.InferType<typeof productSchema>
 
+export const variantSchema = yup.object({
+  name: yup.string().trim().required('Name is required').max(255),
+  sku: yup.string().trim().max(100).optional(),
+  price: yup
+    .number()
+    .typeError('Price is required')
+    .positive('Price must be greater than 0')
+    .required('Price is required'),
+})
+
+export type VariantFormData = yup.InferType<typeof variantSchema>
+
 export type CategoryFormData = yup.InferType<typeof categorySchema>
 
 /** Turn a free-text name into a URL-safe slug (lowercase, hyphenated). */

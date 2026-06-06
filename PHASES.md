@@ -145,7 +145,11 @@ are correct under concurrency; storefront can read published products.
       **Security-hardened**: `categoryId` validated as same-tenant; `vendorId`
       derived from the authenticated principal (never trusted from the client).
       Admin UI with status actions + pagination. Service + role-matrix tested.
-- [ ] Product variants (sub-slice 2b): per-variant SKU/price/attributes
+- [x] **Product variants** (sub-slice 2b): per-variant name/SKU/price CRUD nested
+      under a product. Tenant-safe — every op verifies the parent product belongs
+      to the caller's tenant, and update/delete verify the variant belongs to that
+      product (NotFound, not Forbidden, to avoid leaking existence). Variants modal
+      in the product UI. Service + role-matrix tested. Stock stays out (slice 4).
 - [ ] Media upload pipeline (Cloudinary signed uploads, not raw secrets in client)
 - [ ] Multi-warehouse stock; **atomic stock adjustments** (optimistic locking);
       consolidate the dual stock model

@@ -7,11 +7,12 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import type { AxiosError } from 'axios'
 import {
   Plus, Pencil, Trash2, Package, AlertCircle, Loader2,
-  ChevronLeft, ChevronRight, MoreVertical,
+  ChevronLeft, ChevronRight, MoreVertical, Layers,
 } from 'lucide-react'
 import { categoryApi, productApi } from '@/lib/api/catalog'
 import { productSchema, slugify, type ProductFormData } from '@/lib/validations/catalog'
 import type { Category, Product, ProductStatus } from '@/types'
+import VariantsModal from './VariantsModal'
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -31,6 +32,7 @@ export default function ProductsView() {
   const [page, setPage] = useState(0)
   const [editing, setEditing] = useState<Product | 'new' | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
+  const [variantsTarget, setVariantsTarget] = useState<Product | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const { data, isLoading, isError, isFetching } = useQuery({
@@ -141,6 +143,14 @@ export default function ProductsView() {
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
 
+                      <button
+                        className="btn btn-ghost btn-xs gap-1"
+                        onClick={() => setVariantsTarget(p)}
+                        aria-label={`Variants of ${p.name}`}
+                      >
+                        <Layers className="h-3.5 w-3.5" /> Variants
+                      </button>
+
                       <div className="dropdown dropdown-end">
                         <button tabIndex={0} className="btn btn-ghost btn-xs" aria-label="Status actions">
                           <MoreVertical className="h-3.5 w-3.5" />
@@ -214,6 +224,10 @@ export default function ProductsView() {
             </button>
           </div>
         </div>
+      )}
+
+      {variantsTarget && (
+        <VariantsModal product={variantsTarget} onClose={() => setVariantsTarget(null)} />
       )}
 
       {editing && (
