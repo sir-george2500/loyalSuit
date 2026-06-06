@@ -1,8 +1,11 @@
 package com.loyalsuit.modules.orders.infrastructure.persistence;
 
 import com.loyalsuit.modules.orders.domain.Order;
+import com.loyalsuit.modules.orders.domain.OrderStatus;
 import com.loyalsuit.modules.orders.domain.port.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -32,5 +35,15 @@ public class OrderRepositoryAdapter implements OrderRepository {
     @Override
     public boolean existsByOrderNumber(String orderNumber) {
         return jpa.existsByOrderNumber(orderNumber);
+    }
+
+    @Override
+    public Page<Order> findByTenantId(UUID tenantId, Pageable pageable) {
+        return jpa.findByTenantIdOrderByCreatedAtDesc(tenantId, pageable);
+    }
+
+    @Override
+    public Page<Order> findByTenantIdAndStatus(UUID tenantId, OrderStatus status, Pageable pageable) {
+        return jpa.findByTenantIdAndStatusOrderByCreatedAtDesc(tenantId, status, pageable);
     }
 }

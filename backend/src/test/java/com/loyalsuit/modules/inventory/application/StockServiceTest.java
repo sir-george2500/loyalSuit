@@ -254,4 +254,31 @@ class StockServiceTest {
         // Assert
         verify(stockRepository, never()).applyDelta(any(), any(), anyInt());
     }
+
+    @Test
+    void release_addsQuantityBackToDefaultWarehouse() {
+        // Arrange
+        when(warehouseRepository.findDefault(tenantId)).thenReturn(Optional.of(defaultWarehouse()));
+        when(stockRepository.findExisting(productId, null, warehouseId, tenantId))
+                .thenReturn(Optional.of(stock(2)));
+
+        // Act
+        stockService.release(tenantId, productId, null, 3);
+
+        // Assert — positive delta returns stock
+        verify(stockRepository).applyDelta(stockId, tenantId, 3);
+    }
+
+    @Test
+    void release_isNoOpWhenItemIsNotStocked() {
+        // Arrange
+        when(warehouseRepository.findDefault(tenantId)).thenReturn(Optional.of(defaultWarehouse()));
+        when(stockRepository.findExisting(productId, null, warehouseId, tenantId)).thenReturn(Optional.empty());
+
+        // Act
+        stockService.release(tenantId, productId, null, 3);
+
+        // Assert
+        verify(stockRepository, never()).applyDelta(any(), any(), anyInt());
+    }
 }

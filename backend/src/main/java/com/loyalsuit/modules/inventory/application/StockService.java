@@ -107,6 +107,22 @@ public class StockService {
         }
     }
 
+    /**
+     * Releases previously reserved stock back to the default warehouse (e.g. on
+     * order cancellation). Mirrors {@link #reserve}; a no-op when the item isn't
+     * tracked. The atomic +delta cannot fail the {@code >= 0} guard, so it always
+     * applies when a row exists.
+     */
+    @Transactional
+    public void release(UUID tenantId, UUID productId, UUID variantId, int quantity) {
+        var warehouse = warehouseRepository.findDefault(tenantId);
+        if (warehouse.isEmpty()) {
+            return;
+        }
+        stockRepository.findExisting(productId, variantId, warehouse.get().getId(), tenantId)
+                .ifPresent(stock -> stockRepository.applyDelta(stock.getId(), tenantId, quantity));
+    }
+
     private void requireWarehouse(UUID warehouseId, UUID tenantId) {
         warehouseRepository.findByIdAndTenantId(warehouseId, tenantId)
                 .orElseThrow(() -> new BusinessException("Warehouse does not exist in this store"));

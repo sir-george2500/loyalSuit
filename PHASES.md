@@ -207,10 +207,13 @@ recomputed server-side (never trusted from client); state machine is enforced.
       placed `PENDING` / `CASH` / `UNPAID`; cart cleared. Storefront checkout form +
       cash-on-delivery confirmation. Service + public-access tested.
       (Shipping-cost selection and multi-warehouse allocation deferred.)
-- [ ] Order state machine (PENDING→…→DELIVERED / CANCELLED / REFUNDED) with guards;
-      admin marks payment received (`UNPAID → PAID`)
-- [ ] Stock release on cancel (compensating re-increment)
-- [ ] Admin order management + customer order history (by email/phone for guests)
+- [x] **Order state machine + admin management** (slice 3c) — guarded fulfilment
+      transitions (`canTransitionTo`; invalid edges rejected); **stock released on
+      cancel** via a compensating `applyDelta` in the same transaction; admin marks
+      cash received (`UNPAID → PAID`, idempotent). Admin orders UI: list + status
+      filter, detail with valid-transition actions. Store-role gated; service +
+      role-matrix tested.
+- [ ] Customer order history (authenticated customers; guest lookup by email/phone)
 - [ ] Returns/refunds request flow
 
 ---

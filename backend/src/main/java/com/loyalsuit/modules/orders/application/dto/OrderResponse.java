@@ -6,6 +6,7 @@ import com.loyalsuit.modules.orders.domain.OrderItem;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public record OrderResponse(
@@ -15,6 +16,10 @@ public record OrderResponse(
         String paymentMethod,
         String paymentStatus,
         String customerName,
+        String customerEmail,
+        String customerPhone,
+        Map<String, Object> shippingAddress,
+        String notes,
         BigDecimal subtotal,
         BigDecimal total,
         String currency,
@@ -29,6 +34,10 @@ public record OrderResponse(
                 order.getPaymentMethod().name(),
                 order.getPaymentStatus().name(),
                 order.getCustomerName(),
+                order.getCustomerEmail(),
+                order.getCustomerPhone(),
+                order.getShippingAddress(),
+                order.getNotes(),
                 order.getSubtotal(),
                 order.getTotal(),
                 order.getCurrency(),
