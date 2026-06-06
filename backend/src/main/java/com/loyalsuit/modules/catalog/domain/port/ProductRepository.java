@@ -16,6 +16,7 @@ public interface ProductRepository {
     Page<Product> findByTenantIdAndStatusAndCategoryId(
             UUID tenantId, ProductStatus status, UUID categoryId, Pageable pageable);
     Page<Product> findByTenantId(UUID tenantId, Pageable pageable);
+    Page<Product> findByTenantIdAndVendorId(UUID tenantId, UUID vendorId, Pageable pageable);
     Page<Product> findByCategoryIdAndTenantId(UUID categoryId, UUID tenantId, Pageable pageable);
     boolean existsBySlugAndTenantId(String slug, UUID tenantId);
     boolean existsByCategoryIdAndTenantId(UUID categoryId, UUID tenantId);

@@ -118,6 +118,8 @@ class CatalogAuthorizationTest {
                 .andExpect(expected(READ, role));
     }
 
+    // Vendors manage their own products, so update/status are open to the READ set
+    // (admins, staff, vendors); the service enforces per-vendor ownership + active status.
     @ParameterizedTest
     @EnumSource(UserRole.class)
     void updateProduct(UserRole role) throws Exception {
@@ -125,7 +127,7 @@ class CatalogAuthorizationTest {
                         .header("Authorization", bearer(role))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(PRODUCT_BODY))
-                .andExpect(expected(STORE_WRITE, role));
+                .andExpect(expected(READ, role));
     }
 
     @ParameterizedTest
@@ -133,7 +135,7 @@ class CatalogAuthorizationTest {
     void publishProduct(UserRole role) throws Exception {
         mvc.perform(patch("/api/v1/catalog/products/" + UUID.randomUUID() + "/publish")
                         .header("Authorization", bearer(role)))
-                .andExpect(expected(STORE_WRITE, role));
+                .andExpect(expected(READ, role));
     }
 
     @ParameterizedTest
@@ -141,7 +143,7 @@ class CatalogAuthorizationTest {
     void unpublishProduct(UserRole role) throws Exception {
         mvc.perform(patch("/api/v1/catalog/products/" + UUID.randomUUID() + "/unpublish")
                         .header("Authorization", bearer(role)))
-                .andExpect(expected(STORE_WRITE, role));
+                .andExpect(expected(READ, role));
     }
 
     @ParameterizedTest
@@ -149,7 +151,7 @@ class CatalogAuthorizationTest {
     void archiveProduct(UserRole role) throws Exception {
         mvc.perform(patch("/api/v1/catalog/products/" + UUID.randomUUID() + "/archive")
                         .header("Authorization", bearer(role)))
-                .andExpect(expected(STORE_WRITE, role));
+                .andExpect(expected(READ, role));
     }
 
     @ParameterizedTest

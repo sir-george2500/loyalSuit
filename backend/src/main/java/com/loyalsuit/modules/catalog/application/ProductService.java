@@ -11,6 +11,7 @@ import com.loyalsuit.modules.catalog.domain.Product;
 import com.loyalsuit.modules.catalog.domain.ProductStatus;
 import com.loyalsuit.modules.catalog.domain.port.CategoryRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
+import com.loyalsuit.modules.marketplace.application.VendorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+/**
+ * Product catalog. Vendor-aware: a VENDOR only ever sees and manages their own
+ * products (sub-tenant isolation — another vendor's product reads as not-found),
+ * and may only create/edit while their vendor account is ACTIVE. Admins and staff
+ * operate on all of the tenant's products.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -28,10 +35,23 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final VendorService vendorService;
 
     public PageResponse<ProductResponse> listByTenant(UUID tenantId, Pageable pageable) {
         return new PageResponse<>(
                 productRepository.findByTenantId(tenantId, pageable).map(ProductResponse::new));
+    }
+
+    /**
+     * Lists products for the acting principal: a vendor sees only their own,
+     * everyone else sees the whole tenant catalog.
+     */
+    public PageResponse<ProductResponse> listForActor(UUID tenantId, UUID actorId, String actorRole, Pageable pageable) {
+        if (isVendor(actorRole)) {
+            return new PageResponse<>(
+                    productRepository.findByTenantIdAndVendorId(tenantId, actorId, pageable).map(ProductResponse::new));
+        }
+        return listByTenant(tenantId, pageable);
     }
 
     public PageResponse<ProductResponse> listActiveByTenant(UUID tenantId, Pageable pageable) {
@@ -46,8 +66,8 @@ public class ProductService {
                         .map(ProductResponse::new));
     }
 
-    public ProductResponse getById(UUID id, UUID tenantId) {
-        return new ProductResponse(loadProduct(id, tenantId));
+    public ProductResponse getById(UUID id, UUID tenantId, UUID actorId, String actorRole) {
+        return new ProductResponse(loadForActor(id, tenantId, actorId, actorRole));
     }
 
     /**
@@ -57,6 +77,7 @@ public class ProductService {
      */
     @Transactional
     public ProductResponse create(CreateProductRequest request, UUID tenantId, UUID actorId, String actorRole) {
+        requireActiveVendor(actorId, actorRole);
         if (productRepository.existsBySlugAndTenantId(request.getSlug(), tenantId)) {
             throw new ConflictException("Product slug already exists: " + request.getSlug());
         }
@@ -75,8 +96,9 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse update(UUID id, UpdateProductRequest request, UUID tenantId) {
-        Product product = loadProduct(id, tenantId);
+    public ProductResponse update(UUID id, UpdateProductRequest request, UUID tenantId, UUID actorId, String actorRole) {
+        requireActiveVendor(actorId, actorRole);
+        Product product = loadForActor(id, tenantId, actorId, actorRole);
 
         if (!product.getSlug().equals(request.getSlug())
                 && productRepository.existsBySlugAndTenantId(request.getSlug(), tenantId)) {
@@ -98,26 +120,30 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponse publish(UUID id, UUID tenantId) {
-        Product product = loadProduct(id, tenantId);
+    public ProductResponse publish(UUID id, UUID tenantId, UUID actorId, String actorRole) {
+        requireActiveVendor(actorId, actorRole);
+        Product product = loadForActor(id, tenantId, actorId, actorRole);
         product.activate();
         return new ProductResponse(productRepository.save(product));
     }
 
     @Transactional
-    public ProductResponse unpublish(UUID id, UUID tenantId) {
-        Product product = loadProduct(id, tenantId);
+    public ProductResponse unpublish(UUID id, UUID tenantId, UUID actorId, String actorRole) {
+        requireActiveVendor(actorId, actorRole);
+        Product product = loadForActor(id, tenantId, actorId, actorRole);
         product.deactivate();
         return new ProductResponse(productRepository.save(product));
     }
 
     @Transactional
-    public ProductResponse archive(UUID id, UUID tenantId) {
-        Product product = loadProduct(id, tenantId);
+    public ProductResponse archive(UUID id, UUID tenantId, UUID actorId, String actorRole) {
+        requireActiveVendor(actorId, actorRole);
+        Product product = loadForActor(id, tenantId, actorId, actorRole);
         product.archive();
         return new ProductResponse(productRepository.save(product));
     }
 
+    /** Delete is admin-only (no VENDOR on the endpoint), so it stays tenant-scoped. */
     @Transactional
     public void delete(UUID id, UUID tenantId) {
         loadProduct(id, tenantId);
@@ -127,6 +153,26 @@ public class ProductService {
     private Product loadProduct(UUID id, UUID tenantId) {
         return productRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new NotFoundException("Product", id));
+    }
+
+    /** Loads a tenant product, but a vendor may only ever touch their own (else 404). */
+    private Product loadForActor(UUID id, UUID tenantId, UUID actorId, String actorRole) {
+        Product product = loadProduct(id, tenantId);
+        if (isVendor(actorRole) && !actorId.equals(product.getVendorId())) {
+            throw new NotFoundException("Product", id);
+        }
+        return product;
+    }
+
+    private boolean isVendor(String actorRole) {
+        return VENDOR_ROLE.equals(actorRole);
+    }
+
+    /** A vendor can only create/edit products while their account is active. */
+    private void requireActiveVendor(UUID actorId, String actorRole) {
+        if (isVendor(actorRole) && !vendorService.isActiveVendor(actorId)) {
+            throw new BusinessException("Your vendor account is not active");
+        }
     }
 
     /** A product may only reference a category that exists within the same tenant. */

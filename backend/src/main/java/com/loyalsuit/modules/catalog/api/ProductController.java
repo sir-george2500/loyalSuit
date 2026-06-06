@@ -43,7 +43,8 @@ public class ProductController {
     public ResponseEntity<ApiResponse<PageResponse<ProductResponse>>> list(
             @AuthenticationPrincipal UserPrincipal principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.listByTenant(principal.getTenantId(), pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.listForActor(
+                principal.getTenantId(), principal.getUserId(), principal.getRole(), pageable)));
     }
 
     @GetMapping("/{id}")
@@ -52,7 +53,8 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductResponse>> get(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.getById(id, principal.getTenantId())));
+        return ResponseEntity.ok(ApiResponse.ok(productService.getById(
+                id, principal.getTenantId(), principal.getUserId(), principal.getRole())));
     }
 
     @PostMapping
@@ -67,40 +69,44 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF', 'VENDOR')")
     @Operation(summary = "Update a product")
     public ResponseEntity<ApiResponse<ProductResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateProductRequest request,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.update(id, request, principal.getTenantId())));
+        return ResponseEntity.ok(ApiResponse.ok(productService.update(
+                id, request, principal.getTenantId(), principal.getUserId(), principal.getRole())));
     }
 
     @PatchMapping("/{id}/publish")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF', 'VENDOR')")
     @Operation(summary = "Publish (activate) a product")
     public ResponseEntity<ApiResponse<ProductResponse>> publish(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.publish(id, principal.getTenantId())));
+        return ResponseEntity.ok(ApiResponse.ok(productService.publish(
+                id, principal.getTenantId(), principal.getUserId(), principal.getRole())));
     }
 
     @PatchMapping("/{id}/unpublish")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF', 'VENDOR')")
     @Operation(summary = "Unpublish (deactivate) a product")
     public ResponseEntity<ApiResponse<ProductResponse>> unpublish(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.unpublish(id, principal.getTenantId())));
+        return ResponseEntity.ok(ApiResponse.ok(productService.unpublish(
+                id, principal.getTenantId(), principal.getUserId(), principal.getRole())));
     }
 
     @PatchMapping("/{id}/archive")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF', 'VENDOR')")
     @Operation(summary = "Archive a product")
     public ResponseEntity<ApiResponse<ProductResponse>> archive(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.archive(id, principal.getTenantId())));
+        return ResponseEntity.ok(ApiResponse.ok(productService.archive(
+                id, principal.getTenantId(), principal.getUserId(), principal.getRole())));
     }
 
     @DeleteMapping("/{id}")

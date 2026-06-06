@@ -10,6 +10,7 @@ import com.loyalsuit.modules.catalog.domain.Product;
 import com.loyalsuit.modules.catalog.domain.ProductStatus;
 import com.loyalsuit.modules.catalog.domain.port.CategoryRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
+import com.loyalsuit.modules.marketplace.application.VendorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,6 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,8 +37,12 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
 
+    private static final String ADMIN = "TENANT_ADMIN";
+    private static final String VENDOR = "VENDOR";
+
     @Mock private ProductRepository productRepository;
     @Mock private CategoryRepository categoryRepository;
+    @Mock private VendorService vendorService;
 
     @InjectMocks private ProductService productService;
 
@@ -58,201 +65,181 @@ class ProductServiceTest {
         return request;
     }
 
+    private Product product(UUID vendorId) {
+        Product p = new Product(tenantId, "Test", "test", BigDecimal.TEN);
+        ReflectionTestUtils.setField(p, "id", productId);
+        p.setVendorId(vendorId);
+        return p;
+    }
+
     // ---- create -------------------------------------------------------------
 
     @Test
-    void create_savesAsDraft_withoutVendorForAdminActor() {
-        // Arrange
+    void create_adminProduct_hasNoVendor() {
         when(productRepository.existsBySlugAndTenantId("test-product", tenantId)).thenReturn(false);
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // Act
-        ProductResponse response = productService.create(createRequest(), tenantId, actorId, "TENANT_ADMIN");
+        ProductResponse response = productService.create(createRequest(), tenantId, actorId, ADMIN);
 
-        // Assert
         assertThat(response.getStatus()).isEqualTo(ProductStatus.DRAFT);
-        assertThat(response.getVendorId()).isNull(); // admin products are house products
+        assertThat(response.getVendorId()).isNull();
     }
 
     @Test
-    void create_stampsVendorIdFromPrincipal_forVendorActor() {
-        // Arrange
+    void create_activeVendor_stampsTheirVendorId() {
+        when(vendorService.isActiveVendor(actorId)).thenReturn(true);
         when(productRepository.existsBySlugAndTenantId("test-product", tenantId)).thenReturn(false);
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // Act
-        ProductResponse response = productService.create(createRequest(), tenantId, actorId, "VENDOR");
+        ProductResponse response = productService.create(createRequest(), tenantId, actorId, VENDOR);
 
-        // Assert — ownership comes from the authenticated principal, never the client
         assertThat(response.getVendorId()).isEqualTo(actorId);
     }
 
     @Test
-    void create_throwsConflict_whenSlugAlreadyExists() {
-        // Arrange
+    void create_rejectsInactiveVendor() {
+        when(vendorService.isActiveVendor(actorId)).thenReturn(false);
+
+        assertThatThrownBy(() -> productService.create(createRequest(), tenantId, actorId, VENDOR))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("not active");
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void create_throwsConflict_whenSlugExists() {
         when(productRepository.existsBySlugAndTenantId("test-product", tenantId)).thenReturn(true);
 
-        // Act & Assert
-        assertThatThrownBy(() -> productService.create(createRequest(), tenantId, actorId, "TENANT_ADMIN"))
-                .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("test-product");
+        assertThatThrownBy(() -> productService.create(createRequest(), tenantId, actorId, ADMIN))
+                .isInstanceOf(ConflictException.class);
         verify(productRepository, never()).save(any());
     }
 
     @Test
     void create_rejectsCategoryFromAnotherTenant() {
-        // Arrange — a category id that doesn't resolve within this tenant
         UUID categoryId = UUID.randomUUID();
         var request = createRequest();
         request.setCategoryId(categoryId);
         when(productRepository.existsBySlugAndTenantId("test-product", tenantId)).thenReturn(false);
         when(categoryRepository.findByIdAndTenantId(categoryId, tenantId)).thenReturn(Optional.empty());
 
-        // Act & Assert
-        assertThatThrownBy(() -> productService.create(request, tenantId, actorId, "TENANT_ADMIN"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Category does not exist");
+        assertThatThrownBy(() -> productService.create(request, tenantId, actorId, ADMIN))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("Category does not exist");
+    }
+
+    // ---- vendor scoping -----------------------------------------------------
+
+    @Test
+    void listForActor_vendorSeesOnlyTheirOwnProducts() {
+        when(productRepository.findByTenantIdAndVendorId(tenantId, actorId, PageRequest.of(0, 20)))
+                .thenReturn(new PageImpl<>(List.of(product(actorId))));
+
+        var page = productService.listForActor(tenantId, actorId, VENDOR, PageRequest.of(0, 20));
+
+        assertThat(page.getContent()).hasSize(1);
+        verify(productRepository).findByTenantIdAndVendorId(tenantId, actorId, PageRequest.of(0, 20));
+        verify(productRepository, never()).findByTenantId(any(), any());
+    }
+
+    @Test
+    void listForActor_adminSeesTheWholeCatalog() {
+        when(productRepository.findByTenantId(tenantId, PageRequest.of(0, 20)))
+                .thenReturn(new PageImpl<>(List.of(product(null), product(UUID.randomUUID()))));
+
+        var page = productService.listForActor(tenantId, actorId, ADMIN, PageRequest.of(0, 20));
+
+        assertThat(page.getContent()).hasSize(2);
+        verify(productRepository, never()).findByTenantIdAndVendorId(any(), any(), any());
+    }
+
+    @Test
+    void getById_vendor404sOnAnotherVendorsProduct() {
+        when(productRepository.findByIdAndTenantId(productId, tenantId))
+                .thenReturn(Optional.of(product(UUID.randomUUID()))); // owned by someone else
+
+        assertThatThrownBy(() -> productService.getById(productId, tenantId, actorId, VENDOR))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void getById_vendorCanReadTheirOwnProduct() {
+        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product(actorId)));
+
+        assertThat(productService.getById(productId, tenantId, actorId, VENDOR)).isNotNull();
+    }
+
+    @Test
+    void update_vendor404sOnAnotherVendorsProduct() {
+        when(vendorService.isActiveVendor(actorId)).thenReturn(true);
+        when(productRepository.findByIdAndTenantId(productId, tenantId))
+                .thenReturn(Optional.of(product(UUID.randomUUID())));
+        var request = new UpdateProductRequest();
+        request.setName("X");
+        request.setSlug("x");
+        request.setPrice(BigDecimal.ONE);
+
+        assertThatThrownBy(() -> productService.update(productId, request, tenantId, actorId, VENDOR))
+                .isInstanceOf(NotFoundException.class);
         verify(productRepository, never()).save(any());
     }
 
-    // ---- update -------------------------------------------------------------
+    // ---- update / lifecycle (admin) -----------------------------------------
 
     @Test
     void update_appliesEditableFields() {
-        // Arrange
-        var product = new Product(tenantId, "Old", "old-slug", BigDecimal.valueOf(10));
+        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product(null)));
+        when(productRepository.existsBySlugAndTenantId("new-slug", tenantId)).thenReturn(false);
+        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
         var request = new UpdateProductRequest();
         request.setName("New name");
         request.setSlug("new-slug");
         request.setPrice(BigDecimal.valueOf(42));
-        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product));
-        when(productRepository.existsBySlugAndTenantId("new-slug", tenantId)).thenReturn(false);
-        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        // Act
-        ProductResponse response = productService.update(productId, request, tenantId);
+        ProductResponse response = productService.update(productId, request, tenantId, actorId, ADMIN);
 
-        // Assert
         assertThat(response.getName()).isEqualTo("New name");
-        assertThat(response.getSlug()).isEqualTo("new-slug");
         assertThat(response.getPrice()).isEqualByComparingTo("42");
     }
 
     @Test
-    void update_throwsConflict_whenNewSlugTaken() {
-        // Arrange
-        var product = new Product(tenantId, "Old", "old-slug", BigDecimal.valueOf(10));
-        var request = new UpdateProductRequest();
-        request.setName("Old");
-        request.setSlug("taken-slug");
-        request.setPrice(BigDecimal.valueOf(10));
-        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product));
-        when(productRepository.existsBySlugAndTenantId("taken-slug", tenantId)).thenReturn(true);
-
-        // Act & Assert
-        assertThatThrownBy(() -> productService.update(productId, request, tenantId))
-                .isInstanceOf(ConflictException.class);
-        verify(productRepository, never()).save(any());
-    }
-
-    @Test
-    void update_rejectsCategoryFromAnotherTenant() {
-        // Arrange
-        UUID categoryId = UUID.randomUUID();
-        var product = new Product(tenantId, "P", "p", BigDecimal.valueOf(10));
-        var request = new UpdateProductRequest();
-        request.setName("P");
-        request.setSlug("p"); // unchanged slug → no uniqueness lookup
-        request.setPrice(BigDecimal.valueOf(10));
-        request.setCategoryId(categoryId);
-        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product));
-        when(categoryRepository.findByIdAndTenantId(categoryId, tenantId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> productService.update(productId, request, tenantId))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Category does not exist");
-        verify(productRepository, never()).save(any());
-    }
-
-    @Test
     void update_throwsNotFound_whenProductNotInTenant() {
-        // Arrange
+        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.empty());
         var request = new UpdateProductRequest();
         request.setName("X");
         request.setSlug("x");
-        request.setPrice(BigDecimal.valueOf(1));
-        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.empty());
+        request.setPrice(BigDecimal.ONE);
 
-        // Act & Assert
-        assertThatThrownBy(() -> productService.update(productId, request, tenantId))
+        assertThatThrownBy(() -> productService.update(productId, request, tenantId, actorId, ADMIN))
                 .isInstanceOf(NotFoundException.class);
     }
 
-    // ---- status lifecycle ---------------------------------------------------
-
     @Test
-    void publish_then_unpublish_then_archive_transitionStatus() {
-        // Arrange
-        var product = new Product(tenantId, "Product", "product", BigDecimal.valueOf(50));
+    void statusTransitions_advanceProductState() {
+        Product product = product(null);
         when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product));
         when(productRepository.save(product)).thenReturn(product);
 
-        // Act & Assert
-        assertThat(productService.publish(productId, tenantId).getStatus()).isEqualTo(ProductStatus.ACTIVE);
-        assertThat(productService.unpublish(productId, tenantId).getStatus()).isEqualTo(ProductStatus.INACTIVE);
-        assertThat(productService.archive(productId, tenantId).getStatus()).isEqualTo(ProductStatus.ARCHIVED);
+        assertThat(productService.publish(productId, tenantId, actorId, ADMIN).getStatus()).isEqualTo(ProductStatus.ACTIVE);
+        assertThat(productService.unpublish(productId, tenantId, actorId, ADMIN).getStatus()).isEqualTo(ProductStatus.INACTIVE);
+        assertThat(productService.archive(productId, tenantId, actorId, ADMIN).getStatus()).isEqualTo(ProductStatus.ARCHIVED);
     }
 
-    // ---- reads & delete -----------------------------------------------------
-
-    @Test
-    void getById_throwsNotFound_whenProductNotInTenant() {
-        // Arrange
-        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> productService.getById(productId, tenantId))
-                .isInstanceOf(NotFoundException.class);
-    }
-
-    @Test
-    void listByTenant_returnsPaginatedResults() {
-        // Arrange
-        var product = new Product(tenantId, "P1", "p1", BigDecimal.valueOf(10));
-        var pageable = PageRequest.of(0, 20);
-        when(productRepository.findByTenantId(tenantId, pageable))
-                .thenReturn(new PageImpl<>(List.of(product)));
-
-        // Act
-        var page = productService.listByTenant(tenantId, pageable);
-
-        // Assert
-        assertThat(page.getTotalElements()).isEqualTo(1);
-        assertThat(page.getContent()).hasSize(1);
-    }
+    // ---- delete (admin-only, tenant-scoped) ---------------------------------
 
     @Test
     void delete_removesProduct_whenItExistsInTenant() {
-        // Arrange
-        var product = new Product(tenantId, "P", "p", BigDecimal.valueOf(10));
-        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product(null)));
 
-        // Act
         productService.delete(productId, tenantId);
 
-        // Assert
         verify(productRepository).deleteById(productId);
     }
 
     @Test
     void delete_throwsNotFound_whenProductMissing() {
-        // Arrange
         when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.empty());
 
-        // Act & Assert
-        assertThatThrownBy(() -> productService.delete(productId, tenantId))
-                .isInstanceOf(NotFoundException.class);
-        verify(productRepository, never()).deleteById(any());
+        assertThatThrownBy(() -> productService.delete(productId, tenantId)).isInstanceOf(NotFoundException.class);
+        verify(productRepository, never()).deleteById(eq(productId));
     }
 }

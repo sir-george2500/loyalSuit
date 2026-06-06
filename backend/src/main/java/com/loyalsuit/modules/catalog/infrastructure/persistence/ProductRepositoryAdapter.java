@@ -33,6 +33,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
+    public Page<Product> findByTenantIdAndVendorId(UUID tenantId, UUID vendorId, Pageable pageable) {
+        return jpa.findByTenantIdAndVendorId(tenantId, vendorId, pageable);
+    }
+
+    @Override
     public Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable) {
         return jpa.findByTenantIdAndStatus(tenantId, status, pageable);
     }
