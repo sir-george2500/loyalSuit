@@ -156,8 +156,14 @@ are correct under concurrency; storefront can read published products.
       service, stored in per-tenant/per-product folders. Product image gallery
       (primary + ordering, auto-promote on delete). Mockable `MediaStorage` port;
       service + role-matrix tested. 413 handler for oversize files.
-- [ ] Multi-warehouse stock; **atomic stock adjustments** (optimistic locking);
-      consolidate the dual stock model
+- [x] **Warehouse management** (slice 4a) — CRUD for tenant stock locations;
+      single-default invariant (first is auto-default; promoting one demotes the
+      rest); delete refuses to remove the default or the last warehouse. Admin UI;
+      service + role-matrix tested.
+- [ ] **Stock levels + atomic adjustments** (slice 4b): per-warehouse/variant
+      quantities with `@Version` optimistic locking; **consolidate the dual stock
+      model** (drop `product_variants.stock_quantity`); add a "warehouse has stock"
+      delete guard; low-stock thresholds.
 - [ ] Low-stock thresholds → dashboard + (later) notifications
 - [ ] Bulk CSV import/export with row-level validation + error report
 - [ ] Public storefront read API (`/store/**`) resolving tenant by host/slug
