@@ -11,6 +11,7 @@ import java.util.UUID;
 
 interface OrderJpaRepository extends JpaRepository<Order, UUID> {
     Optional<Order> findByIdAndTenantId(UUID id, UUID tenantId);
+    Optional<Order> findByOrderNumberAndTenantId(String orderNumber, UUID tenantId);
     Optional<Order> findByTenantIdAndIdempotencyKey(UUID tenantId, String idempotencyKey);
     boolean existsByOrderNumber(String orderNumber);
     Page<Order> findByTenantIdOrderByCreatedAtDesc(UUID tenantId, Pageable pageable);

@@ -28,6 +28,11 @@ public class OrderRepositoryAdapter implements OrderRepository {
     }
 
     @Override
+    public Optional<Order> findByOrderNumberAndTenantId(String orderNumber, UUID tenantId) {
+        return jpa.findByOrderNumberAndTenantId(orderNumber, tenantId);
+    }
+
+    @Override
     public Optional<Order> findByTenantIdAndIdempotencyKey(UUID tenantId, String idempotencyKey) {
         return jpa.findByTenantIdAndIdempotencyKey(tenantId, idempotencyKey);
     }

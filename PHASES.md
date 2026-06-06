@@ -213,7 +213,11 @@ recomputed server-side (never trusted from client); state machine is enforced.
       cash received (`UNPAID → PAID`, idempotent). Admin orders UI: list + status
       filter, detail with valid-transition actions. Store-role gated; service +
       role-matrix tested.
-- [ ] Customer order history (authenticated customers; guest lookup by email/phone)
+- [x] **Guest order tracking** — enumeration-safe public lookup by order number +
+      the email used at checkout (any mismatch → generic 404, so order numbers can't
+      be probed). Storefront "track order" page. Service tested.
+      (Authenticated-account order history deferred — needs the customer-account /
+      storefront-login integration.)
 - [ ] Returns/refunds request flow
 
 ---
