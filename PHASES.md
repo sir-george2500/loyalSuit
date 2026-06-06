@@ -180,12 +180,17 @@ are correct under concurrency; storefront can read published products.
 
 ---
 
-## Phase 3 — Orders, cart & checkout
+## Phase 3 — Orders, cart & checkout 🔄 IN PROGRESS
 **Goal:** a customer can buy; an admin can fulfil.
 **Exit criteria:** an order cannot be placed for out-of-stock items; totals are
 recomputed server-side (never trusted from client); state machine is enforced.
 
-- [ ] Cart (Redis-backed, guest + authenticated merge)
+- [x] **Cart (Redis-backed)** (slice 3a) — anonymous, store resolved by slug, cart
+      by an opaque `X-Cart-Token`. Stores only product/variant refs + quantities;
+      **line prices are always recomputed server-side** from current catalog (a
+      stale/tampered cart can't set the price). Only ACTIVE products addable; invalid
+      lines dropped on view. Storefront add-to-cart + cart page. Service + public-
+      access tested. (Guest→authenticated merge deferred to the auth-integration step.)
 - [ ] Checkout: address, shipping selection, server-side total recomputation
 - [ ] Order state machine (PENDING→…→DELIVERED / CANCELLED / REFUNDED) with guards
 - [ ] Idempotent order creation (no double-submit duplicate orders)

@@ -298,6 +298,7 @@ export interface StoreProductSummary {
 }
 
 export interface StoreVariant {
+  id: string
   name: string
   price: number
 }
@@ -314,6 +315,25 @@ export interface StoreProductDetail {
   images: string[]
   variants: StoreVariant[]
   inStock: boolean
+}
+
+export interface CartItemView {
+  productId: string
+  variantId?: string | null
+  productName: string
+  productSlug: string
+  variantName?: string | null
+  imageUrl?: string | null
+  unitPrice: number
+  quantity: number
+  lineTotal: number
+}
+
+export interface CartView {
+  items: CartItemView[]
+  subtotal: number
+  itemCount: number
+  currency: string
 }
 
 export interface CreateCategoryRequest {

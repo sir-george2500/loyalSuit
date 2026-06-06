@@ -51,6 +51,9 @@ public class SecurityConfig {
                 // Public storefront endpoints (these resolve tenant from the URL/host,
                 // NOT from a JWT principal — see StoreController in Phase 2).
                 .requestMatchers(HttpMethod.GET, "/api/v1/store/**").permitAll()
+                // Guest carts are anonymous: cart mutations resolve tenant by slug and
+                // a client cart token (no DB persistence, prices recomputed server-side).
+                .requestMatchers("/api/v1/store/*/cart", "/api/v1/store/*/cart/**").permitAll()
                 // NOTE: /api/v1/catalog/** is tenant-admin scoped and stays authenticated.
                 // Its controllers dereference principal.getTenantId(), so they must never
                 // be public or they NPE on anonymous requests.

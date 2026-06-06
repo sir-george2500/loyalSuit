@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { Package, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getStore, getStoreCategories, getStoreProducts } from '@/lib/api/storefront'
+import CartLink from '@/components/store/CartLink'
 import type { StoreProductSummary } from '@/types'
 
 type Params = { slug: string }
@@ -38,8 +39,9 @@ export default async function StoreHomePage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-6">
+      <header className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">{store.name}</h1>
+        <CartLink slug={slug} />
       </header>
 
       {/* Category filter */}
