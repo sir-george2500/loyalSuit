@@ -302,13 +302,20 @@ reconciles; receipts are correct.
 
 - [x] POS catalog search + cart, barcode scanning _(slice 6a)_
 - [~] Split / cash / card tender; change calc — cash tender + change done _(slice 6a)_; card/split deferred
-- [ ] Offline queue (IndexedDB) with idempotent sync
+- [x] Offline queue (IndexedDB) with idempotent sync _(slice 6b)_
 - [ ] Shift open/close + cash reconciliation; receipt (PDF)
 
 _Slice 6a (cash sale foundation): a cashier searches/scans the catalog, builds a cart,
 takes cash, and completes a sale that reuses the proven commerce machinery — a paid,
 delivered order (single ledger), atomic stock decrement, and vendor commission settle —
 all idempotent on a terminal-supplied `clientSaleId` (the seam offline sync builds on)._
+
+_Slice 6b (offline queue + idempotent sync): sales rung up offline (or whose network
+call drops mid-flight) persist to IndexedDB and sync automatically on reconnect. The
+stable `clientSaleId` + the server's unique index guarantee exactly-once — a 409 on
+replay is treated as already-synced. Transient failures (offline/5xx) retry; hard 4xx
+(e.g. stock changed) are flagged for the cashier to retry/discard, never silently dropped.
+Status bar shows online/offline, queued count, and sync state._
 
 ---
 
