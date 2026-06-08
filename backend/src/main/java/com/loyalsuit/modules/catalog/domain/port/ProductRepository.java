@@ -13,6 +13,8 @@ public interface ProductRepository {
     Optional<Product> findByIdAndTenantId(UUID id, UUID tenantId);
     Optional<Product> findBySlugAndTenantId(String slug, UUID tenantId);
     Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable);
+    /** Active products whose name, SKU, or barcode matches the query (case-insensitive). */
+    Page<Product> searchActive(UUID tenantId, String query, Pageable pageable);
     Page<Product> findByTenantIdAndStatusAndCategoryId(
             UUID tenantId, ProductStatus status, UUID categoryId, Pageable pageable);
     Page<Product> findByTenantId(UUID tenantId, Pageable pageable);

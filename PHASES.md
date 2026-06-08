@@ -300,10 +300,15 @@ auditable (5c), payouts never exceed settled balance (5d).
 **Exit criteria:** an offline sale syncs exactly once on reconnect; cash drawer
 reconciles; receipts are correct.
 
-- [ ] POS catalog search + cart, barcode scanning
-- [ ] Split / cash / card tender; change calc
+- [x] POS catalog search + cart, barcode scanning _(slice 6a)_
+- [~] Split / cash / card tender; change calc — cash tender + change done _(slice 6a)_; card/split deferred
 - [ ] Offline queue (IndexedDB) with idempotent sync
 - [ ] Shift open/close + cash reconciliation; receipt (PDF)
+
+_Slice 6a (cash sale foundation): a cashier searches/scans the catalog, builds a cart,
+takes cash, and completes a sale that reuses the proven commerce machinery — a paid,
+delivered order (single ledger), atomic stock decrement, and vendor commission settle —
+all idempotent on a terminal-supplied `clientSaleId` (the seam offline sync builds on)._
 
 ---
 
