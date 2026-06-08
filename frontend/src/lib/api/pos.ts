@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { ApiResponse, PageResponse, PosProduct, PosSale } from '@/types'
+import type { ApiResponse, PageResponse, PosProduct, PosSale, PosShift } from '@/types'
 
 const BASE = '/api/v1/pos'
 
@@ -24,4 +24,15 @@ export const posApi = {
     apiClient.post<ApiResponse<PosSale>>(`${BASE}/sales`, payload),
   sales: (page = 0) =>
     apiClient.get<ApiResponse<PageResponse<PosSale>>>(`${BASE}/sales`, { params: { page } }),
+}
+
+/** Cash-drawer shifts: open a drawer, read the current one, close + reconcile. */
+export const posShiftApi = {
+  current: () => apiClient.get<ApiResponse<PosShift | null>>(`${BASE}/shifts/current`),
+  open: (openingFloat: number) =>
+    apiClient.post<ApiResponse<PosShift>>(`${BASE}/shifts`, { openingFloat }),
+  close: (id: string, countedCash: number) =>
+    apiClient.post<ApiResponse<PosShift>>(`${BASE}/shifts/${id}/close`, { countedCash }),
+  list: (page = 0) =>
+    apiClient.get<ApiResponse<PageResponse<PosShift>>>(`${BASE}/shifts`, { params: { page } }),
 }

@@ -18,7 +18,9 @@ import com.loyalsuit.modules.pos.application.dto.PosProductResponse;
 import com.loyalsuit.modules.pos.application.dto.PosSaleResponse;
 import com.loyalsuit.modules.pos.application.dto.SaleLineRequest;
 import com.loyalsuit.modules.pos.domain.PosSale;
+import com.loyalsuit.modules.pos.domain.PosShift;
 import com.loyalsuit.modules.pos.domain.port.PosSaleRepository;
+import com.loyalsuit.modules.pos.domain.port.PosShiftRepository;
 import com.loyalsuit.modules.tenants.domain.Tenant;
 import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +58,7 @@ class PosServiceTest {
     @Mock private OrderItemRepository orderItemRepository;
     @Mock private com.loyalsuit.modules.marketplace.application.CommissionService commissionService;
     @Mock private PosSaleRepository posSaleRepository;
+    @Mock private PosShiftRepository shiftRepository;
 
     @InjectMocks private PosService service;
 
@@ -63,6 +66,7 @@ class PosServiceTest {
     private UUID cashierId;
     private UUID productId;
     private UUID vendorId;
+    private UUID shiftId;
 
     @BeforeEach
     void setUp() {
@@ -70,6 +74,14 @@ class PosServiceTest {
         cashierId = UUID.randomUUID();
         productId = UUID.randomUUID();
         vendorId = UUID.randomUUID();
+        shiftId = UUID.randomUUID();
+    }
+
+    /** Stub the cashier as having an open drawer (required to ring up a sale). */
+    private void stubOpenShift() {
+        PosShift shift = new PosShift(tenantId, cashierId, new BigDecimal("0.00"));
+        ReflectionTestUtils.setField(shift, "id", shiftId);
+        when(shiftRepository.findOpenByCashier(tenantId, cashierId)).thenReturn(Optional.of(shift));
     }
 
     private Tenant tenant() {
@@ -120,6 +132,7 @@ class PosServiceTest {
         // Arrange — 2 × $10 = $20, customer pays $50 → $30 change
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
         when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        stubOpenShift();
         when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product("10.00", vendorId)));
         stubOrderSave();
         stubPosSaleSave();
@@ -142,6 +155,7 @@ class PosServiceTest {
         // Arrange
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
         when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        stubOpenShift();
         when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product("10.00", vendorId)));
         stubOrderSave();
         stubPosSaleSave();
@@ -162,6 +176,7 @@ class PosServiceTest {
         // Arrange — a vendor product, so a commission line is settled when cash is in
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
         when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        stubOpenShift();
         when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product("10.00", vendorId)));
         stubOrderSave();
         stubPosSaleSave();
@@ -183,6 +198,7 @@ class PosServiceTest {
         // Arrange — house product (no vendor) → no commission lines
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
         when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        stubOpenShift();
         when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product("10.00", null)));
         stubOrderSave();
         stubPosSaleSave();
@@ -199,6 +215,7 @@ class PosServiceTest {
         // Arrange — $10 due, only $5 tendered
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
         when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        stubOpenShift();
         when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product("10.00", vendorId)));
 
         // Act & Assert
@@ -214,6 +231,7 @@ class PosServiceTest {
         // Arrange — the product can't be found (or isn't active)
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
         when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        stubOpenShift();
         when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -224,9 +242,23 @@ class PosServiceTest {
     }
 
     @Test
+    void completeSale_withoutAnOpenShift_isRejected() {
+        // Arrange — no open drawer for this cashier
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
+        when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        when(shiftRepository.findOpenByCashier(tenantId, cashierId)).thenReturn(Optional.empty());
+
+        // Act & Assert — a cash sale can't be rung up without a drawer to reconcile
+        assertThatThrownBy(() -> service.completeSale(tenantId, cashierId, saleOf(1, "10.00")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Open a shift");
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
     void completeSale_isIdempotent_onClientSaleId() {
         // Arrange — a sale already exists for this client sale id
-        PosSale existing = new PosSale(tenantId, UUID.randomUUID(), "POS-ABC-123", cashierId, "sale-1",
+        PosSale existing = new PosSale(tenantId, UUID.randomUUID(), "POS-ABC-123", cashierId, shiftId, "sale-1",
                 new BigDecimal("20.00"), new BigDecimal("20.00"), new BigDecimal("50.00"),
                 new BigDecimal("30.00"), 2);
         ReflectionTestUtils.setField(existing, "id", UUID.randomUUID());

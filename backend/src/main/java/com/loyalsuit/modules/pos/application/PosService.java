@@ -21,7 +21,9 @@ import com.loyalsuit.modules.pos.application.dto.PosProductResponse;
 import com.loyalsuit.modules.pos.application.dto.PosSaleResponse;
 import com.loyalsuit.modules.pos.application.dto.SaleLineRequest;
 import com.loyalsuit.modules.pos.domain.PosSale;
+import com.loyalsuit.modules.pos.domain.PosShift;
 import com.loyalsuit.modules.pos.domain.port.PosSaleRepository;
+import com.loyalsuit.modules.pos.domain.port.PosShiftRepository;
 import com.loyalsuit.modules.tenants.domain.Tenant;
 import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +70,7 @@ public class PosService {
     private final OrderItemRepository orderItemRepository;
     private final CommissionService commissionService;
     private final PosSaleRepository posSaleRepository;
+    private final PosShiftRepository shiftRepository;
 
     /** Active catalog rows for the terminal grid; an empty query lists everything active. */
     public PageResponse<PosProductResponse> searchProducts(UUID tenantId, String query, Pageable pageable) {
@@ -93,6 +96,10 @@ public class PosService {
         if (existing.isPresent()) {
             return PosSaleResponse.from(existing.get(), tenant.getCurrency());
         }
+
+        // Every cash sale belongs to an open drawer, so the till can be reconciled at close.
+        PosShift shift = shiftRepository.findOpenByCashier(tenantId, cashierId)
+                .orElseThrow(() -> new BusinessException("Open a shift before ringing up sales"));
 
         // Price and stock every line before creating the order; a failure rolls it all back.
         List<OrderItem> lines = new ArrayList<>();
@@ -148,7 +155,7 @@ public class PosService {
 
         int itemCount = request.getItems().stream().mapToInt(SaleLineRequest::getQuantity).sum();
         PosSale sale = posSaleRepository.save(new PosSale(tenantId, savedOrder.getId(), savedOrder.getOrderNumber(),
-                cashierId, request.getClientSaleId(), subtotal, total,
+                cashierId, shift.getId(), request.getClientSaleId(), subtotal, total,
                 request.getAmountTendered(), change, itemCount));
         return PosSaleResponse.from(sale, tenant.getCurrency());
     }

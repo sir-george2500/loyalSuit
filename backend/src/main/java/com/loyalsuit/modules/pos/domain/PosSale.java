@@ -38,6 +38,10 @@ public class PosSale extends TenantScopedEntity {
     @Column(name = "cashier_id", nullable = false, updatable = false)
     private UUID cashierId;
 
+    /** The cash-drawer session this sale was rung up against (for reconciliation). */
+    @Column(name = "shift_id", nullable = false, updatable = false)
+    private UUID shiftId;
+
     /** Terminal-generated id; unique per tenant so a re-submitted sale is idempotent. */
     @Column(name = "client_sale_id", nullable = false, updatable = false)
     private String clientSaleId;
@@ -57,13 +61,14 @@ public class PosSale extends TenantScopedEntity {
     @Column(name = "item_count", nullable = false, updatable = false)
     private int itemCount;
 
-    public PosSale(UUID tenantId, UUID orderId, String orderNumber, UUID cashierId, String clientSaleId,
-                   BigDecimal subtotal, BigDecimal total, BigDecimal amountTendered,
+    public PosSale(UUID tenantId, UUID orderId, String orderNumber, UUID cashierId, UUID shiftId,
+                   String clientSaleId, BigDecimal subtotal, BigDecimal total, BigDecimal amountTendered,
                    BigDecimal changeGiven, int itemCount) {
         this.setTenantId(tenantId);
         this.orderId = orderId;
         this.orderNumber = orderNumber;
         this.cashierId = cashierId;
+        this.shiftId = shiftId;
         this.clientSaleId = clientSaleId;
         this.subtotal = subtotal;
         this.total = total;

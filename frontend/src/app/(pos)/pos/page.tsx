@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import PosTerminal from './PosTerminal'
+import PosWorkspace from './PosWorkspace'
 
 export const metadata: Metadata = { title: 'POS Terminal' }
 
 export default function PosPage() {
-  return <PosTerminal />
+  return <PosWorkspace />
 }
