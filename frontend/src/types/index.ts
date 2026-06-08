@@ -439,3 +439,26 @@ export interface PayoutBalance {
   paid: number
   available: number
 }
+
+// ---- POS terminal ----
+export interface PosProduct {
+  id: string
+  name: string
+  sku?: string | null
+  barcode?: string | null
+  price: number
+}
+
+export interface PosSale {
+  id: string
+  orderId: string
+  orderNumber: string
+  cashierId: string
+  currency: string
+  subtotal: number
+  total: number
+  amountTendered: number
+  changeGiven: number
+  itemCount: number
+  createdAt: string
+}

@@ -43,6 +43,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
+    public Page<Product> searchActive(UUID tenantId, String query, Pageable pageable) {
+        return jpa.searchActive(tenantId, query, pageable);
+    }
+
+    @Override
     public Page<Product> findByTenantIdAndStatusAndCategoryId(
             UUID tenantId, ProductStatus status, UUID categoryId, Pageable pageable) {
         return jpa.findByTenantIdAndStatusAndCategoryId(tenantId, status, categoryId, pageable);
