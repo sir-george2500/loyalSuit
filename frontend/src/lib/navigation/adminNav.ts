@@ -7,6 +7,7 @@ import {
   ShoppingCart,
   Undo2,
   MonitorSmartphone,
+  Truck,
   Store,
   Wallet,
   Percent,
@@ -81,6 +82,12 @@ export const ADMIN_NAV: NavSection[] = [
       { label: 'Vendors', href: '/admin/vendors', icon: Store, roles: OWNER_ROLES, status: 'available' },
       { label: 'Payouts', href: '/admin/payouts', icon: Wallet, roles: OWNER_ROLES, status: 'available' },
       { label: 'Commissions', href: '/admin/commissions', icon: Percent, roles: OWNER_ROLES, status: 'available' },
+    ],
+  },
+  {
+    title: 'Fulfilment',
+    items: [
+      { label: 'Delivery Agents', href: '/admin/delivery-agents', icon: Truck, roles: OWNER_ROLES, status: 'available' },
     ],
   },
   {

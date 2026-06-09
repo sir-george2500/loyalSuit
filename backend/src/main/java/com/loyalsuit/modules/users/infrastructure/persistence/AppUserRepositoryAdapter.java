@@ -5,6 +5,8 @@ import com.loyalsuit.modules.users.domain.port.AppUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +29,11 @@ public class AppUserRepositoryAdapter implements AppUserRepository {
     @Override
     public Optional<AppUser> findById(UUID id) {
         return jpa.findById(id);
+    }
+
+    @Override
+    public List<AppUser> findByIdInAndTenantId(Collection<UUID> ids, UUID tenantId) {
+        return ids.isEmpty() ? List.of() : jpa.findByIdInAndTenantId(ids, tenantId);
     }
 
     @Override

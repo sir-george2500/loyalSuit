@@ -10,6 +10,7 @@ export type ProductStatus = 'DRAFT' | 'ACTIVE' | 'INACTIVE' | 'ARCHIVED'
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'REFUNDED'
 export type VendorStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED'
 export type SubscriptionPlan = 'BASIC' | 'PROFESSIONAL' | 'ENTERPRISE'
+export type VehicleType = 'ON_FOOT' | 'BICYCLE' | 'MOTORBIKE' | 'CAR' | 'VAN' | 'TRUCK'
 
 export interface Product {
   id: string
@@ -479,4 +480,15 @@ export interface PosShift {
   expectedCash?: number | null
   countedCash?: number | null
   variance?: number | null
+}
+
+export interface DeliveryAgent {
+  id: string
+  userId: string
+  name: string | null
+  email: string | null
+  phone: string
+  vehicleType: VehicleType
+  active: boolean
+  createdAt: string
 }
