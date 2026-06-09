@@ -37,7 +37,7 @@ into another's tables — they collaborate through application services / events
 | **orders** | cart, orders, order items, returns | 🟡 schema only |
 | **payments** | gateways, transactions, webhooks, refunds | ⬜ schema only |
 | **dashboard/reporting** | tenant analytics, KPIs | ✅ live (read model) |
-| **fulfilment** | delivery agents, pickup points, tracking | ⬜ planned |
+| **fulfilment** | delivery agents, pickup points, tracking | 🟡 Phase 7 in progress |
 | **hrm** | employees, attendance, payroll | ⬜ planned |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
 | **notifications** | email, SMS, push, in-app | 🟡 transactional email live (onboarding, password reset) |
@@ -295,10 +295,10 @@ auditable (5c), payouts never exceed settled balance (5d).
 
 ---
 
-## Phase 6 — POS terminal
+## Phase 6 — POS terminal ✅ COMPLETE (2026-06-09)
 **Goal:** in-store sales, including offline.
-**Exit criteria:** an offline sale syncs exactly once on reconnect; cash drawer
-reconciles; receipts are correct.
+**Exit criteria (all met):** an offline sale syncs exactly once on reconnect; cash drawer
+reconciles (cash-only, card excluded); receipts are correct; cash/card/split tender.
 
 - [x] POS catalog search + cart, barcode scanning _(slice 6a)_
 - [x] Split / cash / card tender; change calc _(cash + change 6a; card/split 6e)_
@@ -341,9 +341,39 @@ receipt and close-out show the cash/card split. This closes Phase 6._
 
 ---
 
-## Phase 7 — Fulfilment & delivery
-- [ ] Delivery agent management, assignment, pickup points, carrier zones
-- [ ] Real-time order tracking; proof of delivery
+## Phase 7 — Fulfilment & delivery  ⟵ IN PROGRESS
+**Goal:** get a placed order from the warehouse to the customer's hands, tracked end to
+end, with the delivery agent as a first-class role — and close the loop on cash-on-delivery
+(a completed COD delivery is what marks the order paid + settles commission).
+**Exit criteria:** an order can be assigned to a delivery agent, the agent moves it through
+a tracked status lifecycle, a customer/admin can see where it is, and a completed delivery
+captures proof and (for COD) collects payment exactly once.
+
+New module: `fulfilment` (hexagonal, tenant-scoped, owns its tables). Reuses the orders
+ledger — a delivery is layered on an order, mirroring how POS layered on orders.
+
+- [ ] **7a — Delivery agents.** `DeliveryAgent` (links a DELIVERY_AGENT user; phone,
+  vehicle, active flag). Tenant-admin CRUD + list; an agent can read their own profile.
+  RBAC: SUPER_ADMIN/TENANT_ADMIN manage; DELIVERY_AGENT self-read only.
+- [ ] **7b — Assignment + delivery lifecycle.** `Delivery` aggregate (one per order):
+  status `PENDING → ASSIGNED → PICKED_UP → IN_TRANSIT → DELIVERED / FAILED`, agent link,
+  status-change timeline, `@Version` guard. Admin assigns from the order; agent sees their
+  queue. Illegal transitions rejected; one active delivery per order (unique index).
+- [ ] **7c — Agent workflow + tracking.** Agent view of assigned deliveries; advance status
+  step by step (each transition timestamped + actor-stamped). Customer/admin tracking view
+  reads the timeline (polling via TanStack Query; SSE optional later).
+- [ ] **7d — Proof of delivery + COD settlement.** On DELIVERED: capture recipient name,
+  signature/photo (Cloudinary), optional note. For a COD order this is the moment it becomes
+  PAID and commission settles — idempotently (a delivery completes exactly once). FAILED
+  capture with reason; no payment, stock-return policy noted.
+- [ ] **7e — Pickup points & delivery zones.** Pickup-point locations; delivery zones (area
+  / postal) carrying a fee; checkout shipping fee derives from the destination zone
+  (replaces the current flat/zero shipping). Assignment hints by zone.
+
+**Carryover into this phase (from Phase 5 review):** commission **clawback / negative
+available balance** when a paid-out order is later refunded is still unhandled. It now
+intersects fulfilment (a FAILED/returned COD delivery must not leave settled commission) —
+address it as part of 7d, or as a dedicated 7f cleanup before Phase 8.
 
 ## Phase 8 — Marketing, loyalty & engagement
 - [ ] Coupons, flash deals; loyalty points; affiliate program
