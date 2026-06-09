@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,5 +35,15 @@ class PosSaleRepositoryAdapter implements PosSaleRepository {
     @Override
     public Page<PosSale> findByTenantId(UUID tenantId, Pageable pageable) {
         return jpa.findByTenantId(tenantId, pageable);
+    }
+
+    @Override
+    public BigDecimal sumTotalByShift(UUID tenantId, UUID shiftId) {
+        return jpa.sumTotalByShift(tenantId, shiftId);
+    }
+
+    @Override
+    public long countByShift(UUID tenantId, UUID shiftId) {
+        return jpa.countByTenantIdAndShiftId(tenantId, shiftId);
     }
 }

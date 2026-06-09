@@ -5,12 +5,13 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
 import {
   Search, Plus, Minus, Trash2, Loader2, X, Check, ScanLine,
-  Wifi, WifiOff, CloudUpload, RefreshCw, AlertTriangle,
+  Wifi, WifiOff, CloudUpload, RefreshCw, AlertTriangle, Coins, LogOut,
 } from 'lucide-react'
 import { posApi } from '@/lib/api/pos'
-import type { PosProduct, PosSale } from '@/types'
+import type { PosProduct, PosSale, PosShift } from '@/types'
 import { useOfflineSales } from '@/lib/pos/useOfflineSales'
 import type { QueuedSale } from '@/lib/pos/offlineQueue'
+import CloseShiftDialog from './CloseShiftDialog'
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -41,7 +42,7 @@ function isNetworkError(err: unknown): boolean {
   return !(err as AxiosError)?.response
 }
 
-export default function PosTerminal() {
+export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift; onShiftClosed: () => void }) {
   const [query, setQuery] = useState('')
   const [debounced, setDebounced] = useState('')
   const [cart, setCart] = useState<CartLine[]>([])
@@ -49,6 +50,7 @@ export default function PosTerminal() {
   const [receipt, setReceipt] = useState<Receipt | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [closingShift, setClosingShift] = useState(false)
   // Held stable across retries so a re-submit after a network blip can't double-charge.
   const saleIdRef = useRef<string | null>(null)
 
@@ -171,7 +173,7 @@ export default function PosTerminal() {
 
   return (
     <div className="flex h-full flex-col">
-      <StatusBar offline={offline} />
+      <StatusBar offline={offline} shift={shift} onCloseShift={() => setClosingShift(true)} />
 
       <div className="flex min-h-0 flex-1">
         {/* Catalog */}
@@ -307,11 +309,29 @@ export default function PosTerminal() {
       </div>
 
       {receipt && <ReceiptOverlay receipt={receipt} onClose={() => setReceipt(null)} />}
+      {closingShift && (
+        <CloseShiftDialog
+          shift={shift}
+          onClose={() => setClosingShift(false)}
+          onClosed={() => {
+            setClosingShift(false)
+            onShiftClosed()
+          }}
+        />
+      )}
     </div>
   )
 }
 
-function StatusBar({ offline }: { offline: ReturnType<typeof useOfflineSales> }) {
+function StatusBar({
+  offline,
+  shift,
+  onCloseShift,
+}: {
+  offline: ReturnType<typeof useOfflineSales>
+  shift: PosShift
+  onCloseShift: () => void
+}) {
   const [showFailed, setShowFailed] = useState(false)
   const { online, syncing, pendingCount, failedCount, sync } = offline
   const failed = offline.queued.filter((s) => s.status === 'failed')
@@ -326,6 +346,11 @@ function StatusBar({ offline }: { offline: ReturnType<typeof useOfflineSales> })
         >
           {online ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
           {online ? 'Online' : 'Offline'}
+        </span>
+
+        <span className="inline-flex items-center gap-1.5 text-xs text-gray-400" title="Opening float">
+          <Coins className="h-3.5 w-3.5" />
+          {money.format(shift.openingFloat)} float
         </span>
 
         {pendingCount > 0 && (
@@ -347,15 +372,20 @@ function StatusBar({ offline }: { offline: ReturnType<typeof useOfflineSales> })
           </button>
         )}
 
-        {failedCount > 0 && (
-          <button
-            onClick={() => setShowFailed((v) => !v)}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-error/20 px-2.5 py-1 text-xs font-medium text-error"
-          >
-            <AlertTriangle className="h-3.5 w-3.5" />
-            {failedCount} need attention
+        <div className="ml-auto flex items-center gap-2">
+          {failedCount > 0 && (
+            <button
+              onClick={() => setShowFailed((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-error/20 px-2.5 py-1 text-xs font-medium text-error"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {failedCount} need attention
+            </button>
+          )}
+          <button onClick={onCloseShift} className="btn btn-ghost btn-xs gap-1">
+            <LogOut className="h-3.5 w-3.5" /> Close shift
           </button>
-        )}
+        </div>
       </div>
 
       {showFailed && failed.length > 0 && (

@@ -462,3 +462,19 @@ export interface PosSale {
   itemCount: number
   createdAt: string
 }
+
+export type PosShiftStatus = 'OPEN' | 'CLOSED'
+
+export interface PosShift {
+  id: string
+  cashierId: string
+  status: PosShiftStatus
+  openingFloat: number
+  openedAt: string
+  closedAt?: string | null
+  salesTotal?: number | null
+  saleCount: number
+  expectedCash?: number | null
+  countedCash?: number | null
+  variance?: number | null
+}

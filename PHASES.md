@@ -303,7 +303,7 @@ reconciles; receipts are correct.
 - [x] POS catalog search + cart, barcode scanning _(slice 6a)_
 - [~] Split / cash / card tender; change calc — cash tender + change done _(slice 6a)_; card/split deferred
 - [x] Offline queue (IndexedDB) with idempotent sync _(slice 6b)_
-- [ ] Shift open/close + cash reconciliation; receipt (PDF)
+- [~] Shift open/close + cash reconciliation _(slice 6c)_; receipt (PDF) deferred
 
 _Slice 6a (cash sale foundation): a cashier searches/scans the catalog, builds a cart,
 takes cash, and completes a sale that reuses the proven commerce machinery — a paid,
@@ -316,6 +316,12 @@ stable `clientSaleId` + the server's unique index guarantee exactly-once — a 4
 replay is treated as already-synced. Transient failures (offline/5xx) retry; hard 4xx
 (e.g. stock changed) are flagged for the cashier to retry/discard, never silently dropped.
 Status bar shows online/offline, queued count, and sync state._
+
+_Slice 6c (shifts + cash reconciliation): a cashier opens a drawer with a starting float;
+the register is gated until one is open. Every cash sale links to the open shift. Closing
+counts the drawer and reconciles: expected = float + sales, variance = counted − expected
+(short/over/balanced). One open drawer per cashier (partial unique index); `@Version`
+guards the close. Receipts (PDF) remain for a later slice._
 
 ---
 
