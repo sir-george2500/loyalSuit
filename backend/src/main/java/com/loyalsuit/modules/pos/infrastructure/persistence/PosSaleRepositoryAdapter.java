@@ -43,6 +43,11 @@ class PosSaleRepositoryAdapter implements PosSaleRepository {
     }
 
     @Override
+    public BigDecimal sumCashCollectedByShift(UUID tenantId, UUID shiftId) {
+        return jpa.sumCashCollectedByShift(tenantId, shiftId);
+    }
+
+    @Override
     public long countByShift(UUID tenantId, UUID shiftId) {
         return jpa.countByTenantIdAndShiftId(tenantId, shiftId);
     }

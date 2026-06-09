@@ -30,6 +30,7 @@ interface Receipt {
   total: number
   amountTendered: number
   changeGiven: number
+  cardAmount: number
   itemCount: number
   currency: string
 }
@@ -48,6 +49,7 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
   const [debounced, setDebounced] = useState('')
   const [cart, setCart] = useState<CartLine[]>([])
   const [tendered, setTendered] = useState('')
+  const [card, setCard] = useState('')
   const [receipt, setReceipt] = useState<Receipt | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,8 +73,11 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
   const total = useMemo(() => cart.reduce((sum, l) => sum + l.price * l.quantity, 0), [cart])
   const itemCount = useMemo(() => cart.reduce((n, l) => n + l.quantity, 0), [cart])
   const tenderedNum = Number.parseFloat(tendered) || 0
-  const change = tenderedNum - total
-  const canCharge = cart.length > 0 && tenderedNum >= total && total > 0
+  const cardNum = Number.parseFloat(card) || 0
+  const cardExceedsTotal = cardNum > total
+  const paid = tenderedNum + cardNum
+  const change = paid - total // change is always returned from cash
+  const canCharge = cart.length > 0 && total > 0 && !cardExceedsTotal && paid >= total
 
   function addToCart(product: PosProduct) {
     setCart((prev) => {
@@ -107,6 +112,7 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
   function resetSale() {
     setCart([])
     setTendered('')
+    setCard('')
     saleIdRef.current = null
   }
 
@@ -120,6 +126,7 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
       clientSaleId,
       items,
       amountTendered: tenderedNum,
+      cardAmount: cardNum,
       total,
       itemCount,
       currency: 'USD',
@@ -132,6 +139,7 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
       total,
       amountTendered: tenderedNum,
       changeGiven: change,
+      cardAmount: cardNum,
       itemCount,
       currency: 'USD',
     }
@@ -146,7 +154,9 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
 
     setSubmitting(true)
     try {
-      const sale: PosSale = (await posApi.completeSale({ clientSaleId, items, amountTendered: tenderedNum })).data.data
+      const sale: PosSale = (
+        await posApi.completeSale({ clientSaleId, items, amountTendered: tenderedNum, cardAmount: cardNum })
+      ).data.data
       setReceipt({
         offline: false,
         saleId: sale.id,
@@ -154,6 +164,7 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
         total: sale.total,
         amountTendered: sale.amountTendered,
         changeGiven: sale.changeGiven,
+        cardAmount: sale.cardAmount,
         itemCount: sale.itemCount,
         currency: sale.currency,
       })
@@ -265,7 +276,17 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
               <span>{money.format(total)}</span>
             </div>
 
-            <div>
+            <div className="space-y-2">
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                value={card}
+                onChange={(e) => setCard(e.target.value)}
+                placeholder="Card amount (optional)"
+                className="input input-bordered w-full bg-gray-900 text-white"
+              />
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -278,15 +299,19 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
                   className="input input-bordered w-full bg-gray-900 text-white"
                 />
                 <button
-                  onClick={() => setTendered(total.toFixed(2))}
+                  onClick={() => setTendered(Math.max(total - cardNum, 0).toFixed(2))}
                   disabled={total <= 0}
                   className="btn btn-ghost btn-sm"
+                  title="Exact remaining cash"
                 >
                   Exact
                 </button>
               </div>
-              {tenderedNum > 0 && (
-                <div className="mt-2 flex justify-between text-sm">
+              {cardExceedsTotal && (
+                <p className="text-xs text-error">Card amount can&apos;t exceed the total.</p>
+              )}
+              {paid > 0 && !cardExceedsTotal && (
+                <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Change due</span>
                   <span className={change < 0 ? 'text-error' : 'text-success'}>
                     {money.format(Math.max(change, 0))}
@@ -476,6 +501,7 @@ function ReceiptOverlay({ receipt, onClose }: { receipt: Receipt; onClose: () =>
         <dl className="mt-5 space-y-2 text-left text-sm">
           <Row label="Items" value={String(receipt.itemCount)} />
           <Row label="Total" value={fmt.format(receipt.total)} />
+          {receipt.cardAmount > 0 && <Row label="Card" value={fmt.format(receipt.cardAmount)} />}
           <Row label="Cash received" value={fmt.format(receipt.amountTendered)} />
           <div className="flex justify-between border-t border-gray-700 pt-2 text-base font-semibold">
             <span>Change due</span>

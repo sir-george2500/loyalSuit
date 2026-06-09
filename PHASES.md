@@ -301,7 +301,7 @@ auditable (5c), payouts never exceed settled balance (5d).
 reconciles; receipts are correct.
 
 - [x] POS catalog search + cart, barcode scanning _(slice 6a)_
-- [~] Split / cash / card tender; change calc — cash tender + change done _(slice 6a)_; card/split deferred
+- [x] Split / cash / card tender; change calc _(cash + change 6a; card/split 6e)_
 - [x] Offline queue (IndexedDB) with idempotent sync _(slice 6b)_
 - [x] Shift open/close + cash reconciliation _(slice 6c)_
 - [x] PDF receipts _(slice 6d)_
@@ -328,8 +328,16 @@ _Slice 6d (PDF receipts): a completed sale's receipt downloads as an 80mm therma
 PDF (`GET /api/v1/pos/sales/{id}/receipt`) rendered with PDFBox — store header, line
 items (names resolved from the catalog, placeholder if since-deleted), totals, cash/change,
 cashier, and date in the tenant timezone. Generated on demand from existing data (no
-schema change); fetched via axios so the Bearer token is sent, then opened from a blob URL.
-The only remaining Phase 6 item is card/split tender._
+schema change); fetched via axios so the Bearer token is sent, then opened from a blob URL._
+
+_Slice 6e (card / split tender): a sale can be paid with cash, card, or both. The card
+amount is charged on an external terminal (NOT an online gateway) and recorded on the
+sale (`pos_sales.card_amount`, V19); the card is charged exactly (it can't exceed the
+total) and all change comes from cash. The order's payment method is now CASH / CARD /
+SPLIT. Crucially, only cash reaches the drawer, so shift reconciliation counts the cash
+portion only: a shift records `cash_sales` (tendered − change, summed) alongside the gross
+`sales_total`, and `expected = float + cash_sales`. Terminal gains a card-amount field;
+receipt and close-out show the cash/card split. This closes Phase 6._
 
 ---
 

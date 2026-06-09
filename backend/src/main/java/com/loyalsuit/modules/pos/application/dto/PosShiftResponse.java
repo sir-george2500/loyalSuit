@@ -8,7 +8,7 @@ import java.util.UUID;
 
 /**
  * A cash-drawer session. Until it's closed the reconciliation fields (salesTotal,
- * expectedCash, countedCash, variance) are null.
+ * cashSales, expectedCash, countedCash, variance) are null.
  */
 public record PosShiftResponse(
         UUID id,
@@ -18,6 +18,7 @@ public record PosShiftResponse(
         Instant openedAt,
         Instant closedAt,
         BigDecimal salesTotal,
+        BigDecimal cashSales,
         int saleCount,
         BigDecimal expectedCash,
         BigDecimal countedCash,
@@ -32,6 +33,7 @@ public record PosShiftResponse(
                 shift.getCreatedAt(),
                 shift.getClosedAt(),
                 shift.getSalesTotal(),
+                shift.getCashSales(),
                 shift.getSaleCount(),
                 shift.getExpectedCash(),
                 shift.getCountedCash(),

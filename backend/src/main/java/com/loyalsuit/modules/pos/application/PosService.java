@@ -123,12 +123,20 @@ public class PosService {
             lines.add(item);
         }
 
-        BigDecimal total = subtotal; // no tax/shipping on an in-store cash sale
-        if (request.getAmountTendered().compareTo(total) < 0) {
-            throw new BusinessException("Cash tendered (" + request.getAmountTendered()
-                    + ") is less than the total (" + total + ")");
+        BigDecimal total = subtotal; // no tax/shipping on an in-store sale
+
+        // Tender: cash + card must cover the total. The card is charged exactly (no card
+        // change), so card can't exceed the total; any overpayment is cash change.
+        BigDecimal cash = request.getAmountTendered();
+        BigDecimal card = request.getCardAmount() == null ? BigDecimal.ZERO : request.getCardAmount();
+        if (card.compareTo(total) > 0) {
+            throw new BusinessException("Card amount (" + card + ") cannot exceed the total (" + total + ")");
         }
-        BigDecimal change = request.getAmountTendered().subtract(total);
+        BigDecimal paid = cash.add(card);
+        if (paid.compareTo(total) < 0) {
+            throw new BusinessException("Payment (" + paid + ") is less than the total (" + total + ")");
+        }
+        BigDecimal change = paid.subtract(total); // returned from cash only
 
         // An in-store sale completes immediately: a paid, delivered order is the ledger entry.
         Order order = new Order();
@@ -136,7 +144,7 @@ public class PosService {
         order.setOrderNumber(generateOrderNumber());
         order.setCustomerName("Walk-in customer");
         order.setStatus(OrderStatus.DELIVERED);
-        order.setPaymentMethod(PaymentMethod.CASH);
+        order.setPaymentMethod(tenderMethod(total, card));
         order.setPaymentStatus(PaymentStatus.PAID);
         order.setSubtotal(subtotal);
         order.setShippingAmount(BigDecimal.ZERO);
@@ -156,8 +164,16 @@ public class PosService {
         int itemCount = request.getItems().stream().mapToInt(SaleLineRequest::getQuantity).sum();
         PosSale sale = posSaleRepository.save(new PosSale(tenantId, savedOrder.getId(), savedOrder.getOrderNumber(),
                 cashierId, shift.getId(), request.getClientSaleId(), subtotal, total,
-                request.getAmountTendered(), change, itemCount));
+                cash, change, card, itemCount));
         return PosSaleResponse.from(sale, tenant.getCurrency());
+    }
+
+    /** CASH when no card is used, CARD when the card covers the whole total, else SPLIT. */
+    private static PaymentMethod tenderMethod(BigDecimal total, BigDecimal card) {
+        if (card.signum() == 0) {
+            return PaymentMethod.CASH;
+        }
+        return card.compareTo(total) == 0 ? PaymentMethod.CARD : PaymentMethod.SPLIT;
     }
 
     /** Maps the sale's vendor lines (house products excluded) into commission lines. */

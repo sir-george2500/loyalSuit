@@ -12,6 +12,8 @@ export interface QueuedSale {
   clientSaleId: string
   items: SaleLineInput[]
   amountTendered: number
+  /** Amount charged on the card terminal; 0 for a cash-only sale. */
+  cardAmount: number
   total: number
   itemCount: number
   currency: string

@@ -75,6 +75,7 @@ public class PosReceiptService {
                 sale.getTotal(),
                 sale.getAmountTendered(),
                 sale.getChangeGiven(),
+                sale.getCardAmount(),
                 sale.getItemCount());
 
         return new RenderedReceipt("receipt-" + sale.getOrderNumber() + ".pdf", renderer.render(view));

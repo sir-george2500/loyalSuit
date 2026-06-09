@@ -16,9 +16,10 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * Cash-drawer sessions. A cashier opens a shift with a starting float, rings up cash
- * sales against it, then closes it by counting the drawer — at which point the till is
- * reconciled (expected = float + sales; variance = counted − expected). At most one
+ * Cash-drawer sessions. A cashier opens a shift with a starting float, rings up sales
+ * against it, then closes it by counting the drawer — at which point the till is
+ * reconciled against the cash portion of those sales (expected = float + cashSales;
+ * variance = counted − expected; card payments never touch the drawer). At most one
  * shift is open per cashier at a time.
  */
 @Service
@@ -54,8 +55,9 @@ public class PosShiftService {
             throw new ConflictException("This shift is already closed");
         }
         BigDecimal salesTotal = saleRepository.sumTotalByShift(tenantId, shift.getId());
+        BigDecimal cashSales = saleRepository.sumCashCollectedByShift(tenantId, shift.getId());
         long saleCount = saleRepository.countByShift(tenantId, shift.getId());
-        shift.close(countedCash, salesTotal, (int) saleCount);
+        shift.close(countedCash, salesTotal, cashSales, (int) saleCount);
         return PosShiftResponse.from(shiftRepository.save(shift));
     }
 

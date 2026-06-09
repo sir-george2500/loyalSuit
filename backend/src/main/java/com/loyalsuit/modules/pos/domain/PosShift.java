@@ -20,10 +20,12 @@ import java.util.UUID;
  * rings up cash sales against it, then closes it by counting the drawer. Closing
  * reconciles the count against what the till should hold:
  *
- * <pre>expected = openingFloat + salesTotal;  variance = countedCash − expected.</pre>
+ * <pre>expected = openingFloat + cashSales;  variance = countedCash − expected.</pre>
  *
- * <p>The opening time is the row's {@code createdAt}. {@code version} guards the close
- * so a drawer can't be reconciled twice concurrently.
+ * <p>Only the cash portion of sales lands in the drawer, so reconciliation uses
+ * {@code cashSales} (card payments never touch the till); {@code salesTotal} is the gross
+ * (cash + card) kept for reporting. The opening time is the row's {@code createdAt}.
+ * {@code version} guards the close so a drawer can't be reconciled twice concurrently.
  */
 @Entity
 @Table(name = "pos_shifts")
@@ -45,14 +47,18 @@ public class PosShift extends TenantScopedEntity {
     @Column(name = "closed_at")
     private Instant closedAt;
 
-    /** Sum of the cash sales rung up during the shift; set at close. */
+    /** Gross sales rung up during the shift (cash + card); set at close. */
     @Column(name = "sales_total", precision = 10, scale = 2)
     private BigDecimal salesTotal;
+
+    /** The cash portion of those sales (what reached the drawer); set at close. */
+    @Column(name = "cash_sales", precision = 10, scale = 2)
+    private BigDecimal cashSales;
 
     @Column(name = "sale_count")
     private int saleCount;
 
-    /** What the drawer should hold at close: openingFloat + salesTotal. */
+    /** What the drawer should hold at close: openingFloat + cashSales. */
     @Column(name = "expected_cash", precision = 10, scale = 2)
     private BigDecimal expectedCash;
 
@@ -80,10 +86,11 @@ public class PosShift extends TenantScopedEntity {
     }
 
     /** Reconciles and closes the drawer against the counted cash. */
-    public void close(BigDecimal countedCash, BigDecimal salesTotal, int saleCount) {
+    public void close(BigDecimal countedCash, BigDecimal salesTotal, BigDecimal cashSales, int saleCount) {
         this.salesTotal = salesTotal;
+        this.cashSales = cashSales;
         this.saleCount = saleCount;
-        this.expectedCash = openingFloat.add(salesTotal);
+        this.expectedCash = openingFloat.add(cashSales);
         this.countedCash = countedCash;
         this.variance = countedCash.subtract(this.expectedCash);
         this.status = PosShiftStatus.CLOSED;

@@ -49,6 +49,7 @@ export function useOfflineSales(): OfflineSales {
             clientSaleId: sale.clientSaleId,
             items: sale.items,
             amountTendered: sale.amountTendered,
+            cardAmount: sale.cardAmount,
           })
           await removeSale(sale.clientSaleId)
         } catch (err) {

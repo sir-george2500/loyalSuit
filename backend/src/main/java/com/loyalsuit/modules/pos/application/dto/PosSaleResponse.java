@@ -20,6 +20,7 @@ public record PosSaleResponse(
         BigDecimal total,
         BigDecimal amountTendered,
         BigDecimal changeGiven,
+        BigDecimal cardAmount,
         int itemCount,
         Instant createdAt) {
 
@@ -34,6 +35,7 @@ public record PosSaleResponse(
                 sale.getTotal(),
                 sale.getAmountTendered(),
                 sale.getChangeGiven(),
+                sale.getCardAmount(),
                 sale.getItemCount(),
                 sale.getCreatedAt());
     }

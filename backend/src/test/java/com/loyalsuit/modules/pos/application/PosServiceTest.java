@@ -10,6 +10,7 @@ import com.loyalsuit.modules.marketplace.application.CommissionLine;
 import com.loyalsuit.modules.orders.domain.Order;
 import com.loyalsuit.modules.orders.domain.OrderItem;
 import com.loyalsuit.modules.orders.domain.OrderStatus;
+import com.loyalsuit.modules.orders.domain.PaymentMethod;
 import com.loyalsuit.modules.orders.domain.PaymentStatus;
 import com.loyalsuit.modules.orders.domain.port.OrderItemRepository;
 import com.loyalsuit.modules.orders.domain.port.OrderRepository;
@@ -99,6 +100,10 @@ class PosServiceTest {
     }
 
     private CompleteSaleRequest saleOf(int quantity, String tendered) {
+        return saleOf(quantity, tendered, null);
+    }
+
+    private CompleteSaleRequest saleOf(int quantity, String tendered, String card) {
         SaleLineRequest line = new SaleLineRequest();
         line.setProductId(productId);
         line.setQuantity(quantity);
@@ -106,6 +111,9 @@ class PosServiceTest {
         request.setClientSaleId("sale-" + UUID.randomUUID());
         request.setItems(List.of(line));
         request.setAmountTendered(new BigDecimal(tendered));
+        if (card != null) {
+            request.setCardAmount(new BigDecimal(card));
+        }
         return request;
     }
 
@@ -227,6 +235,67 @@ class PosServiceTest {
     }
 
     @Test
+    void completeSale_cardOnly_marksTheOrderCard_withNoChange() {
+        // Arrange — $10 due, paid entirely on the card terminal (no cash)
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
+        when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        stubOpenShift();
+        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product("10.00", vendorId)));
+        stubOrderSave();
+        stubPosSaleSave();
+
+        // Act — cash 0, card 10
+        PosSaleResponse sale = service.completeSale(tenantId, cashierId, saleOf(1, "0.00", "10.00"));
+
+        // Assert — card recorded, no change, and the order's method is CARD
+        assertThat(sale.cardAmount()).isEqualByComparingTo("10.00");
+        assertThat(sale.amountTendered()).isEqualByComparingTo("0.00");
+        assertThat(sale.changeGiven()).isEqualByComparingTo("0.00");
+        ArgumentCaptor<Order> order = ArgumentCaptor.forClass(Order.class);
+        verify(orderRepository).save(order.capture());
+        assertThat(order.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.CARD);
+    }
+
+    @Test
+    void completeSale_splitTender_takesChangeFromCashOnly_andMarksOrderSplit() {
+        // Arrange — $20 due, $5 on card + $20 cash → $5 change (from cash)
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
+        when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        stubOpenShift();
+        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product("10.00", vendorId)));
+        stubOrderSave();
+        stubPosSaleSave();
+
+        // Act
+        PosSaleResponse sale = service.completeSale(tenantId, cashierId, saleOf(2, "20.00", "5.00"));
+
+        // Assert — card 5, cash 20, change 5; cash collected (20 − 5 = 15) + card 5 = total 20
+        assertThat(sale.total()).isEqualByComparingTo("20.00");
+        assertThat(sale.cardAmount()).isEqualByComparingTo("5.00");
+        assertThat(sale.amountTendered()).isEqualByComparingTo("20.00");
+        assertThat(sale.changeGiven()).isEqualByComparingTo("5.00");
+        ArgumentCaptor<Order> order = ArgumentCaptor.forClass(Order.class);
+        verify(orderRepository).save(order.capture());
+        assertThat(order.getValue().getPaymentMethod()).isEqualTo(PaymentMethod.SPLIT);
+    }
+
+    @Test
+    void completeSale_cardExceedingTheTotal_isRejected() {
+        // Arrange — $10 due, but $15 put on the card (no card change allowed)
+        when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
+        when(posSaleRepository.findByTenantIdAndClientSaleId(eq(tenantId), any())).thenReturn(Optional.empty());
+        stubOpenShift();
+        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product("10.00", vendorId)));
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.completeSale(tenantId, cashierId, saleOf(1, "0.00", "15.00")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("cannot exceed the total");
+        verify(orderRepository, never()).save(any());
+        verify(posSaleRepository, never()).save(any());
+    }
+
+    @Test
     void completeSale_unavailableProduct_isRejected() {
         // Arrange — the product can't be found (or isn't active)
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
@@ -260,7 +329,7 @@ class PosServiceTest {
         // Arrange — a sale already exists for this client sale id
         PosSale existing = new PosSale(tenantId, UUID.randomUUID(), "POS-ABC-123", cashierId, shiftId, "sale-1",
                 new BigDecimal("20.00"), new BigDecimal("20.00"), new BigDecimal("50.00"),
-                new BigDecimal("30.00"), 2);
+                new BigDecimal("30.00"), new BigDecimal("0.00"), 2);
         ReflectionTestUtils.setField(existing, "id", UUID.randomUUID());
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.of(tenant()));
         CompleteSaleRequest request = saleOf(2, "50.00");

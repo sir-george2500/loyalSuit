@@ -82,10 +82,11 @@ class PosShiftServiceTest {
     // ---- close (reconciliation) ---------------------------------------------
 
     @Test
-    void close_reconcilesTheDrawer_expectedIsFloatPlusSales() {
-        // Arrange — float 100, sales 250 → expected 350; counted 350 → variance 0
+    void close_reconcilesTheDrawer_expectedIsFloatPlusCashSales() {
+        // Arrange — float 100, all-cash sales 250 → expected 350; counted 350 → variance 0
         when(shiftRepository.findByIdAndTenantId(shiftId, tenantId)).thenReturn(Optional.of(openShift("100.00")));
         when(saleRepository.sumTotalByShift(tenantId, shiftId)).thenReturn(new BigDecimal("250.00"));
+        when(saleRepository.sumCashCollectedByShift(tenantId, shiftId)).thenReturn(new BigDecimal("250.00"));
         when(saleRepository.countByShift(tenantId, shiftId)).thenReturn(7L);
         when(shiftRepository.save(any(PosShift.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -95,6 +96,7 @@ class PosShiftServiceTest {
         // Assert
         assertThat(shift.status()).isEqualTo("CLOSED");
         assertThat(shift.salesTotal()).isEqualByComparingTo("250.00");
+        assertThat(shift.cashSales()).isEqualByComparingTo("250.00");
         assertThat(shift.saleCount()).isEqualTo(7);
         assertThat(shift.expectedCash()).isEqualByComparingTo("350.00");
         assertThat(shift.countedCash()).isEqualByComparingTo("350.00");
@@ -103,10 +105,31 @@ class PosShiftServiceTest {
     }
 
     @Test
+    void close_reconcilesAgainstCashOnly_excludingCardSales() {
+        // Arrange — float 50; gross sales 300 but only 200 of it cash (100 on card)
+        // → expected = 50 + 200 = 250; counted 250 → balanced. The card never hit the drawer.
+        when(shiftRepository.findByIdAndTenantId(shiftId, tenantId)).thenReturn(Optional.of(openShift("50.00")));
+        when(saleRepository.sumTotalByShift(tenantId, shiftId)).thenReturn(new BigDecimal("300.00"));
+        when(saleRepository.sumCashCollectedByShift(tenantId, shiftId)).thenReturn(new BigDecimal("200.00"));
+        when(saleRepository.countByShift(tenantId, shiftId)).thenReturn(5L);
+        when(shiftRepository.save(any(PosShift.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        PosShiftResponse shift = service.close(shiftId, tenantId, new BigDecimal("250.00"));
+
+        // Assert
+        assertThat(shift.salesTotal()).isEqualByComparingTo("300.00");
+        assertThat(shift.cashSales()).isEqualByComparingTo("200.00");
+        assertThat(shift.expectedCash()).isEqualByComparingTo("250.00");
+        assertThat(shift.variance()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
     void close_reportsAShortDrawerAsNegativeVariance() {
         // Arrange — expected 350, but only 340 counted → 10 short
         when(shiftRepository.findByIdAndTenantId(shiftId, tenantId)).thenReturn(Optional.of(openShift("100.00")));
         when(saleRepository.sumTotalByShift(tenantId, shiftId)).thenReturn(new BigDecimal("250.00"));
+        when(saleRepository.sumCashCollectedByShift(tenantId, shiftId)).thenReturn(new BigDecimal("250.00"));
         when(saleRepository.countByShift(tenantId, shiftId)).thenReturn(7L);
         when(shiftRepository.save(any(PosShift.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -122,6 +145,7 @@ class PosShiftServiceTest {
         // Arrange — expected 350, but 360 counted → 10 over
         when(shiftRepository.findByIdAndTenantId(shiftId, tenantId)).thenReturn(Optional.of(openShift("100.00")));
         when(saleRepository.sumTotalByShift(tenantId, shiftId)).thenReturn(new BigDecimal("250.00"));
+        when(saleRepository.sumCashCollectedByShift(tenantId, shiftId)).thenReturn(new BigDecimal("250.00"));
         when(saleRepository.countByShift(tenantId, shiftId)).thenReturn(7L);
         when(shiftRepository.save(any(PosShift.class))).thenAnswer(inv -> inv.getArgument(0));
 

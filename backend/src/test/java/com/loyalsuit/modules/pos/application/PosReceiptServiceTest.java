@@ -71,7 +71,7 @@ class PosReceiptServiceTest {
     private PosSale sale() {
         PosSale sale = new PosSale(tenantId, orderId, "POS-ABC-123", cashierId, UUID.randomUUID(),
                 "client-1", new BigDecimal("10.00"), new BigDecimal("10.00"),
-                new BigDecimal("20.00"), new BigDecimal("10.00"), 2);
+                new BigDecimal("20.00"), new BigDecimal("10.00"), new BigDecimal("0.00"), 2);
         ReflectionTestUtils.setField(sale, "id", saleId);
         return sale;
     }
