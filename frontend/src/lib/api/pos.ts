@@ -24,6 +24,9 @@ export const posApi = {
     apiClient.post<ApiResponse<PosSale>>(`${BASE}/sales`, payload),
   sales: (page = 0) =>
     apiClient.get<ApiResponse<PageResponse<PosSale>>>(`${BASE}/sales`, { params: { page } }),
+  /** The sale's receipt as a PDF blob — fetched via axios so the Bearer token is sent. */
+  receipt: (saleId: string) =>
+    apiClient.get<Blob>(`${BASE}/sales/${saleId}/receipt`, { responseType: 'blob' }),
 }
 
 /** Cash-drawer shifts: open a drawer, read the current one, close + reconcile. */

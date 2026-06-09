@@ -5,12 +5,16 @@ import com.loyalsuit.modules.catalog.domain.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface ProductRepository {
     Product save(Product product);
     Optional<Product> findByIdAndTenantId(UUID id, UUID tenantId);
+    /** Batch lookup by id within a tenant — one query for many ids (e.g. receipt lines). */
+    List<Product> findByIdInAndTenantId(Collection<UUID> ids, UUID tenantId);
     Optional<Product> findBySlugAndTenantId(String slug, UUID tenantId);
     Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable);
     /** Active products whose name, SKU, or barcode matches the query (case-insensitive). */

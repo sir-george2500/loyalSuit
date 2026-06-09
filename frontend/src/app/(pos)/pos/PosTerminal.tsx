@@ -5,7 +5,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
 import {
   Search, Plus, Minus, Trash2, Loader2, X, Check, ScanLine,
-  Wifi, WifiOff, CloudUpload, RefreshCw, AlertTriangle, Coins, LogOut,
+  Wifi, WifiOff, CloudUpload, RefreshCw, AlertTriangle, Coins, LogOut, Printer,
 } from 'lucide-react'
 import { posApi } from '@/lib/api/pos'
 import type { PosProduct, PosSale, PosShift } from '@/types'
@@ -25,6 +25,7 @@ interface CartLine {
 /** Normalised receipt — from the server (online) or computed locally (offline). */
 interface Receipt {
   offline: boolean
+  saleId?: string
   orderNumber?: string
   total: number
   amountTendered: number
@@ -148,6 +149,7 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
       const sale: PosSale = (await posApi.completeSale({ clientSaleId, items, amountTendered: tenderedNum })).data.data
       setReceipt({
         offline: false,
+        saleId: sale.id,
         orderNumber: sale.orderNumber,
         total: sale.total,
         amountTendered: sale.amountTendered,
@@ -430,6 +432,28 @@ function FailedRow({
 
 function ReceiptOverlay({ receipt, onClose }: { receipt: Receipt; onClose: () => void }) {
   const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: receipt.currency || 'USD' })
+  const [printing, setPrinting] = useState(false)
+  const [printError, setPrintError] = useState<string | null>(null)
+
+  // The PDF needs the Bearer token, so it's fetched via axios and opened from a blob URL
+  // (a plain link wouldn't carry the auth header). Offline receipts have no server id yet.
+  async function openReceipt() {
+    if (!receipt.saleId || printing) return
+    setPrinting(true)
+    setPrintError(null)
+    try {
+      const blob = (await posApi.receipt(receipt.saleId)).data
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank', 'noopener')
+      // Revoke after the new tab has had time to load the document.
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    } catch {
+      setPrintError('Could not open the receipt PDF.')
+    } finally {
+      setPrinting(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-sm rounded-xl bg-gray-800 p-6 text-center">
@@ -459,7 +483,16 @@ function ReceiptOverlay({ receipt, onClose }: { receipt: Receipt; onClose: () =>
           </div>
         </dl>
 
-        <button onClick={onClose} className="btn btn-primary btn-block mt-6">
+        {printError && <p className="mt-4 text-sm text-error">{printError}</p>}
+
+        {receipt.saleId && (
+          <button onClick={openReceipt} disabled={printing} className="btn btn-outline btn-block mt-4">
+            {printing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+            Print receipt
+          </button>
+        )}
+
+        <button onClick={onClose} className="btn btn-primary btn-block mt-3">
           <X className="h-4 w-4" /> New sale
         </button>
       </div>

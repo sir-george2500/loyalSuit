@@ -8,6 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +27,11 @@ public class ProductRepositoryAdapter implements ProductRepository {
     @Override
     public Optional<Product> findByIdAndTenantId(UUID id, UUID tenantId) {
         return jpa.findByIdAndTenantId(id, tenantId);
+    }
+
+    @Override
+    public List<Product> findByIdInAndTenantId(Collection<UUID> ids, UUID tenantId) {
+        return ids.isEmpty() ? List.of() : jpa.findByIdInAndTenantId(ids, tenantId);
     }
 
     @Override

@@ -303,7 +303,8 @@ reconciles; receipts are correct.
 - [x] POS catalog search + cart, barcode scanning _(slice 6a)_
 - [~] Split / cash / card tender; change calc — cash tender + change done _(slice 6a)_; card/split deferred
 - [x] Offline queue (IndexedDB) with idempotent sync _(slice 6b)_
-- [~] Shift open/close + cash reconciliation _(slice 6c)_; receipt (PDF) deferred
+- [x] Shift open/close + cash reconciliation _(slice 6c)_
+- [x] PDF receipts _(slice 6d)_
 
 _Slice 6a (cash sale foundation): a cashier searches/scans the catalog, builds a cart,
 takes cash, and completes a sale that reuses the proven commerce machinery — a paid,
@@ -321,7 +322,14 @@ _Slice 6c (shifts + cash reconciliation): a cashier opens a drawer with a starti
 the register is gated until one is open. Every cash sale links to the open shift. Closing
 counts the drawer and reconciles: expected = float + sales, variance = counted − expected
 (short/over/balanced). One open drawer per cashier (partial unique index); `@Version`
-guards the close. Receipts (PDF) remain for a later slice._
+guards the close._
+
+_Slice 6d (PDF receipts): a completed sale's receipt downloads as an 80mm thermal-style
+PDF (`GET /api/v1/pos/sales/{id}/receipt`) rendered with PDFBox — store header, line
+items (names resolved from the catalog, placeholder if since-deleted), totals, cash/change,
+cashier, and date in the tenant timezone. Generated on demand from existing data (no
+schema change); fetched via axios so the Bearer token is sent, then opened from a blob URL.
+The only remaining Phase 6 item is card/split tender._
 
 ---
 

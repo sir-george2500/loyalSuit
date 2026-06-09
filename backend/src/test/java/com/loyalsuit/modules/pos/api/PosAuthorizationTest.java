@@ -1,5 +1,7 @@
 package com.loyalsuit.modules.pos.api;
 
+import com.loyalsuit.modules.pos.application.PosReceiptService;
+import com.loyalsuit.modules.pos.application.PosReceiptService.RenderedReceipt;
 import com.loyalsuit.modules.pos.application.PosService;
 import com.loyalsuit.modules.users.domain.UserRole;
 import com.loyalsuit.security.JwtService;
@@ -19,6 +21,8 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -44,6 +48,9 @@ class PosAuthorizationTest {
 
     @MockitoBean
     private PosService posService;
+
+    @MockitoBean
+    private PosReceiptService receiptService;
 
     private String bearer(UserRole role) {
         return "Bearer " + jwtService.issueToken(
@@ -77,6 +84,16 @@ class PosAuthorizationTest {
     @EnumSource(UserRole.class)
     void listSales(UserRole role) throws Exception {
         mvc.perform(get("/api/v1/pos/sales").header("Authorization", bearer(role)))
+                .andExpect(allowedFor(STORE, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void downloadReceipt(UserRole role) throws Exception {
+        when(receiptService.renderReceipt(any(), any()))
+                .thenReturn(new RenderedReceipt("receipt-POS-1.pdf", new byte[]{1}));
+        mvc.perform(get("/api/v1/pos/sales/" + UUID.randomUUID() + "/receipt")
+                        .header("Authorization", bearer(role)))
                 .andExpect(allowedFor(STORE, role));
     }
 
