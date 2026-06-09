@@ -352,13 +352,14 @@ captures proof and (for COD) collects payment exactly once.
 New module: `fulfilment` (hexagonal, tenant-scoped, owns its tables). Reuses the orders
 ledger — a delivery is layered on an order, mirroring how POS layered on orders.
 
-- [ ] **7a — Delivery agents.** `DeliveryAgent` (links a DELIVERY_AGENT user; phone,
+- [x] **7a — Delivery agents.** `DeliveryAgent` (links a DELIVERY_AGENT user; phone,
   vehicle, active flag). Tenant-admin CRUD + list; an agent can read their own profile.
   RBAC: SUPER_ADMIN/TENANT_ADMIN manage; DELIVERY_AGENT self-read only.
-- [ ] **7b — Assignment + delivery lifecycle.** `Delivery` aggregate (one per order):
+- [x] **7b — Assignment + delivery lifecycle.** `Delivery` aggregate (one per order):
   status `PENDING → ASSIGNED → PICKED_UP → IN_TRANSIT → DELIVERED / FAILED`, agent link,
-  status-change timeline, `@Version` guard. Admin assigns from the order; agent sees their
-  queue. Illegal transitions rejected; one active delivery per order (unique index).
+  append-only status timeline, `@Version` guard. Dispatcher (store roles) assigns by order
+  number and advances status; illegal transitions rejected; one delivery per order (unique
+  index). _(Agent self-service queue + customer tracking land in 7c.)_
 - [ ] **7c — Agent workflow + tracking.** Agent view of assigned deliveries; advance status
   step by step (each transition timestamped + actor-stamped). Customer/admin tracking view
   reads the timeline (polling via TanStack Query; SSE optional later).

@@ -8,6 +8,7 @@ import {
   Undo2,
   MonitorSmartphone,
   Truck,
+  PackageCheck,
   Store,
   Wallet,
   Percent,
@@ -87,6 +88,7 @@ export const ADMIN_NAV: NavSection[] = [
   {
     title: 'Fulfilment',
     items: [
+      { label: 'Deliveries', href: '/admin/deliveries', icon: PackageCheck, roles: STORE_ROLES, status: 'available' },
       { label: 'Delivery Agents', href: '/admin/delivery-agents', icon: Truck, roles: OWNER_ROLES, status: 'available' },
     ],
   },

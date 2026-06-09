@@ -492,3 +492,29 @@ export interface DeliveryAgent {
   active: boolean
   createdAt: string
 }
+
+export type DeliveryStatus = 'PENDING' | 'ASSIGNED' | 'PICKED_UP' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED'
+
+export interface DeliveryEvent {
+  status: DeliveryStatus
+  note?: string | null
+  actorId?: string | null
+  occurredAt: string
+}
+
+export interface Delivery {
+  id: string
+  orderId: string
+  orderNumber: string
+  customerName?: string | null
+  agentId?: string | null
+  agentName?: string | null
+  status: DeliveryStatus
+  assignedAt?: string | null
+  pickedUpAt?: string | null
+  deliveredAt?: string | null
+  failedAt?: string | null
+  failureReason?: string | null
+  createdAt: string
+  events?: DeliveryEvent[] | null
+}
