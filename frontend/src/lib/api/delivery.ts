@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { ApiResponse, DeliveryAgent, PageResponse, VehicleType } from '@/types'
+import type { ApiResponse, Delivery, DeliveryStatus, DeliveryAgent, PageResponse, VehicleType } from '@/types'
 
 export interface RegisterDeliveryAgentPayload {
   email: string
@@ -31,4 +31,24 @@ export const adminDeliveryAgentApi = {
 /** A delivery agent's own profile. */
 export const deliveryAgentApi = {
   me: () => apiClient.get<ApiResponse<DeliveryAgent>>('/api/v1/delivery/me'),
+}
+
+export interface AssignDeliveryPayload {
+  orderNumber: string
+  agentId: string
+}
+
+const ADMIN_DELIVERIES = '/api/v1/admin/deliveries'
+
+/** Dispatch desk: assign orders to couriers and advance the delivery lifecycle. */
+export const adminDeliveryApi = {
+  list: (params: { status?: DeliveryStatus | ''; page?: number } = {}) =>
+    apiClient.get<ApiResponse<PageResponse<Delivery>>>(ADMIN_DELIVERIES, {
+      params: { page: params.page ?? 0, ...(params.status ? { status: params.status } : {}) },
+    }),
+  get: (id: string) => apiClient.get<ApiResponse<Delivery>>(`${ADMIN_DELIVERIES}/${id}`),
+  assign: (payload: AssignDeliveryPayload) =>
+    apiClient.post<ApiResponse<Delivery>>(`${ADMIN_DELIVERIES}/assign`, payload),
+  advance: (id: string, status: DeliveryStatus, note?: string) =>
+    apiClient.patch<ApiResponse<Delivery>>(`${ADMIN_DELIVERIES}/${id}/status`, { status, note }),
 }
