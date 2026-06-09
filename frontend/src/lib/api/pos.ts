@@ -13,7 +13,10 @@ export interface CompleteSaleInput {
   /** Terminal-generated UUID; makes completing the sale idempotent on retry. */
   clientSaleId: string
   items: SaleLineInput[]
+  /** Cash handed over; 0 for a card-only sale. Change comes from this. */
   amountTendered: number
+  /** Amount charged on the card terminal; 0 (or omitted) for a cash-only sale. */
+  cardAmount?: number
 }
 
 /** In-store POS terminal: catalog lookup, ringing up a cash sale, recent sales. */

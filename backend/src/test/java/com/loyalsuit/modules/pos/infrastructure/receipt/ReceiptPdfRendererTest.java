@@ -21,13 +21,17 @@ class ReceiptPdfRendererTest {
     private final ReceiptPdfRenderer renderer = new ReceiptPdfRenderer();
 
     private static ReceiptView view(List<ReceiptView.Line> lines, String cashier) {
+        return view(lines, cashier, BigDecimal.ZERO);
+    }
+
+    private static ReceiptView view(List<ReceiptView.Line> lines, String cashier, BigDecimal card) {
         BigDecimal total = lines.stream().map(ReceiptView.Line::lineTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         int items = lines.stream().mapToInt(ReceiptView.Line::quantity).sum();
         return new ReceiptView(
                 "Acme Store", "USD", ZoneId.of("UTC"),
                 "POS-ABC-123", Instant.parse("2026-06-09T10:15:30Z"), cashier,
-                lines, total, total, total.add(new BigDecimal("5.00")), new BigDecimal("5.00"), items);
+                lines, total, total, total.add(new BigDecimal("5.00")), new BigDecimal("5.00"), card, items);
     }
 
     private static String textOf(byte[] pdf) throws Exception {
@@ -57,6 +61,20 @@ class ReceiptPdfRendererTest {
                 .contains("Red Gadget")
                 .contains("USD 13.50")   // total
                 .contains("Thank you!");
+    }
+
+    @Test
+    void render_showsACardLine_forASplitTender() throws Exception {
+        // Arrange — a sale with a $4 card portion
+        ReceiptView view = view(List.of(
+                new ReceiptView.Line("Blue Widget", 1, new BigDecimal("10.00"), new BigDecimal("10.00"))),
+                "Jane Doe", new BigDecimal("4.00"));
+
+        // Act
+        String text = textOf(renderer.render(view));
+
+        // Assert
+        assertThat(text).contains("Card").contains("USD 4.00");
     }
 
     @Test

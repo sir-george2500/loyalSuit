@@ -19,5 +19,9 @@ interface PosSaleJpaRepository extends JpaRepository<PosSale, UUID> {
     @Query("SELECT COALESCE(SUM(s.total), 0) FROM PosSale s WHERE s.tenantId = :tenantId AND s.shiftId = :shiftId")
     BigDecimal sumTotalByShift(@Param("tenantId") UUID tenantId, @Param("shiftId") UUID shiftId);
 
+    @Query("SELECT COALESCE(SUM(s.amountTendered - s.changeGiven), 0) FROM PosSale s "
+            + "WHERE s.tenantId = :tenantId AND s.shiftId = :shiftId")
+    BigDecimal sumCashCollectedByShift(@Param("tenantId") UUID tenantId, @Param("shiftId") UUID shiftId);
+
     long countByTenantIdAndShiftId(UUID tenantId, UUID shiftId);
 }

@@ -459,6 +459,7 @@ export interface PosSale {
   total: number
   amountTendered: number
   changeGiven: number
+  cardAmount: number
   itemCount: number
   createdAt: string
 }
@@ -473,6 +474,7 @@ export interface PosShift {
   openedAt: string
   closedAt?: string | null
   salesTotal?: number | null
+  cashSales?: number | null
   saleCount: number
   expectedCash?: number | null
   countedCash?: number | null

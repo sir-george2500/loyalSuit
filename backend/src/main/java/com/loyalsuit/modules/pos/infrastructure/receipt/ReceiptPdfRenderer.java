@@ -68,6 +68,9 @@ public class ReceiptPdfRenderer {
 
             cursor.spread("Subtotal", money(view.currency(), view.subtotal()), regular, BODY_SIZE);
             cursor.spread("Total", money(view.currency(), view.total()), bold, BODY_SIZE);
+            if (view.cardAmount() != null && view.cardAmount().signum() > 0) {
+                cursor.spread("Card", money(view.currency(), view.cardAmount()), regular, BODY_SIZE);
+            }
             cursor.spread("Cash", money(view.currency(), view.amountTendered()), regular, BODY_SIZE);
             cursor.spread("Change", money(view.currency(), view.changeGiven()), regular, BODY_SIZE);
             cursor.left("Items: " + view.itemCount(), regular, BODY_SIZE);

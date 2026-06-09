@@ -24,6 +24,7 @@ public record ReceiptView(
         BigDecimal total,
         BigDecimal amountTendered,
         BigDecimal changeGiven,
+        BigDecimal cardAmount,
         int itemCount) {
 
     /** One line item on the receipt; {@code name} falls back to a placeholder if the
