@@ -2,6 +2,8 @@ package com.loyalsuit.modules.pos.api;
 
 import com.loyalsuit.common.response.ApiResponse;
 import com.loyalsuit.common.response.PageResponse;
+import com.loyalsuit.modules.pos.application.PosReceiptService;
+import com.loyalsuit.modules.pos.application.PosReceiptService.RenderedReceipt;
 import com.loyalsuit.modules.pos.application.PosService;
 import com.loyalsuit.modules.pos.application.dto.CompleteSaleRequest;
 import com.loyalsuit.modules.pos.application.dto.PosProductResponse;
@@ -13,16 +15,22 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 /**
  * The in-store POS terminal API: catalog lookup for the product grid / barcode scan,
@@ -36,6 +44,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PosController {
 
     private final PosService posService;
+    private final PosReceiptService receiptService;
 
     @GetMapping("/products")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
@@ -67,5 +76,18 @@ public class PosController {
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(
                 posService.listSales(principal.getTenantId(), pageable)));
+    }
+
+    @GetMapping("/sales/{id}/receipt")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
+    @Operation(summary = "Download a sale's receipt as a PDF")
+    public ResponseEntity<byte[]> receipt(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID id) {
+        RenderedReceipt pdf = receiptService.renderReceipt(principal.getTenantId(), id);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.inline().filename(pdf.fileName()).build());
+        return new ResponseEntity<>(pdf.content(), headers, HttpStatus.OK);
     }
 }

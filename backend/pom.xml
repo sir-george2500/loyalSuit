@@ -23,6 +23,7 @@
         <jjwt.version>0.12.6</jjwt.version>
         <springdoc.version>2.6.0</springdoc.version>
         <cloudinary.version>1.39.0</cloudinary.version>
+        <pdfbox.version>3.0.3</pdfbox.version>
         <testcontainers.version>1.20.4</testcontainers.version>
     </properties>
 
@@ -109,6 +110,13 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- PDF receipts (Apache 2.0; programmatic, no font embedding needed) -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
         </dependency>
 
         <!-- Utilities -->
