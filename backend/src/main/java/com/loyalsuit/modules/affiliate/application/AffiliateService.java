@@ -94,6 +94,21 @@ public class AffiliateService {
         }));
     }
 
+    /**
+     * Collaboration API for checkout: the affiliate id a referral code attributes an order
+     * to — empty if the code is unknown/inactive or would be a self-referral (the buyer is
+     * the affiliate). A bad code simply isn't attributed; it never fails the checkout.
+     */
+    public java.util.Optional<UUID> attributableAffiliateId(UUID tenantId, String code, UUID buyerUserId) {
+        if (!StringUtils.hasText(code)) {
+            return java.util.Optional.empty();
+        }
+        return affiliateRepository.findByTenantIdAndCode(tenantId, Affiliate.normalize(code))
+                .filter(Affiliate::isActive)
+                .filter(affiliate -> !affiliate.getUserId().equals(buyerUserId))
+                .map(Affiliate::getId);
+    }
+
     private AffiliateResponse toResponse(Affiliate affiliate) {
         return userRepository.findById(affiliate.getUserId())
                 .map(user -> AffiliateResponse.from(affiliate, displayName(user), user.getEmail()))

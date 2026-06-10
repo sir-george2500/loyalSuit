@@ -22,6 +22,10 @@ public class CheckoutRequest {
     @jakarta.validation.constraints.Min(value = 0, message = "Points can't be negative")
     private Integer pointsToRedeem;
 
+    /** An affiliate referral code; an unknown/inactive code is simply not attributed. */
+    @Size(max = 64)
+    private String referralCode;
+
     @NotBlank(message = "Your name is required")
     @Size(max = 255)
     private String customerName;

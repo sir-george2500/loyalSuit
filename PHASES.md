@@ -40,7 +40,7 @@ into another's tables — they collaborate through application services / events
 | **fulfilment** | delivery agents, pickup points, tracking | ✅ live (Phase 7: agents, deliveries, POD+COD, tracking, zones) |
 | **promotions** | coupons, flash deals | ✅ Phase 8: coupons + flash deals live |
 | **loyalty** | points earn / redeem | ✅ Phase 8: earn on paid orders, redeem at checkout |
-| **affiliate** | referral codes, rewards | 🟡 Phase 8: registry live; attribution + rewards next |
+| **affiliate** | referral codes, rewards | ✅ Phase 8: registry + attribution + reward ledger live |
 | **hrm** | employees, attendance, payroll | ⬜ planned |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
 | **notifications** | email, SMS, push, in-app | 🟡 transactional email live (onboarding, password reset) |
@@ -444,9 +444,12 @@ New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `no
 - [x] **8e.1 — Affiliate registry.** New `affiliate` module. An admin enrols a tenant user
   (by email) as an affiliate with a unique referral code + reward rate; owner CRUD
   (`/admin/affiliates`), code normalised + unique per tenant, one profile per user. V27.
-- [ ] **8e.2 — Attribution + reward ledger.** Checkout captures a referral code → attributes
-  the order to the affiliate; when the order is paid the affiliate earns (rate × order),
-  reversed on refund (mirrors commission); affiliate views their earnings/balance.
+- [x] **8e.2 — Attribution + reward ledger.** Checkout captures a referral code (`?ref=`
+  persisted to checkout) → attributes the order (`orders.affiliate_id`; self-referral and
+  unknown codes ignored, never failing checkout). When the order is paid the affiliate earns
+  (rate × order subtotal) into `affiliate_rewards`, reversed on refund — mirrors the
+  commission engine, idempotent per order. The affiliate sees their code + earnings at
+  `/affiliate`. V28.
 - [ ] **8f — Notifications.** A `notifications` module: in-app inbox + email (reusing the
   existing mail sender), driven by domain events (order placed, delivered, payout paid,
   coupon granted…). Backfills the password-reset / alert paths into one channel.

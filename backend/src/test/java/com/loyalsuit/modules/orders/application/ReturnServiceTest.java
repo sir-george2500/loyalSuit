@@ -49,6 +49,7 @@ class ReturnServiceTest {
     @Mock private StockService stockService;
     @Mock private CommissionService commissionService;
     @Mock private com.loyalsuit.modules.loyalty.application.LoyaltyService loyaltyService;
+    @Mock private com.loyalsuit.modules.affiliate.application.AffiliateRewardService affiliateRewardService;
 
     @InjectMocks private ReturnService service;
 

@@ -59,6 +59,7 @@ class CheckoutServiceTest {
     @Mock private ShippingZoneResolver shippingZoneResolver;
     @Mock private CouponService couponService;
     @Mock private LoyaltyService loyaltyService;
+    @Mock private com.loyalsuit.modules.affiliate.application.AffiliateService affiliateService;
 
     @InjectMocks private CheckoutService checkoutService;
 
@@ -260,6 +261,28 @@ class CheckoutServiceTest {
                 .hasMessageContaining("isn't valid");
         verify(orderRepository, never()).save(any());
         verify(stockService, never()).reserve(any(), any(), any(), anyInt());
+    }
+
+    // ---- affiliate ----------------------------------------------------------
+
+    @Test
+    void checkout_withAReferralCode_attributesTheOrderToTheAffiliate() {
+        // Arrange — the code resolves to an affiliate
+        UUID affiliateId = UUID.randomUUID();
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(store(true)));
+        when(cartService.view("acme", TOKEN)).thenReturn(cartWithOneLine());
+        when(orderRepository.existsByOrderNumber(any())).thenReturn(false);
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(affiliateService.attributableAffiliateId(eq(tenantId), eq("RILEY"), any()))
+                .thenReturn(Optional.of(affiliateId));
+        CheckoutRequest request = request();
+        request.setReferralCode("RILEY");
+
+        // Act
+        checkoutService.checkout("acme", TOKEN, request, null, null, null);
+
+        // Assert — the order carries the affiliate (rewarded only once it's paid)
+        verify(orderRepository).save(org.mockito.ArgumentMatchers.argThat(o -> affiliateId.equals(o.getAffiliateId())));
     }
 
     // ---- loyalty points -----------------------------------------------------

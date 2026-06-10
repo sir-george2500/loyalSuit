@@ -139,6 +139,36 @@ class AffiliateServiceTest {
         verify(affiliateRepository, never()).save(any());
     }
 
+    // ---- attribution --------------------------------------------------------
+
+    @Test
+    void attributableAffiliateId_resolvesAnActiveCode() {
+        // Arrange
+        when(affiliateRepository.findByTenantIdAndCode(tenantId, "RILEY")).thenReturn(Optional.of(affiliate()));
+
+        // Act & Assert — a different buyer is attributed
+        assertThat(service.attributableAffiliateId(tenantId, "riley", UUID.randomUUID()))
+                .contains(affiliateId);
+    }
+
+    @Test
+    void attributableAffiliateId_ignoresSelfReferral() {
+        // Arrange — the buyer IS the affiliate's user
+        when(affiliateRepository.findByTenantIdAndCode(tenantId, "RILEY")).thenReturn(Optional.of(affiliate()));
+
+        // Act & Assert
+        assertThat(service.attributableAffiliateId(tenantId, "riley", userId)).isEmpty();
+    }
+
+    @Test
+    void attributableAffiliateId_ignoresAnUnknownCode() {
+        // Arrange
+        when(affiliateRepository.findByTenantIdAndCode(tenantId, "NOPE")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThat(service.attributableAffiliateId(tenantId, "nope", UUID.randomUUID())).isEmpty();
+    }
+
     @Test
     void list_resolvesAffiliateNames_fromTheUsers() {
         // Arrange

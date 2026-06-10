@@ -4,6 +4,7 @@ import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.ConflictException;
 import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.common.response.PageResponse;
+import com.loyalsuit.modules.affiliate.application.AffiliateRewardService;
 import com.loyalsuit.modules.inventory.application.StockService;
 import com.loyalsuit.modules.loyalty.application.LoyaltyService;
 import com.loyalsuit.modules.marketplace.application.CommissionService;
@@ -45,6 +46,7 @@ public class ReturnService {
     private final StockService stockService;
     private final CommissionService commissionService;
     private final LoyaltyService loyaltyService;
+    private final AffiliateRewardService affiliateRewardService;
 
     @Transactional
     public ReturnResponse requestReturn(String storeSlug, String orderNumber, CreateReturnRequest request) {
@@ -98,6 +100,7 @@ public class ReturnService {
         // Claw back any commission and loyalty points earned on this order (no-ops if unpaid).
         commissionService.reverseOrder(tenantId, order.getId());
         loyaltyService.reverseForOrder(tenantId, order.getId());
+        affiliateRewardService.reverseForOrder(tenantId, order.getId());
 
         ret.setStatus(ReturnStatus.APPROVED);
         return ReturnResponse.from(returnRepository.save(ret));

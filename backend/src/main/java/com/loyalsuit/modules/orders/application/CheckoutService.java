@@ -12,6 +12,7 @@ import com.loyalsuit.modules.orders.application.dto.CheckoutRequest;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
 import com.loyalsuit.modules.orders.application.port.ResolvedShippingZone;
 import com.loyalsuit.modules.orders.application.port.ShippingZoneResolver;
+import com.loyalsuit.modules.affiliate.application.AffiliateService;
 import com.loyalsuit.modules.loyalty.application.LoyaltyService;
 import com.loyalsuit.modules.promotions.application.CouponService;
 import com.loyalsuit.modules.promotions.application.dto.AppliedCoupon;
@@ -65,6 +66,7 @@ public class CheckoutService {
     private final ShippingZoneResolver shippingZoneResolver;
     private final CouponService couponService;
     private final LoyaltyService loyaltyService;
+    private final AffiliateService affiliateService;
 
     @Transactional
     public OrderResponse checkout(String storeSlug, String cartToken, CheckoutRequest request,
@@ -131,6 +133,8 @@ public class CheckoutService {
         order.setTenantId(tenant.getId());
         order.setOrderNumber(generateOrderNumber());
         order.setCustomerId(customerId);
+        order.setAffiliateId(affiliateService
+                .attributableAffiliateId(tenant.getId(), request.getReferralCode(), customerId).orElse(null));
         order.setCustomerName(request.getCustomerName().trim());
         order.setCustomerEmail(trimToNull(request.getCustomerEmail()));
         order.setCustomerPhone(trimToNull(request.getCustomerPhone()));
