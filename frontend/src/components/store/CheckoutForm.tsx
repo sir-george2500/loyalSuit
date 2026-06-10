@@ -10,6 +10,7 @@ import { cartApi } from '@/lib/api/cart'
 import { checkoutApi, type CheckoutPayload } from '@/lib/api/checkout'
 import { storePickupApi } from '@/lib/api/pickup'
 import { storeCouponApi } from '@/lib/api/coupons'
+import { loyaltyApi } from '@/lib/api/loyalty'
 import type { CouponPreview, OrderResponse } from '@/types'
 
 export default function CheckoutForm({ slug }: { slug: string }) {
@@ -48,7 +49,20 @@ export default function CheckoutForm({ slug }: { slug: string }) {
   const [couponInput, setCouponInput] = useState('')
   const [coupon, setCoupon] = useState<CouponPreview | null>(null)
   const [couponError, setCouponError] = useState<string | null>(null)
-  const discount = coupon?.discountAmount ?? 0
+  const couponDiscount = coupon?.discountAmount ?? 0
+
+  // Loyalty points: the endpoint is the auth gate — it only resolves for a signed-in customer.
+  const { data: loyalty } = useQuery({
+    queryKey: ['loyalty-me'],
+    queryFn: async () => (await loyaltyApi.me()).data.data,
+    retry: false,
+  })
+  const [usePoints, setUsePoints] = useState(false)
+  const pointValue = loyalty && loyalty.points > 0 ? loyalty.redeemableValue / loyalty.points : 0.01
+  const affordable = Math.max((cart?.subtotal ?? 0) - couponDiscount, 0)
+  const pointsToUse = usePoints && loyalty ? Math.min(loyalty.points, Math.floor(affordable / pointValue)) : 0
+  const pointsDiscount = pointsToUse * pointValue
+  const discount = couponDiscount + pointsDiscount
 
   const applyCoupon = useMutation({
     mutationFn: () => storeCouponApi.preview(slug, couponInput.trim()),
@@ -134,7 +148,12 @@ export default function CheckoutForm({ slug }: { slug: string }) {
         <form
           onSubmit={handleSubmit((data) => {
             setServerError(null)
-            place.mutate({ ...data, deliveryZoneId: zoneId || undefined, couponCode: coupon?.code || undefined })
+            place.mutate({
+              ...data,
+              deliveryZoneId: zoneId || undefined,
+              couponCode: coupon?.code || undefined,
+              pointsToRedeem: pointsToUse || undefined,
+            })
           })}
           noValidate
           className="space-y-4"
@@ -250,6 +269,18 @@ export default function CheckoutForm({ slug }: { slug: string }) {
             {couponError && <p className="mt-1 text-xs text-red-600">{couponError}</p>}
           </div>
 
+          {loyalty && loyalty.points > 0 && (
+            <label className="flex cursor-pointer items-center justify-between rounded-lg border border-gray-200 p-4 text-sm">
+              <span className="flex items-center gap-2">
+                <input type="checkbox" checked={usePoints} onChange={(e) => setUsePoints(e.target.checked)} />
+                Redeem my {loyalty.points} loyalty points
+              </span>
+              <span className="text-gray-600">
+                {pointsToUse > 0 ? `−${money.format(pointsDiscount)}` : `worth ${money.format(loyalty.redeemableValue)}`}
+              </span>
+            </label>
+          )}
+
           <Field label="Order notes" hint="optional">
             <textarea {...register('notes')} rows={2} className={input(false)} />
           </Field>
@@ -292,10 +323,16 @@ export default function CheckoutForm({ slug }: { slug: string }) {
               <span className="text-gray-600">Shipping</span>
               <span>{selectedZone ? money.format(shipping) : hasDelivery ? 'Select a zone' : 'Free'}</span>
             </div>
-            {discount > 0 && (
+            {couponDiscount > 0 && (
               <div className="flex justify-between text-green-700">
                 <span>Discount{coupon ? ` (${coupon.code})` : ''}</span>
-                <span>−{money.format(discount)}</span>
+                <span>−{money.format(couponDiscount)}</span>
+              </div>
+            )}
+            {pointsDiscount > 0 && (
+              <div className="flex justify-between text-green-700">
+                <span>Points ({pointsToUse})</span>
+                <span>−{money.format(pointsDiscount)}</span>
               </div>
             )}
             <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold">

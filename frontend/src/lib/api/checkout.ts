@@ -17,6 +17,8 @@ export interface CheckoutPayload {
   deliveryZoneId?: string
   /** A discount code; the server re-validates and prices it. */
   couponCode?: string
+  /** Loyalty points to spend (signed-in customers only). */
+  pointsToRedeem?: number
 }
 
 export const checkoutApi = {

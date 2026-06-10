@@ -1,5 +1,6 @@
 package com.loyalsuit.modules.loyalty.application;
 
+import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.common.response.PageResponse;
 import com.loyalsuit.modules.loyalty.application.dto.LoyaltyBalanceResponse;
@@ -72,6 +73,35 @@ public class LoyaltyService {
         accountRepository.save(account);
         transactionRepository.save(
                 new LoyaltyTransaction(tenantId, account.getId(), orderId, LoyaltyTransactionType.REVERSE, -removed));
+    }
+
+    /** Validate that a customer can spend {@code points} and return the discount they buy.
+     *  Records nothing — checkout commits the spend with the order via {@link #redeemForOrder}. */
+    public BigDecimal validateRedemption(UUID tenantId, UUID customerId, int points) {
+        if (points <= 0) {
+            return BigDecimal.ZERO;
+        }
+        int balance = accountRepository.findByTenantIdAndCustomerId(tenantId, customerId)
+                .map(LoyaltyAccount::getPoints)
+                .orElse(0);
+        if (points > balance) {
+            throw new BusinessException("You don't have enough points (" + balance + " available)");
+        }
+        return valueOf(points);
+    }
+
+    /** Spend points against a placed order (idempotent per order; balance is pre-validated). */
+    @Transactional
+    public void redeemForOrder(UUID tenantId, UUID customerId, UUID orderId, int points) {
+        if (points <= 0 || transactionRepository.existsByOrderIdAndType(orderId, LoyaltyTransactionType.REDEEM)) {
+            return;
+        }
+        LoyaltyAccount account = accountRepository.findByTenantIdAndCustomerId(tenantId, customerId)
+                .orElseThrow(() -> new BusinessException("No loyalty account to redeem from"));
+        int removed = account.debit(points);
+        accountRepository.save(account);
+        transactionRepository.save(
+                new LoyaltyTransaction(tenantId, account.getId(), orderId, LoyaltyTransactionType.REDEEM, -removed));
     }
 
     public LoyaltyBalanceResponse balanceFor(UUID tenantId, UUID customerId) {

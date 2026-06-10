@@ -18,6 +18,10 @@ public class CheckoutRequest {
     @Size(max = 64)
     private String couponCode;
 
+    /** Loyalty points to spend (requires an authenticated customer). Null/0 = none. */
+    @jakarta.validation.constraints.Min(value = 0, message = "Points can't be negative")
+    private Integer pointsToRedeem;
+
     @NotBlank(message = "Your name is required")
     @Size(max = 255)
     private String customerName;

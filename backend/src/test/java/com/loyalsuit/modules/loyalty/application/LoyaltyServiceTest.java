@@ -134,6 +134,47 @@ class LoyaltyServiceTest {
         verify(accountRepository, never()).save(any());
     }
 
+    // ---- redeem -------------------------------------------------------------
+
+    @Test
+    void validateRedemption_returnsTheDiscount_whenTheBalanceCovers() {
+        // Arrange — 250 points available, spending 100 → $1.00
+        when(accountRepository.findByTenantIdAndCustomerId(tenantId, customerId)).thenReturn(Optional.of(account(250)));
+
+        // Act & Assert
+        assertThat(service.validateRedemption(tenantId, customerId, 100)).isEqualByComparingTo("1.00");
+    }
+
+    @Test
+    void validateRedemption_rejects_whenTheBalanceIsTooLow() {
+        // Arrange — only 50 points, trying to spend 100
+        when(accountRepository.findByTenantIdAndCustomerId(tenantId, customerId)).thenReturn(Optional.of(account(50)));
+
+        // Act & Assert
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.validateRedemption(tenantId, customerId, 100))
+                .isInstanceOf(com.loyalsuit.common.exception.BusinessException.class)
+                .hasMessageContaining("enough points");
+    }
+
+    @Test
+    void redeemForOrder_debitsTheBalance_andRecordsTheSpend() {
+        // Arrange — 250 points, spending 100
+        LoyaltyAccount account = account(250);
+        when(transactionRepository.existsByOrderIdAndType(orderId, LoyaltyTransactionType.REDEEM)).thenReturn(false);
+        when(accountRepository.findByTenantIdAndCustomerId(tenantId, customerId)).thenReturn(Optional.of(account));
+        when(accountRepository.save(any(LoyaltyAccount.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        service.redeemForOrder(tenantId, customerId, orderId, 100);
+
+        // Assert
+        assertThat(account.getPoints()).isEqualTo(150);
+        ArgumentCaptor<LoyaltyTransaction> tx = ArgumentCaptor.forClass(LoyaltyTransaction.class);
+        verify(transactionRepository).save(tx.capture());
+        assertThat(tx.getValue().getType()).isEqualTo(LoyaltyTransactionType.REDEEM);
+        assertThat(tx.getValue().getPoints()).isEqualTo(-100);
+    }
+
     // ---- balance ------------------------------------------------------------
 
     @Test
