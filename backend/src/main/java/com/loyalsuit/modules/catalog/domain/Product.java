@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -34,6 +35,16 @@ public class Product extends TenantScopedEntity {
 
     @Column(name = "compare_at_price", precision = 10, scale = 2)
     private BigDecimal compareAtPrice;
+
+    /** A time-boxed flash-deal price; in effect only within [saleStartsAt, saleEndsAt]. */
+    @Column(name = "sale_price", precision = 10, scale = 2)
+    private BigDecimal salePrice;
+
+    @Column(name = "sale_starts_at")
+    private Instant saleStartsAt;
+
+    @Column(name = "sale_ends_at")
+    private Instant saleEndsAt;
 
     @Column
     private String sku;
@@ -62,6 +73,18 @@ public class Product extends TenantScopedEntity {
         this.name = name;
         this.slug = slug;
         this.price = price;
+    }
+
+    /** True when a flash-deal price is set and the moment falls inside its window. */
+    public boolean onSale(Instant now) {
+        return salePrice != null
+                && (saleStartsAt == null || !now.isBefore(saleStartsAt))
+                && (saleEndsAt == null || !now.isAfter(saleEndsAt));
+    }
+
+    /** The price to charge now: the flash-deal price while on sale, otherwise the list price. */
+    public BigDecimal effectivePrice(Instant now) {
+        return onSale(now) ? salePrice : price;
     }
 
     public void activate() {

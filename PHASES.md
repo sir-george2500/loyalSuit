@@ -422,9 +422,12 @@ New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `no
   unique `order_id` index backstops a double-record. `orders → promotions` direct (no cycle —
   promotions doesn't depend on orders). Storefront checkout gains apply/remove a code with a
   live discount line.
-- [ ] **8c — Flash deals (scheduled product discounts).** A product can carry a time-boxed
-  sale price; the storefront and checkout use the sale price only inside the window. Overlap
-  rules; admin schedule.
+- [x] **8c — Flash deals (scheduled product discounts).** A product carries a time-boxed
+  `salePrice` (+ window); `Product.effectivePrice(now)` is used everywhere a product is
+  priced — cart/checkout, storefront, POS — so the sale applies only inside the window
+  (V25). The storefront shows the regular price struck through (reuses `compareAtPrice`),
+  needing no storefront change. Sale price validated below list price; end after start.
+  Authored on the (owner) admin product form — flash deals are an owner-controlled promotion.
 - [ ] **8d — Loyalty points.** Customers earn points on paid orders (earn rate), held in a
   points ledger; redeem points for a capped checkout discount. Earn on COD settlement / pay;
   reverse on refund (mirrors the commission clawback pattern).

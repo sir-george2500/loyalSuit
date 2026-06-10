@@ -298,6 +298,13 @@ export default function ProductsView() {
   )
 }
 
+/** ISO instant → value for a <input type="datetime-local"> (local time, no seconds). */
+function toLocalInput(iso?: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+}
+
 function ProductFormModal({
   target,
   categories,
@@ -326,6 +333,9 @@ function ProductFormModal({
       slug: current?.slug ?? '',
       price: current?.price ?? undefined,
       compareAtPrice: current?.compareAtPrice ?? undefined,
+      salePrice: current?.salePrice ?? undefined,
+      saleStartsAt: toLocalInput(current?.saleStartsAt),
+      saleEndsAt: toLocalInput(current?.saleEndsAt),
       sku: current?.sku ?? '',
       barcode: current?.barcode ?? '',
       categoryId: current?.categoryId ?? '',
@@ -341,6 +351,9 @@ function ProductFormModal({
         slug: form.slug,
         price: form.price,
         compareAtPrice: form.compareAtPrice ?? undefined,
+        salePrice: form.salePrice ?? null,
+        saleStartsAt: form.saleStartsAt ? new Date(form.saleStartsAt).toISOString() : null,
+        saleEndsAt: form.saleEndsAt ? new Date(form.saleEndsAt).toISOString() : null,
         sku: form.sku || undefined,
         barcode: form.barcode || undefined,
         categoryId: form.categoryId || undefined,
@@ -422,6 +435,26 @@ function ProductFormModal({
                 ))}
               </select>
             </Field>
+          </div>
+
+          <div className="rounded-lg border border-base-300 p-3">
+            <p className="mb-2 text-sm font-medium text-base-content/70">Flash deal (optional)</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <Field label="Sale price" hint="below list" error={errors.salePrice?.message}>
+                <input
+                  type="number"
+                  step="0.01"
+                  {...register('salePrice')}
+                  className={`input input-bordered w-full ${errors.salePrice ? 'input-error' : ''}`}
+                />
+              </Field>
+              <Field label="Starts" hint="optional">
+                <input type="datetime-local" {...register('saleStartsAt')} className="input input-bordered w-full" />
+              </Field>
+              <Field label="Ends" hint="optional">
+                <input type="datetime-local" {...register('saleEndsAt')} className="input input-bordered w-full" />
+              </Field>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

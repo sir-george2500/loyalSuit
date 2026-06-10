@@ -127,6 +127,40 @@ class ProductServiceTest {
                 .isInstanceOf(BusinessException.class).hasMessageContaining("Category does not exist");
     }
 
+    // ---- flash deals --------------------------------------------------------
+
+    @Test
+    void create_withAValidFlashDeal_schedulesTheSalePrice() {
+        // Arrange — list 29.99, sale 19.99 running now
+        var request = createRequest();
+        request.setSalePrice(BigDecimal.valueOf(19.99));
+        request.setSaleStartsAt(java.time.Instant.now().minusSeconds(60));
+        request.setSaleEndsAt(java.time.Instant.now().plusSeconds(60));
+        when(productRepository.existsBySlugAndTenantId("test-product", tenantId)).thenReturn(false);
+        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        ProductResponse response = productService.create(request, tenantId, actorId, ADMIN);
+
+        // Assert
+        assertThat(response.getSalePrice()).isEqualByComparingTo("19.99");
+        assertThat(response.isOnSale()).isTrue();
+    }
+
+    @Test
+    void create_aSalePriceAtOrAboveTheListPrice_isRejected() {
+        // Arrange — sale 35 >= list 29.99
+        var request = createRequest();
+        request.setSalePrice(BigDecimal.valueOf(35.00));
+        when(productRepository.existsBySlugAndTenantId("test-product", tenantId)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> productService.create(request, tenantId, actorId, ADMIN))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("below the regular price");
+        verify(productRepository, never()).save(any());
+    }
+
     // ---- vendor scoping -----------------------------------------------------
 
     @Test

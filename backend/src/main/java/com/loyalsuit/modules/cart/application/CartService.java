@@ -103,7 +103,8 @@ public class CartService {
                 continue; // product gone or unpublished — drop the line
             }
 
-            BigDecimal unitPrice = product.getPrice();
+            // A product's flash-deal price applies to its base line; variants keep their own price.
+            BigDecimal unitPrice = product.effectivePrice(java.time.Instant.now());
             String variantName = null;
             if (item.getVariantId() != null) {
                 ProductVariant variant = variantRepository.findById(item.getVariantId())

@@ -17,6 +17,10 @@ public class ProductResponse {
     private final String description;
     private final BigDecimal price;
     private final BigDecimal compareAtPrice;
+    private final BigDecimal salePrice;
+    private final Instant saleStartsAt;
+    private final Instant saleEndsAt;
+    private final boolean onSale;
     private final String sku;
     private final String barcode;
     private final UUID categoryId;
@@ -33,6 +37,10 @@ public class ProductResponse {
         this.description = product.getDescription();
         this.price = product.getPrice();
         this.compareAtPrice = product.getCompareAtPrice();
+        this.salePrice = product.getSalePrice();
+        this.saleStartsAt = product.getSaleStartsAt();
+        this.saleEndsAt = product.getSaleEndsAt();
+        this.onSale = product.onSale(Instant.now());
         this.sku = product.getSku();
         this.barcode = product.getBarcode();
         this.categoryId = product.getCategoryId();

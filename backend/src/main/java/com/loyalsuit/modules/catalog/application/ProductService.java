@@ -91,6 +91,8 @@ public class ProductService {
         product.setCategoryId(request.getCategoryId());
         product.setVendorId(VENDOR_ROLE.equals(actorRole) ? actorId : null);
         product.setDigital(request.isDigital());
+        applySale(product, request.getPrice(), request.getSalePrice(),
+                request.getSaleStartsAt(), request.getSaleEndsAt());
 
         return new ProductResponse(productRepository.save(product));
     }
@@ -115,8 +117,31 @@ public class ProductService {
         product.setBarcode(request.getBarcode());
         product.setCategoryId(request.getCategoryId());
         product.setDigital(request.isDigital());
+        applySale(product, request.getPrice(), request.getSalePrice(),
+                request.getSaleStartsAt(), request.getSaleEndsAt());
 
         return new ProductResponse(productRepository.save(product));
+    }
+
+    /** Schedules (or clears) a flash deal, validating it sits below the list price and that
+     *  the window's end is after its start. A null sale price clears any existing deal. */
+    private static void applySale(Product product, java.math.BigDecimal price, java.math.BigDecimal salePrice,
+                                  java.time.Instant startsAt, java.time.Instant endsAt) {
+        if (salePrice == null) {
+            product.setSalePrice(null);
+            product.setSaleStartsAt(null);
+            product.setSaleEndsAt(null);
+            return;
+        }
+        if (salePrice.compareTo(price) >= 0) {
+            throw new BusinessException("The sale price must be below the regular price");
+        }
+        if (startsAt != null && endsAt != null && !endsAt.isAfter(startsAt)) {
+            throw new BusinessException("The sale must end after it starts");
+        }
+        product.setSalePrice(salePrice);
+        product.setSaleStartsAt(startsAt);
+        product.setSaleEndsAt(endsAt);
     }
 
     @Transactional

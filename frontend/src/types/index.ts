@@ -19,6 +19,10 @@ export interface Product {
   description?: string
   price: number
   compareAtPrice?: number
+  salePrice?: number | null
+  saleStartsAt?: string | null
+  saleEndsAt?: string | null
+  onSale?: boolean
   sku?: string
   barcode?: string
   categoryId?: string
@@ -208,6 +212,9 @@ export interface ProductWriteRequest {
   description?: string
   price: number
   compareAtPrice?: number
+  salePrice?: number | null
+  saleStartsAt?: string | null
+  saleEndsAt?: string | null
   sku?: string
   barcode?: string
   categoryId?: string
