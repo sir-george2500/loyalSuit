@@ -602,3 +602,15 @@ export interface Affiliate {
   active: boolean
   createdAt: string
 }
+
+export type NotificationType = 'ORDER_PLACED' | 'ORDER_DELIVERED' | 'PAYOUT_PAID' | 'GENERAL'
+
+export interface AppNotification {
+  id: string
+  type: NotificationType
+  title: string
+  body?: string | null
+  link?: string | null
+  read: boolean
+  createdAt: string
+}

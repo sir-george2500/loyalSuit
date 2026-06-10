@@ -43,7 +43,7 @@ into another's tables — they collaborate through application services / events
 | **affiliate** | referral codes, rewards | ✅ Phase 8: registry + attribution + reward ledger live |
 | **hrm** | employees, attendance, payroll | ⬜ planned |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
-| **notifications** | email, SMS, push, in-app | 🟡 transactional email live (onboarding, password reset) |
+| **notifications** | email, in-app inbox | 🟡 in-app inbox live (Phase 8f); transactional email live; SMS/push planned |
 
 ---
 
@@ -398,7 +398,7 @@ ledger — a delivery is layered on an order, mirroring how POS layered on order
   is flagged on the audit trail; and a test locking the invariant (paid-out → refunded →
   negative balance **blocks** the next withdrawal, future earnings clear it).
 
-## Phase 8 — Marketing, loyalty & engagement  ⟵ IN PROGRESS
+## Phase 8 — Marketing, loyalty & engagement  ✅ COMPLETE (2026-06-10)
 **Goal:** the levers a store pulls to win and keep customers — discounts, time-boxed deals,
 points, referrals, and the messages that tie them together — each server-validated so a
 client can never grant itself a price it didn't earn.
@@ -450,9 +450,12 @@ New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `no
   (rate × order subtotal) into `affiliate_rewards`, reversed on refund — mirrors the
   commission engine, idempotent per order. The affiliate sees their code + earnings at
   `/affiliate`. V28.
-- [ ] **8f — Notifications.** A `notifications` module: in-app inbox + email (reusing the
-  existing mail sender), driven by domain events (order placed, delivered, payout paid,
-  coupon granted…). Backfills the password-reset / alert paths into one channel.
+- [x] **8f — Notifications (in-app inbox).** New `notifications` module: per-user inbox with
+  unread count + mark-read/all-read (`/api/v1/notifications`, any authenticated user, scoped
+  to the caller). `NotificationService.notify` is called by other modules when something
+  notable happens — wired so far for **order placed** (→ customer) and **payout paid** (→
+  vendor). Storefront/admin `/notifications` page. V29. _(Email delivery on top of `notify`,
+  and more event hooks, are a fast-follow.)_
 
 ## Phase 9 — HRM
 - [ ] Employees, attendance, leave, payroll, awards (feature-gated by plan)
