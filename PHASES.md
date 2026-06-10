@@ -38,6 +38,7 @@ into another's tables — they collaborate through application services / events
 | **payments** | gateways, transactions, webhooks, refunds | ⬜ schema only |
 | **dashboard/reporting** | tenant analytics, KPIs | ✅ live (read model) |
 | **fulfilment** | delivery agents, pickup points, tracking | ✅ live (Phase 7: agents, deliveries, POD+COD, tracking, zones) |
+| **promotions** | coupons, flash deals | 🟡 Phase 8: coupons (model + admin + preview) live |
 | **hrm** | employees, attendance, payroll | ⬜ planned |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
 | **notifications** | email, SMS, push, in-app | 🟡 transactional email live (onboarding, password reset) |
@@ -395,9 +396,40 @@ ledger — a delivery is layered on an order, mirroring how POS layered on order
   is flagged on the audit trail; and a test locking the invariant (paid-out → refunded →
   negative balance **blocks** the next withdrawal, future earnings clear it).
 
-## Phase 8 — Marketing, loyalty & engagement
-- [ ] Coupons, flash deals; loyalty points; affiliate program
-- [ ] Notifications (email/SMS/push/in-app) — also backfills password-reset, alerts
+## Phase 8 — Marketing, loyalty & engagement  ⟵ IN PROGRESS
+**Goal:** the levers a store pulls to win and keep customers — discounts, time-boxed deals,
+points, referrals, and the messages that tie them together — each server-validated so a
+client can never grant itself a price it didn't earn.
+**Exit criteria:** a coupon discounts an order within its rules (and exactly its allowed
+number of times); a flash deal prices a product only inside its window; points earn on paid
+orders and redeem for a capped discount; an affiliate referral is attributed to a placed
+order; key events send a notification the customer can see.
+
+New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `notifications`
+— hexagonal, tenant-scoped. Discounts reuse the checkout total pipeline (subtotal + shipping
+− discount), the seam zone-shipping already established.
+
+- [x] **8a — Coupons: model + admin CRUD + public validate.** `Coupon` (code unique per
+  tenant; PERCENT / FIXED_AMOUNT; min-subtotal, max-discount cap, total + per-customer usage
+  limits, validity window, active) and a `coupon_redemptions` ledger (V24). Owner admin CRUD
+  (`/admin/coupons`) + a public preview (`GET /store/{slug}/coupons/{code}` against the
+  server-priced cart, no redemption). Discount math lives on the aggregate; the redemption
+  ledger is unique on order_id (the 8b idempotency seam).
+- [ ] **8b — Coupon redemption at checkout.** Checkout takes a `couponCode`; the server
+  re-validates (active, in-window, min met, under limits), applies the discount to the order
+  total, and records a redemption — idempotently with the order, so a retried checkout can't
+  double-spend a coupon. Enforces total + per-customer limits.
+- [ ] **8c — Flash deals (scheduled product discounts).** A product can carry a time-boxed
+  sale price; the storefront and checkout use the sale price only inside the window. Overlap
+  rules; admin schedule.
+- [ ] **8d — Loyalty points.** Customers earn points on paid orders (earn rate), held in a
+  points ledger; redeem points for a capped checkout discount. Earn on COD settlement / pay;
+  reverse on refund (mirrors the commission clawback pattern).
+- [ ] **8e — Affiliate program.** Affiliate codes/links, referral attribution captured on a
+  placed order, and a reward ledger for the affiliate (reuses the payout/balance pattern).
+- [ ] **8f — Notifications.** A `notifications` module: in-app inbox + email (reusing the
+  existing mail sender), driven by domain events (order placed, delivered, payout paid,
+  coupon granted…). Backfills the password-reset / alert paths into one channel.
 
 ## Phase 9 — HRM
 - [ ] Employees, attendance, leave, payroll, awards (feature-gated by plan)

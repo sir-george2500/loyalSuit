@@ -10,6 +10,7 @@ import {
   Truck,
   PackageCheck,
   MapPin,
+  Ticket,
   Store,
   Wallet,
   Percent,
@@ -92,6 +93,12 @@ export const ADMIN_NAV: NavSection[] = [
       { label: 'Deliveries', href: '/admin/deliveries', icon: PackageCheck, roles: STORE_ROLES, status: 'available' },
       { label: 'Delivery Agents', href: '/admin/delivery-agents', icon: Truck, roles: OWNER_ROLES, status: 'available' },
       { label: 'Pickup Points', href: '/admin/pickup-points', icon: MapPin, roles: OWNER_ROLES, status: 'available' },
+    ],
+  },
+  {
+    title: 'Marketing',
+    items: [
+      { label: 'Coupons', href: '/admin/coupons', icon: Ticket, roles: OWNER_ROLES, status: 'available' },
     ],
   },
   {
