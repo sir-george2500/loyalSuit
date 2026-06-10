@@ -166,6 +166,7 @@ class CouponServiceTest {
     void preview_anUnknownOrInactiveCode_isRejected() {
         // Arrange
         stubStore();
+        stubCart("80.00");
         when(couponRepository.findByTenantIdAndCode(tenantId, "SAVE10")).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -188,5 +189,50 @@ class CouponServiceTest {
         assertThatThrownBy(() -> service.preview("acme", "save10", "tok"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("usage limit");
+    }
+
+    // ---- checkout (validate + redeem) ---------------------------------------
+
+    @Test
+    void validateForCheckout_returnsTheDiscountToApply() {
+        // Arrange — 25% off a $200 subtotal = $50
+        when(couponRepository.findByTenantIdAndCode(tenantId, "SAVE10"))
+                .thenReturn(Optional.of(coupon(DiscountType.PERCENT, "25")));
+
+        // Act
+        var applied = service.validateForCheckout(tenantId, "save10", new BigDecimal("200.00"), "buyer@x.dev");
+
+        // Assert
+        assertThat(applied.code()).isEqualTo("SAVE10");
+        assertThat(applied.discount()).isEqualByComparingTo("50.00");
+    }
+
+    @Test
+    void validateForCheckout_whenTheCustomerHitTheirLimit_isRejected() {
+        // Arrange — per-customer limit 1, this email already used it once
+        Coupon coupon = coupon(DiscountType.PERCENT, "10");
+        coupon.setPerCustomerLimit(1);
+        when(couponRepository.findByTenantIdAndCode(tenantId, "SAVE10")).thenReturn(Optional.of(coupon));
+        when(redemptionRepository.countByCouponIdAndCustomerEmail(coupon.getId(), "buyer@x.dev")).thenReturn(1L);
+
+        // Act & Assert
+        assertThatThrownBy(() ->
+                service.validateForCheckout(tenantId, "save10", new BigDecimal("80.00"), "Buyer@X.dev"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("maximum number of times");
+    }
+
+    @Test
+    void recordRedemption_writesALedgerRow() {
+        // Arrange
+        var applied = new com.loyalsuit.modules.promotions.application.dto.AppliedCoupon(
+                UUID.randomUUID(), "SAVE10", new BigDecimal("10.00"));
+        UUID orderId = UUID.randomUUID();
+
+        // Act
+        service.recordRedemption(tenantId, applied, orderId, "buyer@x.dev");
+
+        // Assert
+        verify(redemptionRepository).save(any());
     }
 }

@@ -15,6 +15,8 @@ export interface CheckoutPayload {
   notes?: string
   /** The chosen delivery zone; its fee becomes shipping. */
   deliveryZoneId?: string
+  /** A discount code; the server re-validates and prices it. */
+  couponCode?: string
 }
 
 export const checkoutApi = {

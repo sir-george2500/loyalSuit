@@ -12,6 +12,8 @@ import com.loyalsuit.modules.orders.application.dto.CheckoutRequest;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
 import com.loyalsuit.modules.orders.application.port.ResolvedShippingZone;
 import com.loyalsuit.modules.orders.application.port.ShippingZoneResolver;
+import com.loyalsuit.modules.promotions.application.CouponService;
+import com.loyalsuit.modules.promotions.application.dto.AppliedCoupon;
 import com.loyalsuit.modules.orders.domain.Order;
 import com.loyalsuit.modules.orders.domain.OrderItem;
 import com.loyalsuit.modules.orders.domain.OrderStatus;
@@ -60,6 +62,7 @@ public class CheckoutService {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final ShippingZoneResolver shippingZoneResolver;
+    private final CouponService couponService;
 
     @Transactional
     public OrderResponse checkout(String storeSlug, String cartToken, CheckoutRequest request,
@@ -91,6 +94,16 @@ public class CheckoutService {
             address.put("deliveryZone", zone.zoneName());
         }
 
+        // A coupon discounts the subtotal. The server re-validates the code (the storefront
+        // preview is advisory) and prices it; the redemption is recorded after the order exists.
+        BigDecimal discount = BigDecimal.ZERO;
+        AppliedCoupon coupon = null;
+        if (StringUtils.hasText(request.getCouponCode())) {
+            coupon = couponService.validateForCheckout(
+                    tenant.getId(), request.getCouponCode(), cart.subtotal(), request.getCustomerEmail());
+            discount = coupon.discount();
+        }
+
         // Reserve stock for every line before creating the order. A shortfall throws,
         // rolling back any decrements already applied in this transaction.
         for (CartItemView line : cart.items()) {
@@ -110,8 +123,8 @@ public class CheckoutService {
         order.setSubtotal(cart.subtotal());
         order.setShippingAmount(shipping);
         order.setTaxAmount(BigDecimal.ZERO);
-        order.setDiscountAmount(BigDecimal.ZERO);
-        order.setTotal(cart.subtotal().add(shipping));
+        order.setDiscountAmount(discount);
+        order.setTotal(cart.subtotal().add(shipping).subtract(discount));
         order.setCurrency(cart.currency());
         order.setShippingAddress(address);
         order.setNotes(trimToNull(request.getNotes()));
@@ -131,6 +144,10 @@ public class CheckoutService {
             items.add(item);
         }
         orderItemRepository.saveAll(items);
+
+        if (coupon != null) {
+            couponService.recordRedemption(tenant.getId(), coupon, saved.getId(), request.getCustomerEmail());
+        }
 
         cartService.clear(storeSlug, cartToken);
         return OrderResponse.from(saved, items);

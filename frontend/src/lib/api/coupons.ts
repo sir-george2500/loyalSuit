@@ -1,4 +1,5 @@
 import apiClient from './client'
+import { getCartToken } from '@/lib/cart/token'
 import type { ApiResponse, Coupon, CouponPreview, DiscountType, PageResponse } from '@/types'
 
 export interface CouponPayload {
@@ -31,5 +32,6 @@ export const storeCouponApi = {
   preview: (slug: string, code: string) =>
     apiClient.get<ApiResponse<CouponPreview>>(
       `/api/v1/store/${encodeURIComponent(slug)}/coupons/${encodeURIComponent(code)}`,
+      { headers: { 'X-Cart-Token': getCartToken() } },
     ),
 }
