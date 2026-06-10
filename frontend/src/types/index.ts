@@ -591,3 +591,14 @@ export interface LoyaltyBalance {
   points: number
   redeemableValue: number
 }
+
+export interface Affiliate {
+  id: string
+  userId: string
+  name?: string | null
+  email?: string | null
+  code: string
+  rewardRate: number
+  active: boolean
+  createdAt: string
+}

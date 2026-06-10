@@ -38,7 +38,9 @@ into another's tables — they collaborate through application services / events
 | **payments** | gateways, transactions, webhooks, refunds | ⬜ schema only |
 | **dashboard/reporting** | tenant analytics, KPIs | ✅ live (read model) |
 | **fulfilment** | delivery agents, pickup points, tracking | ✅ live (Phase 7: agents, deliveries, POD+COD, tracking, zones) |
-| **promotions** | coupons, flash deals | 🟡 Phase 8: coupons (model + admin + preview) live |
+| **promotions** | coupons, flash deals | ✅ Phase 8: coupons + flash deals live |
+| **loyalty** | points earn / redeem | ✅ Phase 8: earn on paid orders, redeem at checkout |
+| **affiliate** | referral codes, rewards | 🟡 Phase 8: registry live; attribution + rewards next |
 | **hrm** | employees, attendance, payroll | ⬜ planned |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
 | **notifications** | email, SMS, push, in-app | 🟡 transactional email live (onboarding, password reset) |
@@ -439,8 +441,12 @@ New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `no
   coupon − points`), and records a REDEEM against the order. Storefront checkout shows a
   "redeem my N points" option (the `/loyalty/me` endpoint is itself the auth gate) with a live
   points line.
-- [ ] **8e — Affiliate program.** Affiliate codes/links, referral attribution captured on a
-  placed order, and a reward ledger for the affiliate (reuses the payout/balance pattern).
+- [x] **8e.1 — Affiliate registry.** New `affiliate` module. An admin enrols a tenant user
+  (by email) as an affiliate with a unique referral code + reward rate; owner CRUD
+  (`/admin/affiliates`), code normalised + unique per tenant, one profile per user. V27.
+- [ ] **8e.2 — Attribution + reward ledger.** Checkout captures a referral code → attributes
+  the order to the affiliate; when the order is paid the affiliate earns (rate × order),
+  reversed on refund (mirrors commission); affiliate views their earnings/balance.
 - [ ] **8f — Notifications.** A `notifications` module: in-app inbox + email (reusing the
   existing mail sender), driven by domain events (order placed, delivered, payout paid,
   coupon granted…). Backfills the password-reset / alert paths into one channel.

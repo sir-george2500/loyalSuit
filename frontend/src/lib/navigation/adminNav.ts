@@ -11,6 +11,7 @@ import {
   PackageCheck,
   MapPin,
   Ticket,
+  Share2,
   Store,
   Wallet,
   Percent,
@@ -99,6 +100,7 @@ export const ADMIN_NAV: NavSection[] = [
     title: 'Marketing',
     items: [
       { label: 'Coupons', href: '/admin/coupons', icon: Ticket, roles: OWNER_ROLES, status: 'available' },
+      { label: 'Affiliates', href: '/admin/affiliates', icon: Share2, roles: OWNER_ROLES, status: 'available' },
     ],
   },
   {
