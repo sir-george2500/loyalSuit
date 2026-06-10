@@ -12,6 +12,7 @@ import com.loyalsuit.modules.orders.application.dto.CheckoutRequest;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
 import com.loyalsuit.modules.orders.application.port.ResolvedShippingZone;
 import com.loyalsuit.modules.orders.application.port.ShippingZoneResolver;
+import com.loyalsuit.modules.loyalty.application.LoyaltyService;
 import com.loyalsuit.modules.promotions.application.CouponService;
 import com.loyalsuit.modules.promotions.application.dto.AppliedCoupon;
 import com.loyalsuit.modules.orders.domain.Order;
@@ -63,6 +64,7 @@ public class CheckoutService {
     private final ProductRepository productRepository;
     private final ShippingZoneResolver shippingZoneResolver;
     private final CouponService couponService;
+    private final LoyaltyService loyaltyService;
 
     @Transactional
     public OrderResponse checkout(String storeSlug, String cartToken, CheckoutRequest request,
@@ -104,6 +106,21 @@ public class CheckoutService {
             discount = coupon.discount();
         }
 
+        // Loyalty points: a signed-in customer can spend points for a further discount, capped
+        // so the goods can't be discounted below zero (after any coupon). Spent once the order exists.
+        UUID customerId = resolveCustomer(tenant, authUserId, authTenantId);
+        int pointsToRedeem = request.getPointsToRedeem() == null ? 0 : request.getPointsToRedeem();
+        if (pointsToRedeem > 0) {
+            if (customerId == null) {
+                throw new BusinessException("Sign in to redeem points");
+            }
+            BigDecimal pointsDiscount = loyaltyService.validateRedemption(tenant.getId(), customerId, pointsToRedeem);
+            if (pointsDiscount.compareTo(cart.subtotal().subtract(discount)) > 0) {
+                throw new BusinessException("That's more points than this order can use");
+            }
+            discount = discount.add(pointsDiscount);
+        }
+
         // Reserve stock for every line before creating the order. A shortfall throws,
         // rolling back any decrements already applied in this transaction.
         for (CartItemView line : cart.items()) {
@@ -113,7 +130,7 @@ public class CheckoutService {
         Order order = new Order();
         order.setTenantId(tenant.getId());
         order.setOrderNumber(generateOrderNumber());
-        order.setCustomerId(resolveCustomer(tenant, authUserId, authTenantId));
+        order.setCustomerId(customerId);
         order.setCustomerName(request.getCustomerName().trim());
         order.setCustomerEmail(trimToNull(request.getCustomerEmail()));
         order.setCustomerPhone(trimToNull(request.getCustomerPhone()));
@@ -147,6 +164,9 @@ public class CheckoutService {
 
         if (coupon != null) {
             couponService.recordRedemption(tenant.getId(), coupon, saved.getId(), request.getCustomerEmail());
+        }
+        if (pointsToRedeem > 0) {
+            loyaltyService.redeemForOrder(tenant.getId(), customerId, saved.getId(), pointsToRedeem);
         }
 
         cartService.clear(storeSlug, cartToken);

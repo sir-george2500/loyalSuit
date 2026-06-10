@@ -586,3 +586,8 @@ export interface CouponPreview {
   description?: string | null
   discountAmount: number
 }
+
+export interface LoyaltyBalance {
+  points: number
+  redeemableValue: number
+}

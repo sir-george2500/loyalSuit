@@ -11,6 +11,7 @@ import com.loyalsuit.modules.inventory.application.StockService;
 import com.loyalsuit.modules.orders.application.dto.CheckoutRequest;
 import com.loyalsuit.modules.orders.application.port.ResolvedShippingZone;
 import com.loyalsuit.modules.orders.application.port.ShippingZoneResolver;
+import com.loyalsuit.modules.loyalty.application.LoyaltyService;
 import com.loyalsuit.modules.promotions.application.CouponService;
 import com.loyalsuit.modules.promotions.application.dto.AppliedCoupon;
 import com.loyalsuit.modules.orders.domain.OrderItem;
@@ -57,6 +58,7 @@ class CheckoutServiceTest {
     @Mock private ProductRepository productRepository;
     @Mock private ShippingZoneResolver shippingZoneResolver;
     @Mock private CouponService couponService;
+    @Mock private LoyaltyService loyaltyService;
 
     @InjectMocks private CheckoutService checkoutService;
 
@@ -258,6 +260,67 @@ class CheckoutServiceTest {
                 .hasMessageContaining("isn't valid");
         verify(orderRepository, never()).save(any());
         verify(stockService, never()).reserve(any(), any(), any(), anyInt());
+    }
+
+    // ---- loyalty points -----------------------------------------------------
+
+    @Test
+    void checkout_redeemingPoints_appliesTheDiscount_andSpendsThem() {
+        // Arrange — signed-in customer spends 1000 points worth $10 off a $40 cart
+        UUID userId = UUID.randomUUID();
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(store(true)));
+        when(cartService.view("acme", TOKEN)).thenReturn(cartWithOneLine());
+        when(orderRepository.existsByOrderNumber(any())).thenReturn(false);
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            ReflectionTestUtils.setField(o, "id", UUID.randomUUID());
+            return o;
+        });
+        when(loyaltyService.validateRedemption(tenantId, userId, 1000)).thenReturn(new BigDecimal("10.00"));
+        CheckoutRequest request = request();
+        request.setPointsToRedeem(1000);
+
+        // Act — authenticated customer of this tenant
+        OrderResponse response = checkoutService.checkout("acme", TOKEN, request, null, userId, tenantId);
+
+        // Assert — total reduced by the points value; the spend is recorded against the order
+        assertThat(response.total()).isEqualByComparingTo("30");
+        ArgumentCaptor<Order> order = ArgumentCaptor.forClass(Order.class);
+        verify(orderRepository).save(order.capture());
+        assertThat(order.getValue().getDiscountAmount()).isEqualByComparingTo("10.00");
+        verify(loyaltyService).redeemForOrder(eq(tenantId), eq(userId), any(), eq(1000));
+    }
+
+    @Test
+    void checkout_redeemingPointsWithoutSigningIn_isRejected() {
+        // Arrange — points requested but the checkout is a guest (no auth)
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(store(true)));
+        when(cartService.view("acme", TOKEN)).thenReturn(cartWithOneLine());
+        CheckoutRequest request = request();
+        request.setPointsToRedeem(500);
+
+        // Act & Assert
+        assertThatThrownBy(() -> checkoutService.checkout("acme", TOKEN, request, null, null, null))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("Sign in to redeem");
+        verify(orderRepository, never()).save(any());
+    }
+
+    @Test
+    void checkout_redeemingMorePointsThanTheOrderCanUse_isRejected() {
+        // Arrange — points worth $50 against a $40 cart
+        UUID userId = UUID.randomUUID();
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(store(true)));
+        when(cartService.view("acme", TOKEN)).thenReturn(cartWithOneLine());
+        when(loyaltyService.validateRedemption(tenantId, userId, 5000)).thenReturn(new BigDecimal("50.00"));
+        CheckoutRequest request = request();
+        request.setPointsToRedeem(5000);
+
+        // Act & Assert
+        assertThatThrownBy(() -> checkoutService.checkout("acme", TOKEN, request, null, userId, tenantId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("more points than this order");
+        verify(orderRepository, never()).save(any());
     }
 
     // ---- guards -------------------------------------------------------------

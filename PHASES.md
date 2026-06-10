@@ -433,9 +433,12 @@ New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `no
   (hooked into `markPaid` / `settleCashOnDelivery`, idempotent per order); refund claws them
   back (`ReturnService.approve`, mirroring commission reversal, never below zero). Customer
   reads `GET /api/v1/loyalty/me` (balance + redeemable value) and `/me/history`. V26.
-- [ ] **8d.2 — Loyalty redemption at checkout + customer UI.** Checkout takes points to spend;
-  the server validates the balance + a cap, applies the discount (point value), records a
-  REDEEM, and a customer sees/uses their points in the storefront.
+- [x] **8d.2 — Loyalty redemption at checkout + customer UI.** Checkout takes `pointsToRedeem`
+  (signed-in customers only); the server validates the balance, caps the discount so the goods
+  can't go below zero (after any coupon), folds it into the total (`subtotal + shipping −
+  coupon − points`), and records a REDEEM against the order. Storefront checkout shows a
+  "redeem my N points" option (the `/loyalty/me` endpoint is itself the auth gate) with a live
+  points line.
 - [ ] **8e — Affiliate program.** Affiliate codes/links, referral attribution captured on a
   placed order, and a reward ledger for the affiliate (reuses the payout/balance pattern).
 - [ ] **8f — Notifications.** A `notifications` module: in-app inbox + email (reusing the
