@@ -5,6 +5,7 @@ import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.common.response.PageResponse;
 import com.loyalsuit.modules.fulfilment.application.dto.AdvanceDeliveryRequest;
 import com.loyalsuit.modules.fulfilment.application.dto.AssignDeliveryRequest;
+import com.loyalsuit.modules.fulfilment.application.dto.CompleteDeliveryRequest;
 import com.loyalsuit.modules.fulfilment.application.dto.DeliveryResponse;
 import com.loyalsuit.modules.fulfilment.domain.Delivery;
 import com.loyalsuit.modules.fulfilment.domain.DeliveryAgent;
@@ -13,6 +14,7 @@ import com.loyalsuit.modules.fulfilment.domain.port.DeliveryAgentRepository;
 import com.loyalsuit.modules.fulfilment.domain.port.DeliveryEventRepository;
 import com.loyalsuit.modules.fulfilment.domain.port.DeliveryRepository;
 import com.loyalsuit.modules.fulfilment.domain.DeliveryEvent;
+import com.loyalsuit.modules.orders.application.OrderManagementService;
 import com.loyalsuit.modules.orders.domain.Order;
 import com.loyalsuit.modules.orders.domain.OrderStatus;
 import com.loyalsuit.modules.orders.domain.port.OrderRepository;
@@ -41,6 +43,7 @@ public class DeliveryService {
     private final DeliveryEventRepository eventRepository;
     private final DeliveryAgentRepository agentRepository;
     private final OrderRepository orderRepository;
+    private final OrderManagementService orderManagementService;
     private final AppUserRepository userRepository;
 
     @Transactional
@@ -82,15 +85,25 @@ public class DeliveryService {
     /** A courier advances one of their own deliveries — same lifecycle, with an ownership check. */
     @Transactional
     public DeliveryResponse advanceAsAgent(UUID id, UUID tenantId, UUID agentUserId, AdvanceDeliveryRequest request) {
-        DeliveryAgent agent = resolveAgent(tenantId, agentUserId);
-        Delivery delivery = load(id, tenantId);
-        if (!agent.getId().equals(delivery.getAgentId())) {
-            throw new BusinessException("That delivery is not assigned to you");
-        }
-        return doAdvance(delivery, agentUserId, request);
+        return doAdvance(ownDelivery(id, tenantId, agentUserId), agentUserId, request);
+    }
+
+    /** Complete a delivery with proof; a cash-on-delivery order is settled here (idempotent). */
+    @Transactional
+    public DeliveryResponse complete(UUID id, UUID tenantId, UUID actorId, CompleteDeliveryRequest request) {
+        return doComplete(load(id, tenantId), actorId, request);
+    }
+
+    /** A courier completes one of their own deliveries. */
+    @Transactional
+    public DeliveryResponse completeAsAgent(UUID id, UUID tenantId, UUID agentUserId, CompleteDeliveryRequest request) {
+        return doComplete(ownDelivery(id, tenantId, agentUserId), agentUserId, request);
     }
 
     private DeliveryResponse doAdvance(Delivery delivery, UUID actorId, AdvanceDeliveryRequest request) {
+        if (request.getStatus() == DeliveryStatus.DELIVERED) {
+            throw new BusinessException("Use the complete action (with proof of delivery) to finish a delivery");
+        }
         if (request.getStatus() == DeliveryStatus.FAILED && !StringUtils.hasText(request.getNote())) {
             throw new BusinessException("A reason is required to mark a delivery failed");
         }
@@ -98,6 +111,26 @@ public class DeliveryService {
         Delivery saved = deliveryRepository.save(delivery);
         record(saved, request.getStatus(), trimToNull(request.getNote()), actorId);
         return DeliveryResponse.from(saved);
+    }
+
+    private DeliveryResponse doComplete(Delivery delivery, UUID actorId, CompleteDeliveryRequest request) {
+        delivery.markDelivered(request.getRecipientName().trim(),
+                trimToNull(request.getNote()), trimToNull(request.getProofImageUrl()));
+        Delivery saved = deliveryRepository.save(delivery);
+        record(saved, DeliveryStatus.DELIVERED, "Delivered to " + saved.getRecipientName(), actorId);
+
+        // Cash-on-delivery is collected the moment the drop-off completes (idempotent).
+        orderManagementService.settleCashOnDelivery(saved.getOrderId(), saved.getTenantId());
+        return DeliveryResponse.from(saved);
+    }
+
+    private Delivery ownDelivery(UUID id, UUID tenantId, UUID agentUserId) {
+        DeliveryAgent agent = resolveAgent(tenantId, agentUserId);
+        Delivery delivery = load(id, tenantId);
+        if (!agent.getId().equals(delivery.getAgentId())) {
+            throw new BusinessException("That delivery is not assigned to you");
+        }
+        return delivery;
     }
 
     private DeliveryAgent resolveAgent(UUID tenantId, UUID agentUserId) {

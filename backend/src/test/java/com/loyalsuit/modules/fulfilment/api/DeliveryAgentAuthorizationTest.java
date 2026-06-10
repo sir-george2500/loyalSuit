@@ -111,6 +111,16 @@ class DeliveryAgentAuthorizationTest {
                 .andExpect(allowedFor(AGENT, role));
     }
 
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void completeMyAssignment(UserRole role) throws Exception {
+        String body = "{\"recipientName\":\"Ada Lovelace\"}";
+        mvc.perform(patch("/api/v1/delivery/assignments/" + UUID.randomUUID() + "/complete")
+                        .header("Authorization", bearer(role))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(allowedFor(AGENT, role));
+    }
+
     @Test
     void anonymousIsRejected() throws Exception {
         mvc.perform(get("/api/v1/admin/delivery-agents")).andExpect(status().is4xxClientError());

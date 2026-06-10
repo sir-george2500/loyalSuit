@@ -191,6 +191,36 @@ class OrderManagementServiceTest {
     }
 
     @Test
+    void settleCashOnDelivery_paysAndSettlesAnUnpaidOrder() {
+        // Arrange
+        Order order = order(OrderStatus.PENDING, PaymentStatus.UNPAID);
+        when(orderRepository.findByIdAndTenantId(orderId, tenantId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(orderItemRepository.findByOrderId(orderId)).thenReturn(List.of());
+
+        // Act
+        service.settleCashOnDelivery(orderId, tenantId);
+
+        // Assert
+        assertThat(order.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
+        verify(commissionService).settleOrder(eq(tenantId), eq(orderId), eq("ORD-1"), any());
+    }
+
+    @Test
+    void settleCashOnDelivery_isANoOp_whenAlreadyPaid() {
+        // Arrange — already settled (e.g. a re-run); must not pay or settle twice
+        when(orderRepository.findByIdAndTenantId(orderId, tenantId))
+                .thenReturn(Optional.of(order(OrderStatus.CONFIRMED, PaymentStatus.PAID)));
+
+        // Act
+        service.settleCashOnDelivery(orderId, tenantId);
+
+        // Assert
+        verify(orderRepository, never()).save(any());
+        verify(commissionService, never()).settleOrder(any(), any(), any(), any());
+    }
+
+    @Test
     void get_throwsNotFound_whenOrderNotInTenant() {
         // Arrange
         when(orderRepository.findByIdAndTenantId(orderId, tenantId)).thenReturn(Optional.empty());

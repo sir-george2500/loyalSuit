@@ -203,21 +203,33 @@ function AssignModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
 function AdvanceModal({ delivery, onClose, onSaved }: { delivery: Delivery; onClose: () => void; onSaved: () => void }) {
   const [target, setTarget] = useState<DeliveryStatus>(NEXT_STATUSES[delivery.status][0])
   const [note, setNote] = useState('')
+  const [recipient, setRecipient] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  const isComplete = target === 'DELIVERED'
+  const needsReason = target === 'FAILED'
+
   const save = useMutation({
-    mutationFn: () => adminDeliveryApi.advance(delivery.id, target, note.trim() || undefined),
+    // DELIVERED captures proof and settles a cash-on-delivery order, so it goes through complete().
+    mutationFn: () =>
+      isComplete
+        ? adminDeliveryApi.complete(delivery.id, { recipientName: recipient.trim(), note: note.trim() || undefined })
+        : adminDeliveryApi.advance(delivery.id, target, note.trim() || undefined),
     onSuccess: onSaved,
     onError: (err) => setError(errorMessage(err, 'Could not update the delivery.')),
   })
 
-  const needsReason = target === 'FAILED'
-  const canSave = !save.isPending && (!needsReason || note.trim() !== '')
+  const canSave = !save.isPending && (!needsReason || note.trim() !== '') && (!isComplete || recipient.trim() !== '')
 
   return (
     <dialog className="modal modal-open">
       <div className="modal-box">
         <h3 className="text-lg font-bold">Update delivery {delivery.orderNumber}</h3>
+        {isComplete && (
+          <p className="mt-1 text-sm text-base-content/60">
+            Completing settles a cash-on-delivery order (marks it paid and earns commission).
+          </p>
+        )}
         {error && <div role="alert" className="alert alert-error my-2 text-sm"><span>{error}</span></div>}
         <label className="form-control mt-2">
           <span className="label-text">New status</span>
@@ -225,6 +237,13 @@ function AdvanceModal({ delivery, onClose, onSaved }: { delivery: Delivery; onCl
             {NEXT_STATUSES[delivery.status].map((s) => <option key={s} value={s}>{statusLabel(s)}</option>)}
           </select>
         </label>
+        {isComplete && (
+          <label className="form-control mt-2">
+            <span className="label-text">Received by <span className="text-error">(required)</span></span>
+            <input value={recipient} onChange={(e) => setRecipient(e.target.value)}
+              placeholder="Recipient name" className="input input-bordered" />
+          </label>
+        )}
         <label className="form-control mt-2">
           <span className="label-text">Note {needsReason && <span className="text-error">(required)</span>}</span>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2}

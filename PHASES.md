@@ -365,19 +365,22 @@ ledger — a delivery is layered on an order, mirroring how POS layered on order
   DELIVERED, or FAILED with a reason), each transition timestamped + actor-stamped, with an
   ownership check so an agent can only move their own deliveries. _(Customer-facing tracking
   moved to 7d — it reads the same timeline and is most relevant alongside completion.)_
-- [ ] **7d — Proof of delivery + COD settlement + customer tracking.** On DELIVERED: capture
-  recipient name, signature/photo (Cloudinary), optional note. For a COD order this is the
-  moment it becomes PAID and commission settles — idempotently (a delivery completes exactly
-  once). FAILED capture with reason; no payment, stock-return policy noted. Customer tracking
-  view (extends the existing public order-tracking flow with the delivery timeline; polling).
+- [x] **7d — Proof of delivery + COD settlement.** Completing a delivery captures proof
+  (recipient name + optional note; `recipient_name`/`pod_note`/`proof_image_url`, V22) and —
+  for an unpaid (cash-on-delivery) order — settles it the moment it lands: marks the order
+  PAID and earns commission, **idempotently** (`settleCashOnDelivery` no-ops if already paid;
+  a delivery completes exactly once). DELIVERED now only reachable via the complete (proof)
+  action, not a plain status advance. Both dispatcher and the courier (own deliveries) can
+  complete. _(Signature/photo capture deferred — needs the real Cloudinary cloud name + a
+  courier-app upload; the `proof_image_url` column is ready for it.)_
 - [ ] **7e — Pickup points & delivery zones.** Pickup-point locations; delivery zones (area
   / postal) carrying a fee; checkout shipping fee derives from the destination zone
   (replaces the current flat/zero shipping). Assignment hints by zone.
-
-**Carryover into this phase (from Phase 5 review):** commission **clawback / negative
-available balance** when a paid-out order is later refunded is still unhandled. It now
-intersects fulfilment (a FAILED/returned COD delivery must not leave settled commission) —
-address it as part of 7d, or as a dedicated 7f cleanup before Phase 8.
+- [ ] **7f — Customer tracking + commission clawback.** Customer-facing tracking: extend the
+  existing public order-tracking flow (`/store/{slug}/orders/{orderNumber}?email=`) with the
+  delivery status + sanitized timeline (polling). **Commission clawback** (the Phase 5
+  carryover): when a settled/paid-out order is later refunded — or a delivered COD is
+  returned — reverse the commission and handle a resulting negative available balance.
 
 ## Phase 8 — Marketing, loyalty & engagement
 - [ ] Coupons, flash deals; loyalty points; affiliate program

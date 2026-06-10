@@ -5,6 +5,7 @@ import com.loyalsuit.common.response.PageResponse;
 import com.loyalsuit.modules.fulfilment.application.DeliveryService;
 import com.loyalsuit.modules.fulfilment.application.dto.AdvanceDeliveryRequest;
 import com.loyalsuit.modules.fulfilment.application.dto.AssignDeliveryRequest;
+import com.loyalsuit.modules.fulfilment.application.dto.CompleteDeliveryRequest;
 import com.loyalsuit.modules.fulfilment.application.dto.DeliveryResponse;
 import com.loyalsuit.modules.fulfilment.domain.DeliveryStatus;
 import com.loyalsuit.security.UserPrincipal;
@@ -79,5 +80,16 @@ public class AdminDeliveryController {
             @Valid @RequestBody AdvanceDeliveryRequest body) {
         return ResponseEntity.ok(ApiResponse.ok(
                 deliveryService.advance(id, principal.getTenantId(), principal.getUserId(), body)));
+    }
+
+    @PatchMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF')")
+    @Operation(summary = "Complete a delivery with proof (settles a cash-on-delivery order)")
+    public ResponseEntity<ApiResponse<DeliveryResponse>> complete(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody CompleteDeliveryRequest body) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                deliveryService.complete(id, principal.getTenantId(), principal.getUserId(), body)));
     }
 }

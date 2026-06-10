@@ -35,11 +35,19 @@ export const deliveryAgentApi = {
     apiClient.get<ApiResponse<PageResponse<Delivery>>>('/api/v1/delivery/assignments', { params: { page } }),
   advance: (id: string, status: DeliveryStatus, note?: string) =>
     apiClient.patch<ApiResponse<Delivery>>(`/api/v1/delivery/assignments/${id}/status`, { status, note }),
+  complete: (id: string, payload: CompleteDeliveryPayload) =>
+    apiClient.patch<ApiResponse<Delivery>>(`/api/v1/delivery/assignments/${id}/complete`, payload),
 }
 
 export interface AssignDeliveryPayload {
   orderNumber: string
   agentId: string
+}
+
+export interface CompleteDeliveryPayload {
+  recipientName: string
+  note?: string
+  proofImageUrl?: string
 }
 
 const ADMIN_DELIVERIES = '/api/v1/admin/deliveries'
@@ -55,4 +63,6 @@ export const adminDeliveryApi = {
     apiClient.post<ApiResponse<Delivery>>(`${ADMIN_DELIVERIES}/assign`, payload),
   advance: (id: string, status: DeliveryStatus, note?: string) =>
     apiClient.patch<ApiResponse<Delivery>>(`${ADMIN_DELIVERIES}/${id}/status`, { status, note }),
+  complete: (id: string, payload: CompleteDeliveryPayload) =>
+    apiClient.patch<ApiResponse<Delivery>>(`${ADMIN_DELIVERIES}/${id}/complete`, payload),
 }

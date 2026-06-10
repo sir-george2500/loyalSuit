@@ -24,6 +24,9 @@ public record DeliveryResponse(
         Instant deliveredAt,
         Instant failedAt,
         String failureReason,
+        String recipientName,
+        String podNote,
+        String proofImageUrl,
         Instant createdAt,
         List<DeliveryEventResponse> events) {
 
@@ -49,6 +52,9 @@ public record DeliveryResponse(
                 d.getDeliveredAt(),
                 d.getFailedAt(),
                 d.getFailureReason(),
+                d.getRecipientName(),
+                d.getPodNote(),
+                d.getProofImageUrl(),
                 d.getCreatedAt(),
                 events);
     }

@@ -515,6 +515,9 @@ export interface Delivery {
   deliveredAt?: string | null
   failedAt?: string | null
   failureReason?: string | null
+  recipientName?: string | null
+  podNote?: string | null
+  proofImageUrl?: string | null
   createdAt: string
   events?: DeliveryEvent[] | null
 }
