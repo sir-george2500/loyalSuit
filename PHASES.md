@@ -373,9 +373,13 @@ ledger — a delivery is layered on an order, mirroring how POS layered on order
   action, not a plain status advance. Both dispatcher and the courier (own deliveries) can
   complete. _(Signature/photo capture deferred — needs the real Cloudinary cloud name + a
   courier-app upload; the `proof_image_url` column is ready for it.)_
-- [ ] **7e — Pickup points & delivery zones.** Pickup-point locations; delivery zones (area
-  / postal) carrying a fee; checkout shipping fee derives from the destination zone
-  (replaces the current flat/zero shipping). Assignment hints by zone.
+- [x] **7e.1 — Pickup points & per-point zones (config).** Pickup-point locations, and **each
+  point owns its own delivery zones** (area + fee) — two points can price the same city
+  differently. Owner-only admin CRUD (`/admin/pickup-points`, points + nested zones) and a
+  public storefront read (`/store/{slug}/pickup-points` → active points with active zones).
+- [ ] **7e.2 — Checkout shipping from zones.** Storefront checkout lets the customer pick a
+  pickup point + one of its zones; the zone's fee becomes the order's shipping (replacing the
+  current flat/zero shipping), snapshotted onto the order.
 - [x] **7f.1 — Customer delivery tracking.** Public `GET /store/{slug}/orders/{orderNumber}/delivery?email=`
   reuses the order-tracking email gate, then returns a **sanitized** delivery view (status +
   a stage timeline; no internal notes/actor/agent). Storefront tracking page shows a delivery
