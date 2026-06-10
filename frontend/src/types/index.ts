@@ -536,3 +536,21 @@ export interface DeliveryTracking {
   recipientName?: string | null
   timeline: DeliveryTrackingStage[]
 }
+
+export interface DeliveryZone {
+  id: string
+  pickupPointId: string
+  name: string
+  fee: number
+  active: boolean
+}
+
+export interface PickupPoint {
+  id: string
+  name: string
+  address?: string | null
+  phone?: string | null
+  active: boolean
+  zones: DeliveryZone[]
+  createdAt: string
+}
