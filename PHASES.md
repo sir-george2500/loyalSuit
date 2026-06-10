@@ -376,11 +376,13 @@ ledger — a delivery is layered on an order, mirroring how POS layered on order
 - [ ] **7e — Pickup points & delivery zones.** Pickup-point locations; delivery zones (area
   / postal) carrying a fee; checkout shipping fee derives from the destination zone
   (replaces the current flat/zero shipping). Assignment hints by zone.
-- [ ] **7f — Customer tracking + commission clawback.** Customer-facing tracking: extend the
-  existing public order-tracking flow (`/store/{slug}/orders/{orderNumber}?email=`) with the
-  delivery status + sanitized timeline (polling). **Commission clawback** (the Phase 5
-  carryover): when a settled/paid-out order is later refunded — or a delivered COD is
-  returned — reverse the commission and handle a resulting negative available balance.
+- [x] **7f.1 — Customer delivery tracking.** Public `GET /store/{slug}/orders/{orderNumber}/delivery?email=`
+  reuses the order-tracking email gate, then returns a **sanitized** delivery view (status +
+  a stage timeline; no internal notes/actor/agent). Storefront tracking page shows a delivery
+  progress stepper. "PREPARING" until dispatched.
+- [ ] **7f.2 — Commission clawback** (the Phase 5 carryover): when a settled/paid-out order is
+  later refunded — or a delivered COD is returned — reverse the commission and handle a
+  resulting negative available balance.
 
 ## Phase 8 — Marketing, loyalty & engagement
 - [ ] Coupons, flash deals; loyalty points; affiliate program

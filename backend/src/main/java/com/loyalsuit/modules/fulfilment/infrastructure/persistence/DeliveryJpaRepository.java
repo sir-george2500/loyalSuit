@@ -13,6 +13,7 @@ import java.util.UUID;
 interface DeliveryJpaRepository extends JpaRepository<Delivery, UUID> {
     Optional<Delivery> findByIdAndTenantId(UUID id, UUID tenantId);
     Optional<Delivery> findByOrderIdAndTenantId(UUID orderId, UUID tenantId);
+    Optional<Delivery> findByOrderId(UUID orderId);
     Page<Delivery> findByTenantIdOrderByCreatedAtDesc(UUID tenantId, Pageable pageable);
     Page<Delivery> findByTenantIdAndStatusOrderByCreatedAtDesc(
             UUID tenantId, DeliveryStatus status, Pageable pageable);

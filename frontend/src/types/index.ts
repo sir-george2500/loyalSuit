@@ -521,3 +521,16 @@ export interface Delivery {
   createdAt: string
   events?: DeliveryEvent[] | null
 }
+
+export interface DeliveryTrackingStage {
+  status: DeliveryStatus
+  occurredAt: string
+}
+
+export interface DeliveryTracking {
+  orderNumber: string
+  /** Delivery status, or "PREPARING" before the order is dispatched. */
+  status: DeliveryStatus | 'PREPARING'
+  recipientName?: string | null
+  timeline: DeliveryTrackingStage[]
+}
