@@ -439,6 +439,8 @@ export interface PayoutBalance {
   pending: number
   paid: number
   available: number
+  /** Debt when a refund reversed commission on an already-paid order (available < 0). */
+  owed: number
 }
 
 // ---- POS terminal ----

@@ -15,6 +15,7 @@ import com.loyalsuit.modules.marketplace.domain.port.PayoutRequestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -168,10 +169,12 @@ class PayoutServiceTest {
 
     @Test
     void pay_marksPaid_recordsDeciderAndReference_andAudits() {
-        // Arrange
+        // Arrange — after paying, earned 100 / paid 40 → +60 available (no overdraft)
         when(payoutRepository.findByIdAndTenantId(payoutId, tenantId))
                 .thenReturn(Optional.of(pending(new BigDecimal("40.00"))));
         when(payoutRepository.save(any(PayoutRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+        earnedNet("100.00");
+        payoutSums("0.00", "40.00");
 
         // Act
         PayoutResponse response = service.pay(payoutId, tenantId, adminActor, "CASH-001", "handed over");
@@ -183,6 +186,55 @@ class PayoutServiceTest {
         assertThat(response.decidedAt()).isNotNull();
         verify(auditService).recordSuccess(eq(AuditAction.PAYOUT_PAID), eq(adminActor),
                 eq("PayoutRequest"), eq(payoutId.toString()), any());
+    }
+
+    // ---- clawback / negative balance ----------------------------------------
+
+    @Test
+    void balanceFor_reportsOwed_whenARefundDrivesTheBalanceNegative() {
+        // Arrange — a $100 payout was made, then a refund reversed commission to $60 net
+        earnedNet("60.00");
+        payoutSums("0.00", "100.00");
+
+        // Act
+        PayoutBalanceResponse balance = service.balanceFor(tenantId, vendorId);
+
+        // Assert — available is the debt; owed surfaces it as a positive number
+        assertThat(balance.available()).isEqualByComparingTo("-40.00");
+        assertThat(balance.owed()).isEqualByComparingTo("40.00");
+    }
+
+    @Test
+    void request_isBlocked_whenTheVendorOwesFromARefund() {
+        // Arrange — clawback invariant: a paid-out order was refunded, balance is now -40
+        earnedNet("60.00");
+        payoutSums("0.00", "100.00");
+
+        // Act & Assert — no withdrawal until future earnings clear the debt
+        assertThatThrownBy(() -> service.request(tenantId, vendorActor, new BigDecimal("10.00")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("exceeds your available balance");
+        verify(payoutRepository, never()).save(any());
+    }
+
+    @Test
+    void pay_overdrawingAfterAReversal_isAllowed_andFlaggedOnTheAuditTrail() {
+        // Arrange — vendor requested $100 when they had it; a refund since reversed it to $60
+        when(payoutRepository.findByIdAndTenantId(payoutId, tenantId))
+                .thenReturn(Optional.of(pending(new BigDecimal("100.00"))));
+        when(payoutRepository.save(any(PayoutRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+        earnedNet("60.00");
+        payoutSums("0.00", "100.00");
+
+        // Act — warn-but-allow: the payment goes through
+        PayoutResponse response = service.pay(payoutId, tenantId, adminActor, "CASH-9", null);
+
+        // Assert — paid, but the overpayment is recorded for audit
+        assertThat(response.status()).isEqualTo("PAID");
+        ArgumentCaptor<String> detail = ArgumentCaptor.forClass(String.class);
+        verify(auditService).recordSuccess(eq(AuditAction.PAYOUT_PAID), eq(adminActor),
+                eq("PayoutRequest"), eq(payoutId.toString()), detail.capture());
+        assertThat(detail.getValue()).contains("OVERPAID").contains("40.00");
     }
 
     @Test

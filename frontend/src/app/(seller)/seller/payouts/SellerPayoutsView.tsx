@@ -36,6 +36,7 @@ export default function SellerPayoutsView() {
   })
 
   const available = balance?.available ?? 0
+  const owed = balance?.owed ?? 0
 
   if (isError) {
     return (
@@ -50,9 +51,24 @@ export default function SellerPayoutsView() {
 
   return (
     <div className="space-y-6">
+      {owed > 0 && (
+        <div role="alert" className="alert alert-warning text-sm">
+          <AlertCircle className="h-4 w-4" />
+          <span>
+            A refund reversed commission on an already-paid order, so you currently owe{' '}
+            <span className="font-semibold">{money.format(owed)}</span>. Your future earnings will clear this
+            before your next withdrawal.
+          </span>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-3">
-        <BalanceCard label="Available" value={money.format(available)} tone="text-success" highlight />
-        <BalanceCard label="Pending" value={money.format(balance?.pending ?? 0)} tone="text-warning" />
+        <BalanceCard label="Available" value={money.format(Math.max(available, 0))} tone="text-success" highlight />
+        <BalanceCard
+          label={owed > 0 ? 'Owed' : 'Pending'}
+          value={money.format(owed > 0 ? owed : (balance?.pending ?? 0))}
+          tone={owed > 0 ? 'text-error' : 'text-warning'}
+        />
         <BalanceCard label="Paid out" value={money.format(balance?.paid ?? 0)} tone="text-base-content/70" />
       </div>
 
