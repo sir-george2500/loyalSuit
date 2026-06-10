@@ -42,6 +42,7 @@ class OrderManagementServiceTest {
     @Mock private OrderItemRepository orderItemRepository;
     @Mock private StockService stockService;
     @Mock private CommissionService commissionService;
+    @Mock private com.loyalsuit.modules.loyalty.application.LoyaltyService loyaltyService;
 
     @InjectMocks private OrderManagementService service;
 

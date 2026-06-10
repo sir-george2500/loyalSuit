@@ -4,6 +4,7 @@ import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.common.response.PageResponse;
 import com.loyalsuit.modules.inventory.application.StockService;
+import com.loyalsuit.modules.loyalty.application.LoyaltyService;
 import com.loyalsuit.modules.marketplace.application.CommissionLine;
 import com.loyalsuit.modules.marketplace.application.CommissionService;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
@@ -36,6 +37,7 @@ public class OrderManagementService {
     private final OrderItemRepository orderItemRepository;
     private final StockService stockService;
     private final CommissionService commissionService;
+    private final LoyaltyService loyaltyService;
 
     public PageResponse<OrderSummaryResponse> list(UUID tenantId, OrderStatus status, Pageable pageable) {
         var page = status == null
@@ -82,6 +84,7 @@ public class OrderManagementService {
         // Cash is in: earn commission for every vendor line of the order (idempotent).
         List<OrderItem> items = orderItemRepository.findByOrderId(saved.getId());
         commissionService.settleOrder(tenantId, saved.getId(), saved.getOrderNumber(), vendorLines(items));
+        loyaltyService.earnForOrder(tenantId, saved.getCustomerId(), saved.getId(), saved.getTotal());
         return OrderResponse.from(saved, items);
     }
 
@@ -102,6 +105,7 @@ public class OrderManagementService {
 
         List<OrderItem> items = orderItemRepository.findByOrderId(saved.getId());
         commissionService.settleOrder(tenantId, saved.getId(), saved.getOrderNumber(), vendorLines(items));
+        loyaltyService.earnForOrder(tenantId, saved.getCustomerId(), saved.getId(), saved.getTotal());
     }
 
     /** Maps the order's vendor lines (house products excluded) into commission lines. */
