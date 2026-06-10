@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -82,12 +83,14 @@ public class StorefrontService {
                 .stream()
                 .collect(Collectors.toMap(ProductMedia::getProductId, ProductMedia::getUrl, (a, b) -> a));
 
+        Instant now = Instant.now();
         return new PageResponse<>(page.map(p -> new StoreProductSummary(
                 p.getId(),
                 p.getName(),
                 p.getSlug(),
-                p.getPrice(),
-                p.getCompareAtPrice(),
+                p.effectivePrice(now),
+                // On sale, the regular price becomes the struck-through "was" price.
+                p.onSale(now) ? p.getPrice() : p.getCompareAtPrice(),
                 primaryImages.get(p.getId()),
                 p.getCategoryId() != null ? categoryNames.get(p.getCategoryId()) : null)));
     }
@@ -114,13 +117,14 @@ public class StorefrontService {
 
         boolean inStock = stockRepository.hasStock(product.getId(), tenant.getId());
 
+        Instant now = Instant.now();
         return new StoreProductDetail(
                 product.getId(),
                 product.getName(),
                 product.getSlug(),
                 product.getDescription(),
-                product.getPrice(),
-                product.getCompareAtPrice(),
+                product.effectivePrice(now),
+                product.onSale(now) ? product.getPrice() : product.getCompareAtPrice(),
                 product.isDigital(),
                 categoryName,
                 images,

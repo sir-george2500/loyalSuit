@@ -3,6 +3,7 @@ package com.loyalsuit.modules.pos.application.dto;
 import com.loyalsuit.modules.catalog.domain.Product;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.UUID;
 
 /** A lean catalog row for the terminal's product grid / scan lookup. */
@@ -19,6 +20,6 @@ public record PosProductResponse(
                 product.getName(),
                 product.getSku(),
                 product.getBarcode(),
-                product.getPrice());
+                product.effectivePrice(Instant.now()));
     }
 }

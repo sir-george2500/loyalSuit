@@ -108,7 +108,8 @@ public class PosService {
             Product product = productRepository.findByIdAndTenantId(line.getProductId(), tenantId)
                     .filter(p -> p.getStatus() == ProductStatus.ACTIVE)
                     .orElseThrow(() -> new BusinessException("A product in the sale is not available"));
-            BigDecimal lineTotal = product.getPrice().multiply(BigDecimal.valueOf(line.getQuantity()));
+            BigDecimal unitPrice = product.effectivePrice(java.time.Instant.now());
+            BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(line.getQuantity()));
             subtotal = subtotal.add(lineTotal);
 
             stockService.reserve(tenantId, product.getId(), line.getVariantId(), line.getQuantity());
@@ -118,7 +119,7 @@ public class PosService {
             item.setVariantId(line.getVariantId());
             item.setVendorId(product.getVendorId());
             item.setQuantity(line.getQuantity());
-            item.setUnitPrice(product.getPrice());
+            item.setUnitPrice(unitPrice);
             item.setTotal(lineTotal);
             lines.add(item);
         }

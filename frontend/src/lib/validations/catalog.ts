@@ -41,6 +41,16 @@ export const productSchema = yup.object({
   categoryId: yup.string().optional(),
   digital: yup.boolean().default(false),
   description: yup.string().trim().max(2000).optional(),
+  // Flash deal (owner-controlled promotion). Sale price must be below the list price.
+  salePrice: yup
+    .number()
+    .typeError('Must be a number')
+    .positive('Must be greater than 0')
+    .nullable()
+    .transform((v, o) => (o === '' ? null : v))
+    .optional(),
+  saleStartsAt: yup.string().optional(),
+  saleEndsAt: yup.string().optional(),
 })
 
 export type ProductFormData = yup.InferType<typeof productSchema>

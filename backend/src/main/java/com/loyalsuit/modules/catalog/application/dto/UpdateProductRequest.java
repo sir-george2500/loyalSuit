@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -38,6 +39,13 @@ public class UpdateProductRequest {
     private String barcode;
 
     private BigDecimal compareAtPrice;
+
+    // Flash deal: a time-boxed sale price (validated in the service). Null clears the deal.
+    @DecimalMin(value = "0.00", inclusive = false, message = "Sale price must be positive")
+    private BigDecimal salePrice;
+    private Instant saleStartsAt;
+    private Instant saleEndsAt;
+
     private UUID categoryId;
     private boolean digital = false;
 }
