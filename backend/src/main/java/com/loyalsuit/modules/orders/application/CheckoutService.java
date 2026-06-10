@@ -10,6 +10,8 @@ import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
 import com.loyalsuit.modules.inventory.application.StockService;
 import com.loyalsuit.modules.orders.application.dto.CheckoutRequest;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
+import com.loyalsuit.modules.orders.application.port.ResolvedShippingZone;
+import com.loyalsuit.modules.orders.application.port.ShippingZoneResolver;
 import com.loyalsuit.modules.orders.domain.Order;
 import com.loyalsuit.modules.orders.domain.OrderItem;
 import com.loyalsuit.modules.orders.domain.OrderStatus;
@@ -57,6 +59,7 @@ public class CheckoutService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
+    private final ShippingZoneResolver shippingZoneResolver;
 
     @Transactional
     public OrderResponse checkout(String storeSlug, String cartToken, CheckoutRequest request,
@@ -76,6 +79,18 @@ public class CheckoutService {
             throw new BusinessException("Your cart is empty");
         }
 
+        // Shipping is priced from the chosen delivery zone (its fee), 0 if none was selected.
+        Map<String, Object> address = buildAddress(request);
+        BigDecimal shipping = BigDecimal.ZERO;
+        if (request.getDeliveryZoneId() != null) {
+            ResolvedShippingZone zone = shippingZoneResolver
+                    .resolveActive(tenant.getId(), request.getDeliveryZoneId())
+                    .orElseThrow(() -> new BusinessException("The selected delivery zone is unavailable"));
+            shipping = zone.fee();
+            address.put("pickupPoint", zone.pickupPointName());
+            address.put("deliveryZone", zone.zoneName());
+        }
+
         // Reserve stock for every line before creating the order. A shortfall throws,
         // rolling back any decrements already applied in this transaction.
         for (CartItemView line : cart.items()) {
@@ -93,12 +108,12 @@ public class CheckoutService {
         order.setPaymentMethod(PaymentMethod.CASH);
         order.setPaymentStatus(PaymentStatus.UNPAID);
         order.setSubtotal(cart.subtotal());
-        order.setShippingAmount(BigDecimal.ZERO);
+        order.setShippingAmount(shipping);
         order.setTaxAmount(BigDecimal.ZERO);
         order.setDiscountAmount(BigDecimal.ZERO);
-        order.setTotal(cart.subtotal());
+        order.setTotal(cart.subtotal().add(shipping));
         order.setCurrency(cart.currency());
-        order.setShippingAddress(buildAddress(request));
+        order.setShippingAddress(address);
         order.setNotes(trimToNull(request.getNotes()));
         order.setIdempotencyKey(StringUtils.hasText(idempotencyKey) ? idempotencyKey : null);
         Order saved = orderRepository.save(order);

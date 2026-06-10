@@ -30,3 +30,9 @@ export const adminPickupApi = {
     apiClient.put<ApiResponse<DeliveryZone>>(`${ADMIN}/zones/${zoneId}`, payload),
   deleteZone: (zoneId: string) => apiClient.delete<ApiResponse<void>>(`${ADMIN}/zones/${zoneId}`),
 }
+
+/** Public storefront read: active pickup points and their zones, for checkout. */
+export const storePickupApi = {
+  list: (slug: string) =>
+    apiClient.get<ApiResponse<PickupPoint[]>>(`/api/v1/store/${encodeURIComponent(slug)}/pickup-points`),
+}

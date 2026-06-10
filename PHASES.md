@@ -37,7 +37,7 @@ into another's tables — they collaborate through application services / events
 | **orders** | cart, orders, order items, returns | 🟡 schema only |
 | **payments** | gateways, transactions, webhooks, refunds | ⬜ schema only |
 | **dashboard/reporting** | tenant analytics, KPIs | ✅ live (read model) |
-| **fulfilment** | delivery agents, pickup points, tracking | 🟡 Phase 7 in progress |
+| **fulfilment** | delivery agents, pickup points, tracking | ✅ live (Phase 7: agents, deliveries, POD+COD, tracking, zones) |
 | **hrm** | employees, attendance, payroll | ⬜ planned |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
 | **notifications** | email, SMS, push, in-app | 🟡 transactional email live (onboarding, password reset) |
@@ -341,7 +341,7 @@ receipt and close-out show the cash/card split. This closes Phase 6._
 
 ---
 
-## Phase 7 — Fulfilment & delivery  ⟵ IN PROGRESS
+## Phase 7 — Fulfilment & delivery  ✅ COMPLETE (2026-06-10)
 **Goal:** get a placed order from the warehouse to the customer's hands, tracked end to
 end, with the delivery agent as a first-class role — and close the loop on cash-on-delivery
 (a completed COD delivery is what marks the order paid + settles commission).
@@ -377,9 +377,11 @@ ledger — a delivery is layered on an order, mirroring how POS layered on order
   point owns its own delivery zones** (area + fee) — two points can price the same city
   differently. Owner-only admin CRUD (`/admin/pickup-points`, points + nested zones) and a
   public storefront read (`/store/{slug}/pickup-points` → active points with active zones).
-- [ ] **7e.2 — Checkout shipping from zones.** Storefront checkout lets the customer pick a
+- [x] **7e.2 — Checkout shipping from zones.** Storefront checkout lets the customer pick a
   pickup point + one of its zones; the zone's fee becomes the order's shipping (replacing the
-  current flat/zero shipping), snapshotted onto the order.
+  flat/zero shipping), and the point/zone are snapshotted onto the order. Server prices it
+  via a `ShippingZoneResolver` port in orders implemented by fulfilment (dependency
+  inversion — no orders↔fulfilment cycle); an inactive/unknown zone is rejected.
 - [x] **7f.1 — Customer delivery tracking.** Public `GET /store/{slug}/orders/{orderNumber}/delivery?email=`
   reuses the order-tracking email gate, then returns a **sanitized** delivery view (status +
   a stage timeline; no internal notes/actor/agent). Storefront tracking page shows a delivery
