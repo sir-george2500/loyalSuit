@@ -17,7 +17,7 @@ describe('homeForRole', () => {
       ['STAFF', '/admin/dashboard'],
       ['VENDOR', '/seller/dashboard'],
       ['CUSTOMER', '/store'],
-      ['DELIVERY_AGENT', '/store'],
+      ['DELIVERY_AGENT', '/delivery'],
     ]
 
     // Act + Assert
@@ -54,6 +54,16 @@ describe('canAccess', () => {
     // Act + Assert
     expect(canAccess('VENDOR', path)).toBe(true)
     expect(canAccess('TENANT_ADMIN', path)).toBe(false)
+  })
+
+  it('scopes the delivery area to couriers only', () => {
+    // Arrange
+    const path = '/delivery'
+
+    // Act + Assert
+    expect(canAccess('DELIVERY_AGENT', path)).toBe(true)
+    expect(canAccess('STAFF', path)).toBe(false)
+    expect(canAccess('CUSTOMER', path)).toBe(false)
   })
 
   it('treats unlisted paths as public for any role, including null', () => {

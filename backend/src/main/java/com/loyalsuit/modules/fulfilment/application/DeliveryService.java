@@ -69,15 +69,41 @@ public class DeliveryService {
 
     @Transactional
     public DeliveryResponse advance(UUID id, UUID tenantId, UUID actorId, AdvanceDeliveryRequest request) {
+        return doAdvance(load(id, tenantId), actorId, request);
+    }
+
+    /** A courier's own open queue (their still-active deliveries). */
+    public PageResponse<DeliveryResponse> myAssignments(UUID tenantId, UUID agentUserId, Pageable pageable) {
+        DeliveryAgent agent = resolveAgent(tenantId, agentUserId);
+        return new PageResponse<>(deliveryRepository.findActiveByAgent(tenantId, agent.getId(), pageable)
+                .map(DeliveryResponse::from));
+    }
+
+    /** A courier advances one of their own deliveries — same lifecycle, with an ownership check. */
+    @Transactional
+    public DeliveryResponse advanceAsAgent(UUID id, UUID tenantId, UUID agentUserId, AdvanceDeliveryRequest request) {
+        DeliveryAgent agent = resolveAgent(tenantId, agentUserId);
         Delivery delivery = load(id, tenantId);
+        if (!agent.getId().equals(delivery.getAgentId())) {
+            throw new BusinessException("That delivery is not assigned to you");
+        }
+        return doAdvance(delivery, agentUserId, request);
+    }
+
+    private DeliveryResponse doAdvance(Delivery delivery, UUID actorId, AdvanceDeliveryRequest request) {
         if (request.getStatus() == DeliveryStatus.FAILED && !StringUtils.hasText(request.getNote())) {
             throw new BusinessException("A reason is required to mark a delivery failed");
         }
         delivery.advanceTo(request.getStatus(), trimToNull(request.getNote()));
         Delivery saved = deliveryRepository.save(delivery);
-
         record(saved, request.getStatus(), trimToNull(request.getNote()), actorId);
         return DeliveryResponse.from(saved);
+    }
+
+    private DeliveryAgent resolveAgent(UUID tenantId, UUID agentUserId) {
+        return agentRepository.findByUserId(agentUserId)
+                .filter(a -> tenantId.equals(a.getTenantId()))
+                .orElseThrow(() -> new NotFoundException("Delivery agent", agentUserId));
     }
 
     public DeliveryResponse get(UUID id, UUID tenantId) {

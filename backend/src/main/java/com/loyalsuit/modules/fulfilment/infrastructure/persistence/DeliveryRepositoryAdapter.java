@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,5 +41,14 @@ public class DeliveryRepositoryAdapter implements DeliveryRepository {
     @Override
     public Page<Delivery> findByTenantIdAndStatus(UUID tenantId, DeliveryStatus status, Pageable pageable) {
         return jpa.findByTenantIdAndStatusOrderByCreatedAtDesc(tenantId, status, pageable);
+    }
+
+    /** The non-terminal, assigned states that make up an agent's open queue. */
+    private static final List<DeliveryStatus> ACTIVE = List.of(
+            DeliveryStatus.ASSIGNED, DeliveryStatus.PICKED_UP, DeliveryStatus.IN_TRANSIT);
+
+    @Override
+    public Page<Delivery> findActiveByAgent(UUID tenantId, UUID agentId, Pageable pageable) {
+        return jpa.findByTenantIdAndAgentIdAndStatusInOrderByCreatedAtDesc(tenantId, agentId, ACTIVE, pageable);
     }
 }
