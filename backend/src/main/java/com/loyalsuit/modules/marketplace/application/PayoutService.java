@@ -12,6 +12,8 @@ import com.loyalsuit.modules.marketplace.application.dto.PayoutResponse;
 import com.loyalsuit.modules.marketplace.domain.PayoutRequest;
 import com.loyalsuit.modules.marketplace.domain.PayoutStatus;
 import com.loyalsuit.modules.marketplace.domain.port.PayoutRequestRepository;
+import com.loyalsuit.modules.notifications.application.NotificationService;
+import com.loyalsuit.modules.notifications.domain.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class PayoutService {
     private final PayoutRequestRepository payoutRepository;
     private final CommissionService commissionService;
     private final AuditService auditService;
+    private final NotificationService notificationService;
 
     /** A vendor's payout standing: earned net, locked (pending), paid, and what's left. */
     public PayoutBalanceResponse balanceFor(UUID tenantId, UUID vendorUserId) {
@@ -98,6 +101,8 @@ public class PayoutService {
                 "amount=" + saved.getAmount()
                         + (saved.getReference() != null ? " ref=" + saved.getReference() : "")
                         + overdraft);
+        notificationService.notify(tenantId, saved.getVendorId(), NotificationType.PAYOUT_PAID,
+                "Payout paid", "Your payout of " + saved.getAmount() + " has been paid.", "/seller/payouts");
         return PayoutResponse.from(saved);
     }
 

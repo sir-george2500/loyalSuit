@@ -60,6 +60,7 @@ class CheckoutServiceTest {
     @Mock private CouponService couponService;
     @Mock private LoyaltyService loyaltyService;
     @Mock private com.loyalsuit.modules.affiliate.application.AffiliateService affiliateService;
+    @Mock private com.loyalsuit.modules.notifications.application.NotificationService notificationService;
 
     @InjectMocks private CheckoutService checkoutService;
 

@@ -40,6 +40,7 @@ class PayoutServiceTest {
     @Mock private PayoutRequestRepository payoutRepository;
     @Mock private CommissionService commissionService;
     @Mock private AuditService auditService;
+    @Mock private com.loyalsuit.modules.notifications.application.NotificationService notificationService;
 
     @InjectMocks private PayoutService service;
 

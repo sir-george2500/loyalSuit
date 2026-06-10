@@ -14,6 +14,8 @@ import com.loyalsuit.modules.orders.application.port.ResolvedShippingZone;
 import com.loyalsuit.modules.orders.application.port.ShippingZoneResolver;
 import com.loyalsuit.modules.affiliate.application.AffiliateService;
 import com.loyalsuit.modules.loyalty.application.LoyaltyService;
+import com.loyalsuit.modules.notifications.application.NotificationService;
+import com.loyalsuit.modules.notifications.domain.NotificationType;
 import com.loyalsuit.modules.promotions.application.CouponService;
 import com.loyalsuit.modules.promotions.application.dto.AppliedCoupon;
 import com.loyalsuit.modules.orders.domain.Order;
@@ -67,6 +69,7 @@ public class CheckoutService {
     private final CouponService couponService;
     private final LoyaltyService loyaltyService;
     private final AffiliateService affiliateService;
+    private final NotificationService notificationService;
 
     @Transactional
     public OrderResponse checkout(String storeSlug, String cartToken, CheckoutRequest request,
@@ -172,6 +175,11 @@ public class CheckoutService {
         if (pointsToRedeem > 0) {
             loyaltyService.redeemForOrder(tenant.getId(), customerId, saved.getId(), pointsToRedeem);
         }
+
+        // Tell a signed-in customer their order is in — guests (no recipient) are a no-op.
+        notificationService.notify(tenant.getId(), customerId, NotificationType.ORDER_PLACED,
+                "Order placed", "Your order " + saved.getOrderNumber() + " has been received.",
+                "/store/" + storeSlug + "/track");
 
         cartService.clear(storeSlug, cartToken);
         return OrderResponse.from(saved, items);
