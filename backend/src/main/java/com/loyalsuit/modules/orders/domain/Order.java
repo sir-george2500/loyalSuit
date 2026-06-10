@@ -42,6 +42,10 @@ public class Order extends TenantScopedEntity {
     @Column(name = "vendor_id")
     private UUID vendorId;
 
+    /** The affiliate (by id) who referred this order, if any — set from a referral code at checkout. */
+    @Column(name = "affiliate_id")
+    private UUID affiliateId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;

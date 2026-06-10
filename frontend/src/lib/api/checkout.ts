@@ -19,6 +19,8 @@ export interface CheckoutPayload {
   couponCode?: string
   /** Loyalty points to spend (signed-in customers only). */
   pointsToRedeem?: number
+  /** An affiliate referral code captured from the landing link. */
+  referralCode?: string
 }
 
 export const checkoutApi = {

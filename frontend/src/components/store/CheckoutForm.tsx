@@ -11,6 +11,7 @@ import { checkoutApi, type CheckoutPayload } from '@/lib/api/checkout'
 import { storePickupApi } from '@/lib/api/pickup'
 import { storeCouponApi } from '@/lib/api/coupons'
 import { loyaltyApi } from '@/lib/api/loyalty'
+import { getReferral, clearReferral } from '@/lib/referral'
 import type { CouponPreview, OrderResponse } from '@/types'
 
 export default function CheckoutForm({ slug }: { slug: string }) {
@@ -81,6 +82,7 @@ export default function CheckoutForm({ slug }: { slug: string }) {
     mutationFn: (payload: CheckoutPayload) => checkoutApi.placeOrder(slug, payload, idempotencyKey),
     onSuccess: ({ data }) => {
       setOrder(data.data)
+      clearReferral()
       queryClient.invalidateQueries({ queryKey: ['cart', slug] })
     },
     onError: (err) =>
@@ -153,6 +155,7 @@ export default function CheckoutForm({ slug }: { slug: string }) {
               deliveryZoneId: zoneId || undefined,
               couponCode: coupon?.code || undefined,
               pointsToRedeem: pointsToUse || undefined,
+              referralCode: getReferral() || undefined,
             })
           })}
           noValidate

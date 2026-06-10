@@ -3,6 +3,7 @@ package com.loyalsuit.modules.orders.application;
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.common.response.PageResponse;
+import com.loyalsuit.modules.affiliate.application.AffiliateRewardService;
 import com.loyalsuit.modules.inventory.application.StockService;
 import com.loyalsuit.modules.loyalty.application.LoyaltyService;
 import com.loyalsuit.modules.marketplace.application.CommissionLine;
@@ -38,6 +39,7 @@ public class OrderManagementService {
     private final StockService stockService;
     private final CommissionService commissionService;
     private final LoyaltyService loyaltyService;
+    private final AffiliateRewardService affiliateRewardService;
 
     public PageResponse<OrderSummaryResponse> list(UUID tenantId, OrderStatus status, Pageable pageable) {
         var page = status == null
@@ -85,6 +87,8 @@ public class OrderManagementService {
         List<OrderItem> items = orderItemRepository.findByOrderId(saved.getId());
         commissionService.settleOrder(tenantId, saved.getId(), saved.getOrderNumber(), vendorLines(items));
         loyaltyService.earnForOrder(tenantId, saved.getCustomerId(), saved.getId(), saved.getTotal());
+        affiliateRewardService.earnForOrder(
+                tenantId, saved.getAffiliateId(), saved.getId(), saved.getOrderNumber(), saved.getSubtotal());
         return OrderResponse.from(saved, items);
     }
 
@@ -106,6 +110,8 @@ public class OrderManagementService {
         List<OrderItem> items = orderItemRepository.findByOrderId(saved.getId());
         commissionService.settleOrder(tenantId, saved.getId(), saved.getOrderNumber(), vendorLines(items));
         loyaltyService.earnForOrder(tenantId, saved.getCustomerId(), saved.getId(), saved.getTotal());
+        affiliateRewardService.earnForOrder(
+                tenantId, saved.getAffiliateId(), saved.getId(), saved.getOrderNumber(), saved.getSubtotal());
     }
 
     /** Maps the order's vendor lines (house products excluded) into commission lines. */
