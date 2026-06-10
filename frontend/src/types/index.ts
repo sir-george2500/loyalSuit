@@ -554,3 +554,28 @@ export interface PickupPoint {
   zones: DeliveryZone[]
   createdAt: string
 }
+
+export type DiscountType = 'PERCENT' | 'FIXED_AMOUNT'
+
+export interface Coupon {
+  id: string
+  code: string
+  description?: string | null
+  discountType: DiscountType
+  value: number
+  minOrderSubtotal?: number | null
+  maxDiscount?: number | null
+  usageLimit?: number | null
+  perCustomerLimit?: number | null
+  startsAt?: string | null
+  endsAt?: string | null
+  active: boolean
+  timesRedeemed: number
+  createdAt: string
+}
+
+export interface CouponPreview {
+  code: string
+  description?: string | null
+  discountAmount: number
+}
