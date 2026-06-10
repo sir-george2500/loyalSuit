@@ -360,13 +360,16 @@ ledger — a delivery is layered on an order, mirroring how POS layered on order
   append-only status timeline, `@Version` guard. Dispatcher (store roles) assigns by order
   number and advances status; illegal transitions rejected; one delivery per order (unique
   index). _(Agent self-service queue + customer tracking land in 7c.)_
-- [ ] **7c — Agent workflow + tracking.** Agent view of assigned deliveries; advance status
-  step by step (each transition timestamped + actor-stamped). Customer/admin tracking view
-  reads the timeline (polling via TanStack Query; SSE optional later).
-- [ ] **7d — Proof of delivery + COD settlement.** On DELIVERED: capture recipient name,
-  signature/photo (Cloudinary), optional note. For a COD order this is the moment it becomes
-  PAID and commission settles — idempotently (a delivery completes exactly once). FAILED
-  capture with reason; no payment, stock-return policy noted.
+- [x] **7c — Agent workflow.** A courier's own area (`/delivery`, DELIVERY_AGENT only):
+  their active work queue and step-by-step status advancement (PICKED_UP → IN_TRANSIT →
+  DELIVERED, or FAILED with a reason), each transition timestamped + actor-stamped, with an
+  ownership check so an agent can only move their own deliveries. _(Customer-facing tracking
+  moved to 7d — it reads the same timeline and is most relevant alongside completion.)_
+- [ ] **7d — Proof of delivery + COD settlement + customer tracking.** On DELIVERED: capture
+  recipient name, signature/photo (Cloudinary), optional note. For a COD order this is the
+  moment it becomes PAID and commission settles — idempotently (a delivery completes exactly
+  once). FAILED capture with reason; no payment, stock-return policy noted. Customer tracking
+  view (extends the existing public order-tracking flow with the delivery timeline; polling).
 - [ ] **7e — Pickup points & delivery zones.** Pickup-point locations; delivery zones (area
   / postal) carrying a fee; checkout shipping fee derives from the destination zone
   (replaces the current flat/zero shipping). Assignment hints by zone.

@@ -14,4 +14,6 @@ public interface DeliveryRepository {
     Optional<Delivery> findByOrderIdAndTenantId(UUID orderId, UUID tenantId);
     Page<Delivery> findByTenantId(UUID tenantId, Pageable pageable);
     Page<Delivery> findByTenantIdAndStatus(UUID tenantId, DeliveryStatus status, Pageable pageable);
+    /** An agent's still-open deliveries (ASSIGNED / PICKED_UP / IN_TRANSIT) — their work queue. */
+    Page<Delivery> findActiveByAgent(UUID tenantId, UUID agentId, Pageable pageable);
 }

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,4 +16,6 @@ interface DeliveryJpaRepository extends JpaRepository<Delivery, UUID> {
     Page<Delivery> findByTenantIdOrderByCreatedAtDesc(UUID tenantId, Pageable pageable);
     Page<Delivery> findByTenantIdAndStatusOrderByCreatedAtDesc(
             UUID tenantId, DeliveryStatus status, Pageable pageable);
+    Page<Delivery> findByTenantIdAndAgentIdAndStatusInOrderByCreatedAtDesc(
+            UUID tenantId, UUID agentId, Collection<DeliveryStatus> statuses, Pageable pageable);
 }

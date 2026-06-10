@@ -239,6 +239,54 @@ class DeliveryServiceTest {
         assertThat(delivery.failedAt()).isNotNull();
     }
 
+    // ---- agent self-service -------------------------------------------------
+
+    @Test
+    void myAssignments_returnsTheAgentsActiveQueue() {
+        // Arrange
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 20);
+        when(agentRepository.findByUserId(agentUserId)).thenReturn(Optional.of(agent(true)));
+        when(deliveryRepository.findActiveByAgent(tenantId, agentId, pageable))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(delivery(DeliveryStatus.PICKED_UP))));
+
+        // Act
+        var page = service.myAssignments(tenantId, agentUserId, pageable);
+
+        // Assert
+        assertThat(page.getContent()).singleElement()
+                .satisfies(d -> assertThat(d.status()).isEqualTo("PICKED_UP"));
+    }
+
+    @Test
+    void advanceAsAgent_movesTheirOwnDelivery() {
+        // Arrange — the delivery is assigned to this agent
+        when(agentRepository.findByUserId(agentUserId)).thenReturn(Optional.of(agent(true)));
+        when(deliveryRepository.findByIdAndTenantId(deliveryId, tenantId)).thenReturn(Optional.of(delivery(DeliveryStatus.ASSIGNED)));
+        stubDeliverySave();
+
+        // Act
+        DeliveryResponse delivery = service.advanceAsAgent(deliveryId, tenantId, agentUserId, advanceTo(DeliveryStatus.PICKED_UP, null));
+
+        // Assert
+        assertThat(delivery.status()).isEqualTo("PICKED_UP");
+        verify(eventRepository).save(any(DeliveryEvent.class));
+    }
+
+    @Test
+    void advanceAsAgent_isRejected_whenTheDeliveryIsNotTheirs() {
+        // Arrange — the delivery is assigned to someone else
+        when(agentRepository.findByUserId(agentUserId)).thenReturn(Optional.of(agent(true)));
+        Delivery other = delivery(DeliveryStatus.ASSIGNED);
+        other.setAgentId(UUID.randomUUID());
+        when(deliveryRepository.findByIdAndTenantId(deliveryId, tenantId)).thenReturn(Optional.of(other));
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.advanceAsAgent(deliveryId, tenantId, agentUserId, advanceTo(DeliveryStatus.PICKED_UP, null)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("not assigned to you");
+        verify(deliveryRepository, never()).save(any());
+    }
+
     // ---- get ----------------------------------------------------------------
 
     @Test

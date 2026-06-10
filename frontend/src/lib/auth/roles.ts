@@ -16,7 +16,7 @@ const ROLE_HOME: Record<UserRole, string> = {
   STAFF: '/admin/dashboard',
   VENDOR: '/seller/dashboard',
   CUSTOMER: '/store',
-  DELIVERY_AGENT: '/store',
+  DELIVERY_AGENT: '/delivery',
 }
 
 export function homeForRole(role: UserRole | null | undefined): string {
@@ -33,6 +33,7 @@ const AREA_ROLES: ReadonlyArray<{ prefix: string; roles: readonly UserRole[] }> 
   { prefix: '/admin', roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF'] },
   { prefix: '/seller', roles: ['VENDOR'] },
   { prefix: '/pos', roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'STAFF'] },
+  { prefix: '/delivery', roles: ['DELIVERY_AGENT'] },
 ]
 
 function areaFor(pathname: string) {

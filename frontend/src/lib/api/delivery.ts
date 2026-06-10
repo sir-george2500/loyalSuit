@@ -28,9 +28,13 @@ export const adminDeliveryAgentApi = {
   deactivate: (id: string) => apiClient.patch<ApiResponse<DeliveryAgent>>(`${ADMIN}/${id}/deactivate`),
 }
 
-/** A delivery agent's own profile. */
+/** A delivery agent's own profile, work queue, and status updates. */
 export const deliveryAgentApi = {
   me: () => apiClient.get<ApiResponse<DeliveryAgent>>('/api/v1/delivery/me'),
+  assignments: (page = 0) =>
+    apiClient.get<ApiResponse<PageResponse<Delivery>>>('/api/v1/delivery/assignments', { params: { page } }),
+  advance: (id: string, status: DeliveryStatus, note?: string) =>
+    apiClient.patch<ApiResponse<Delivery>>(`/api/v1/delivery/assignments/${id}/status`, { status, note }),
 }
 
 export interface AssignDeliveryPayload {

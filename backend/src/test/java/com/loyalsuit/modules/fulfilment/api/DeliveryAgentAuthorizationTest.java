@@ -1,6 +1,7 @@
 package com.loyalsuit.modules.fulfilment.api;
 
 import com.loyalsuit.modules.fulfilment.application.DeliveryAgentService;
+import com.loyalsuit.modules.fulfilment.application.DeliveryService;
 import com.loyalsuit.modules.users.domain.UserRole;
 import com.loyalsuit.security.JwtService;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,6 +47,9 @@ class DeliveryAgentAuthorizationTest {
 
     @MockitoBean
     private DeliveryAgentService agentService;
+
+    @MockitoBean
+    private DeliveryService deliveryService;
 
     private String bearer(UserRole role) {
         return "Bearer " + jwtService.issueToken(
@@ -89,9 +94,27 @@ class DeliveryAgentAuthorizationTest {
                 .andExpect(allowedFor(AGENT, role));
     }
 
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void myAssignments(UserRole role) throws Exception {
+        mvc.perform(get("/api/v1/delivery/assignments").header("Authorization", bearer(role)))
+                .andExpect(allowedFor(AGENT, role));
+    }
+
+    @ParameterizedTest
+    @EnumSource(UserRole.class)
+    void advanceMyAssignment(UserRole role) throws Exception {
+        String body = "{\"status\":\"PICKED_UP\"}";
+        mvc.perform(patch("/api/v1/delivery/assignments/" + UUID.randomUUID() + "/status")
+                        .header("Authorization", bearer(role))
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(allowedFor(AGENT, role));
+    }
+
     @Test
     void anonymousIsRejected() throws Exception {
         mvc.perform(get("/api/v1/admin/delivery-agents")).andExpect(status().is4xxClientError());
         mvc.perform(get("/api/v1/delivery/me")).andExpect(status().is4xxClientError());
+        mvc.perform(get("/api/v1/delivery/assignments")).andExpect(status().is4xxClientError());
     }
 }
