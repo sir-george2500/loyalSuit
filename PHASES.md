@@ -380,9 +380,14 @@ ledger — a delivery is layered on an order, mirroring how POS layered on order
   reuses the order-tracking email gate, then returns a **sanitized** delivery view (status +
   a stage timeline; no internal notes/actor/agent). Storefront tracking page shows a delivery
   progress stepper. "PREPARING" until dispatched.
-- [ ] **7f.2 — Commission clawback** (the Phase 5 carryover): when a settled/paid-out order is
-  later refunded — or a delivered COD is returned — reverse the commission and handle a
-  resulting negative available balance.
+- [x] **7f.2 — Commission clawback** (the Phase 5 carryover — the reversal mechanism already
+  shipped with returns; this slice verified + hardened it). `ReturnService.approve` already
+  reverses commission (`reverseOrder`, idempotent) and `available = earned − pending − paid`
+  already goes negative after a refund. Added: an explicit **`owed`** on the balance (the
+  negative surfaced as a positive debt) shown in the seller payout view; **warn-but-allow** on
+  `pay()` — an admin can still pay a request a later refund has undercut, but the overpayment
+  is flagged on the audit trail; and a test locking the invariant (paid-out → refunded →
+  negative balance **blocks** the next withdrawal, future earnings clear it).
 
 ## Phase 8 — Marketing, loyalty & engagement
 - [ ] Coupons, flash deals; loyalty points; affiliate program

@@ -43,7 +43,7 @@ public class PayoutService {
         BigDecimal pending = payoutRepository.sumAmount(tenantId, vendorUserId, PayoutStatus.PENDING);
         BigDecimal paid = payoutRepository.sumAmount(tenantId, vendorUserId, PayoutStatus.PAID);
         BigDecimal available = earned.subtract(pending).subtract(paid);
-        return new PayoutBalanceResponse(vendorUserId, earned, pending, paid, available);
+        return PayoutBalanceResponse.of(vendorUserId, earned, pending, paid, available);
     }
 
     @Transactional
@@ -84,8 +84,20 @@ public class PayoutService {
         payout.setReference(trimToNull(reference));
         payout.setResolutionNote(trimToNull(note));
         PayoutRequest saved = payoutRepository.save(payout);
+
+        // Warn-but-allow: a refund may have reversed commission since the vendor requested
+        // this. Paying it can then overdraw them — their balance goes negative, a debt their
+        // future earnings clear. We honour the request but flag the shortfall on the audit
+        // trail (balance recomputed after this payout is recorded as PAID).
+        PayoutBalanceResponse balance = balanceFor(tenantId, saved.getVendorId());
+        String overdraft = balance.available().signum() < 0
+                ? " OVERPAID (vendor now owes " + balance.owed() + " after a refund reversal)"
+                : "";
+
         auditService.recordSuccess(AuditAction.PAYOUT_PAID, admin, "PayoutRequest", id.toString(),
-                "amount=" + saved.getAmount() + (saved.getReference() != null ? " ref=" + saved.getReference() : ""));
+                "amount=" + saved.getAmount()
+                        + (saved.getReference() != null ? " ref=" + saved.getReference() : "")
+                        + overdraft);
         return PayoutResponse.from(saved);
     }
 
