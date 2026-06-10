@@ -428,9 +428,14 @@ New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `no
   (V25). The storefront shows the regular price struck through (reuses `compareAtPrice`),
   needing no storefront change. Sale price validated below list price; end after start.
   Authored on the (owner) admin product form — flash deals are an owner-controlled promotion.
-- [ ] **8d — Loyalty points.** Customers earn points on paid orders (earn rate), held in a
-  points ledger; redeem points for a capped checkout discount. Earn on COD settlement / pay;
-  reverse on refund (mirrors the commission clawback pattern).
+- [x] **8d.1 — Loyalty: earn engine + balance.** New `loyalty` module. A registered customer
+  earns points (1 per unit paid) into a `LoyaltyAccount` + ledger when their order is paid
+  (hooked into `markPaid` / `settleCashOnDelivery`, idempotent per order); refund claws them
+  back (`ReturnService.approve`, mirroring commission reversal, never below zero). Customer
+  reads `GET /api/v1/loyalty/me` (balance + redeemable value) and `/me/history`. V26.
+- [ ] **8d.2 — Loyalty redemption at checkout + customer UI.** Checkout takes points to spend;
+  the server validates the balance + a cap, applies the discount (point value), records a
+  REDEEM, and a customer sees/uses their points in the storefront.
 - [ ] **8e — Affiliate program.** Affiliate codes/links, referral attribution captured on a
   placed order, and a reward ledger for the affiliate (reuses the payout/balance pattern).
 - [ ] **8f — Notifications.** A `notifications` module: in-app inbox + email (reusing the
