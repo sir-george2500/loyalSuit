@@ -5,11 +5,12 @@ import com.loyalsuit.common.exception.ConflictException;
 import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.common.response.PageResponse;
 import com.loyalsuit.modules.cart.application.CartService;
-import com.loyalsuit.modules.cart.application.dto.CartView;
+import com.loyalsuit.modules.promotions.application.dto.AppliedCoupon;
 import com.loyalsuit.modules.promotions.application.dto.CouponPreviewResponse;
 import com.loyalsuit.modules.promotions.application.dto.CouponRequest;
 import com.loyalsuit.modules.promotions.application.dto.CouponResponse;
 import com.loyalsuit.modules.promotions.domain.Coupon;
+import com.loyalsuit.modules.promotions.domain.CouponRedemption;
 import com.loyalsuit.modules.promotions.domain.DiscountType;
 import com.loyalsuit.modules.promotions.domain.port.CouponRedemptionRepository;
 import com.loyalsuit.modules.promotions.domain.port.CouponRepository;
@@ -94,28 +95,53 @@ public class CouponService {
         Tenant tenant = tenantRepository.findBySlug(storeSlug)
                 .filter(Tenant::isActive)
                 .orElseThrow(() -> new NotFoundException("Store", storeSlug));
+        BigDecimal subtotal = cartService.view(storeSlug, cartToken).subtotal();
+        Coupon coupon = requireRedeemable(tenant.getId(), code, subtotal, null);
+        return new CouponPreviewResponse(coupon.getCode(), coupon.getDescription(), coupon.discountFor(subtotal));
+    }
 
-        Coupon coupon = couponRepository.findByTenantIdAndCode(tenant.getId(), Coupon.normalize(code))
+    // ---- checkout (orders module collaborates here) -------------------------
+
+    /** Validate a code for an order and return the discount to apply, or throw. Includes the
+     *  per-customer limit (the preview can't, having no identity). Records nothing yet. */
+    public AppliedCoupon validateForCheckout(UUID tenantId, String code, BigDecimal subtotal, String customerEmail) {
+        Coupon coupon = requireRedeemable(tenantId, code, subtotal, customerEmail);
+        return new AppliedCoupon(coupon.getId(), coupon.getCode(), coupon.discountFor(subtotal));
+    }
+
+    /** Record a redemption against the placed order. The unique index on order_id is the
+     *  backstop against a double-record. */
+    @Transactional
+    public void recordRedemption(UUID tenantId, AppliedCoupon coupon, UUID orderId, String customerEmail) {
+        redemptionRepository.save(
+                new CouponRedemption(tenantId, coupon.couponId(), orderId, customerEmail, coupon.discount()));
+    }
+
+    // ---- helpers ------------------------------------------------------------
+
+    /** All the rules that gate a redemption (active, window, minimum, usage + per-customer
+     *  limits). Returns the coupon when it may be applied to {@code subtotal}. */
+    private Coupon requireRedeemable(UUID tenantId, String code, BigDecimal subtotal, String customerEmail) {
+        Coupon coupon = couponRepository.findByTenantIdAndCode(tenantId, Coupon.normalize(code))
                 .filter(Coupon::isActive)
                 .orElseThrow(() -> new BusinessException("That code isn't valid"));
         if (!coupon.isWithinWindow(Instant.now())) {
             throw new BusinessException("That code isn't available right now");
         }
-
-        CartView cart = cartService.view(storeSlug, cartToken);
-        if (!coupon.meetsMinimum(cart.subtotal())) {
+        if (!coupon.meetsMinimum(subtotal)) {
             throw new BusinessException("Spend at least " + coupon.getMinOrderSubtotal() + " to use this code");
         }
         if (coupon.getUsageLimit() != null
                 && redemptionRepository.countByCouponId(coupon.getId()) >= coupon.getUsageLimit()) {
             throw new BusinessException("That code has reached its usage limit");
         }
-
-        return new CouponPreviewResponse(coupon.getCode(), coupon.getDescription(),
-                coupon.discountFor(cart.subtotal()));
+        if (coupon.getPerCustomerLimit() != null && StringUtils.hasText(customerEmail)
+                && redemptionRepository.countByCouponIdAndCustomerEmail(
+                        coupon.getId(), customerEmail.trim().toLowerCase()) >= coupon.getPerCustomerLimit()) {
+            throw new BusinessException("You've already used this code the maximum number of times");
+        }
+        return coupon;
     }
-
-    // ---- helpers ------------------------------------------------------------
 
     private void apply(Coupon coupon, CouponRequest request) {
         coupon.setDescription(trimToNull(request.getDescription()));

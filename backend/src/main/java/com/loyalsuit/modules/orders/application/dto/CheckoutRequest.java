@@ -14,6 +14,10 @@ public class CheckoutRequest {
     /** The delivery zone the customer chose; its fee becomes shipping. Null = no delivery fee. */
     private UUID deliveryZoneId;
 
+    /** A discount code to apply; the server re-validates and prices it. Null = no coupon. */
+    @Size(max = 64)
+    private String couponCode;
+
     @NotBlank(message = "Your name is required")
     @Size(max = 255)
     private String customerName;

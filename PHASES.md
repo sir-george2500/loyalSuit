@@ -415,10 +415,13 @@ New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `no
   (`/admin/coupons`) + a public preview (`GET /store/{slug}/coupons/{code}` against the
   server-priced cart, no redemption). Discount math lives on the aggregate; the redemption
   ledger is unique on order_id (the 8b idempotency seam).
-- [ ] **8b — Coupon redemption at checkout.** Checkout takes a `couponCode`; the server
-  re-validates (active, in-window, min met, under limits), applies the discount to the order
-  total, and records a redemption — idempotently with the order, so a retried checkout can't
-  double-spend a coupon. Enforces total + per-customer limits.
+- [x] **8b — Coupon redemption at checkout.** Checkout takes a `couponCode`; the server
+  re-validates (active, in-window, min met, total + per-customer limits), applies the discount
+  to the order total (`subtotal + shipping − discount`), and records a redemption against the
+  order — the idempotency-key path returns the existing order before redeeming, and the
+  unique `order_id` index backstops a double-record. `orders → promotions` direct (no cycle —
+  promotions doesn't depend on orders). Storefront checkout gains apply/remove a code with a
+  live discount line.
 - [ ] **8c — Flash deals (scheduled product discounts).** A product can carry a time-boxed
   sale price; the storefront and checkout use the sale price only inside the window. Overlap
   rules; admin schedule.

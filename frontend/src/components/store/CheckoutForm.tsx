@@ -5,11 +5,12 @@ import Link from 'next/link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import type { AxiosError } from 'axios'
-import { ArrowLeft, Loader2, CheckCircle2, Banknote, Truck } from 'lucide-react'
+import { ArrowLeft, Loader2, CheckCircle2, Banknote, Truck, Ticket, X } from 'lucide-react'
 import { cartApi } from '@/lib/api/cart'
 import { checkoutApi, type CheckoutPayload } from '@/lib/api/checkout'
 import { storePickupApi } from '@/lib/api/pickup'
-import type { OrderResponse } from '@/types'
+import { storeCouponApi } from '@/lib/api/coupons'
+import type { CouponPreview, OrderResponse } from '@/types'
 
 export default function CheckoutForm({ slug }: { slug: string }) {
   const queryClient = useQueryClient()
@@ -43,6 +44,18 @@ export default function CheckoutForm({ slug }: { slug: string }) {
   const selectedPoint = deliverablePoints.find((p) => p.id === pointId)
   const selectedZone = selectedPoint?.zones.find((z) => z.id === zoneId)
   const shipping = selectedZone?.fee ?? 0
+
+  const [couponInput, setCouponInput] = useState('')
+  const [coupon, setCoupon] = useState<CouponPreview | null>(null)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const discount = coupon?.discountAmount ?? 0
+
+  const applyCoupon = useMutation({
+    mutationFn: () => storeCouponApi.preview(slug, couponInput.trim()),
+    onSuccess: ({ data }) => { setCoupon(data.data); setCouponError(null) },
+    onError: (err) =>
+      setCouponError((err as AxiosError<{ message?: string }>)?.response?.data?.message ?? 'That code isn’t valid.'),
+  })
 
   const {
     register,
@@ -119,7 +132,10 @@ export default function CheckoutForm({ slug }: { slug: string }) {
 
       <div className="grid gap-8 md:grid-cols-[1fr_18rem]">
         <form
-          onSubmit={handleSubmit((data) => { setServerError(null); place.mutate({ ...data, deliveryZoneId: zoneId || undefined }) })}
+          onSubmit={handleSubmit((data) => {
+            setServerError(null)
+            place.mutate({ ...data, deliveryZoneId: zoneId || undefined, couponCode: coupon?.code || undefined })
+          })}
           noValidate
           className="space-y-4"
         >
@@ -198,6 +214,42 @@ export default function CheckoutForm({ slug }: { slug: string }) {
             </div>
           )}
 
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Ticket className="h-4 w-4" /> Discount code
+            </div>
+            {coupon ? (
+              <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
+                <span><span className="font-mono font-medium">{coupon.code}</span> applied — {money.format(discount)} off</span>
+                <button
+                  type="button"
+                  onClick={() => { setCoupon(null); setCouponInput(''); setCouponError(null) }}
+                  className="text-green-700 hover:text-green-900"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  value={couponInput}
+                  onChange={(e) => { setCouponInput(e.target.value); setCouponError(null) }}
+                  placeholder="Enter code"
+                  className={`${input(false)} uppercase`}
+                />
+                <button
+                  type="button"
+                  disabled={!couponInput.trim() || applyCoupon.isPending}
+                  onClick={() => applyCoupon.mutate()}
+                  className="rounded-lg border border-gray-300 px-4 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+                >
+                  {applyCoupon.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                </button>
+              </div>
+            )}
+            {couponError && <p className="mt-1 text-xs text-red-600">{couponError}</p>}
+          </div>
+
           <Field label="Order notes" hint="optional">
             <textarea {...register('notes')} rows={2} className={input(false)} />
           </Field>
@@ -240,9 +292,15 @@ export default function CheckoutForm({ slug }: { slug: string }) {
               <span className="text-gray-600">Shipping</span>
               <span>{selectedZone ? money.format(shipping) : hasDelivery ? 'Select a zone' : 'Free'}</span>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-green-700">
+                <span>Discount{coupon ? ` (${coupon.code})` : ''}</span>
+                <span>−{money.format(discount)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold">
               <span>Total</span>
-              <span>{money.format((cart?.subtotal ?? 0) + shipping)}</span>
+              <span>{money.format(Math.max((cart?.subtotal ?? 0) + shipping - discount, 0))}</span>
             </div>
           </div>
         </aside>
