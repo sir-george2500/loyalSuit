@@ -13,6 +13,8 @@ export interface CheckoutPayload {
   postalCode?: string
   country?: string
   notes?: string
+  /** The chosen delivery zone; its fee becomes shipping. */
+  deliveryZoneId?: string
 }
 
 export const checkoutApi = {

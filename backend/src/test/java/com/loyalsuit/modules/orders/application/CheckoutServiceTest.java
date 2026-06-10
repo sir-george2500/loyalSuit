@@ -9,6 +9,8 @@ import com.loyalsuit.modules.catalog.domain.Product;
 import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
 import com.loyalsuit.modules.inventory.application.StockService;
 import com.loyalsuit.modules.orders.application.dto.CheckoutRequest;
+import com.loyalsuit.modules.orders.application.port.ResolvedShippingZone;
+import com.loyalsuit.modules.orders.application.port.ShippingZoneResolver;
 import com.loyalsuit.modules.orders.domain.OrderItem;
 import com.loyalsuit.modules.orders.application.dto.OrderResponse;
 import com.loyalsuit.modules.orders.domain.Order;
@@ -50,6 +52,7 @@ class CheckoutServiceTest {
     @Mock private OrderRepository orderRepository;
     @Mock private OrderItemRepository orderItemRepository;
     @Mock private ProductRepository productRepository;
+    @Mock private ShippingZoneResolver shippingZoneResolver;
 
     @InjectMocks private CheckoutService checkoutService;
 
@@ -155,6 +158,55 @@ class CheckoutServiceTest {
         verify(orderItemRepository).saveAll(captor.capture());
         assertThat(captor.getValue()).singleElement()
                 .satisfies(item -> assertThat(item.getVendorId()).isEqualTo(vendorId));
+    }
+
+    // ---- delivery zone / shipping -------------------------------------------
+
+    @Test
+    void checkout_withADeliveryZone_addsTheZoneFeeToShippingAndTotal() {
+        // Arrange — subtotal 40, a chosen zone priced at 7.50
+        UUID zoneId = UUID.randomUUID();
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(store(true)));
+        when(cartService.view("acme", TOKEN)).thenReturn(cartWithOneLine());
+        when(orderRepository.existsByOrderNumber(any())).thenReturn(false);
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            ReflectionTestUtils.setField(o, "id", UUID.randomUUID());
+            return o;
+        });
+        when(shippingZoneResolver.resolveActive(tenantId, zoneId))
+                .thenReturn(Optional.of(new ResolvedShippingZone("City centre", "Downtown", new BigDecimal("7.50"))));
+        CheckoutRequest request = request();
+        request.setDeliveryZoneId(zoneId);
+
+        // Act
+        OrderResponse response = checkoutService.checkout("acme", TOKEN, request, null, null, null);
+
+        // Assert — total = subtotal + fee; the order snapshots the fee and the zone labels
+        assertThat(response.total()).isEqualByComparingTo("47.50");
+        ArgumentCaptor<Order> order = ArgumentCaptor.forClass(Order.class);
+        verify(orderRepository).save(order.capture());
+        assertThat(order.getValue().getShippingAmount()).isEqualByComparingTo("7.50");
+        assertThat(order.getValue().getShippingAddress())
+                .containsEntry("pickupPoint", "Downtown")
+                .containsEntry("deliveryZone", "City centre");
+    }
+
+    @Test
+    void checkout_withAnUnavailableZone_isRejected_andCreatesNoOrder() {
+        // Arrange — the chosen zone (or its point) is inactive/missing
+        UUID zoneId = UUID.randomUUID();
+        when(tenantRepository.findBySlug("acme")).thenReturn(Optional.of(store(true)));
+        when(cartService.view("acme", TOKEN)).thenReturn(cartWithOneLine());
+        when(shippingZoneResolver.resolveActive(tenantId, zoneId)).thenReturn(Optional.empty());
+        CheckoutRequest request = request();
+        request.setDeliveryZoneId(zoneId);
+
+        // Act & Assert
+        assertThatThrownBy(() -> checkoutService.checkout("acme", TOKEN, request, null, null, null))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("delivery zone is unavailable");
+        verify(orderRepository, never()).save(any());
     }
 
     // ---- guards -------------------------------------------------------------

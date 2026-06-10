@@ -5,9 +5,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.UUID;
+
 /** Guest checkout details. Payment is cash, so no card data is collected. */
 @Data
 public class CheckoutRequest {
+
+    /** The delivery zone the customer chose; its fee becomes shipping. Null = no delivery fee. */
+    private UUID deliveryZoneId;
 
     @NotBlank(message = "Your name is required")
     @Size(max = 255)

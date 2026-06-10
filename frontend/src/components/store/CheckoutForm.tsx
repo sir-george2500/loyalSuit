@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import type { AxiosError } from 'axios'
-import { ArrowLeft, Loader2, CheckCircle2, Banknote } from 'lucide-react'
+import { ArrowLeft, Loader2, CheckCircle2, Banknote, Truck } from 'lucide-react'
 import { cartApi } from '@/lib/api/cart'
 import { checkoutApi, type CheckoutPayload } from '@/lib/api/checkout'
+import { storePickupApi } from '@/lib/api/pickup'
 import type { OrderResponse } from '@/types'
 
 export default function CheckoutForm({ slug }: { slug: string }) {
@@ -22,6 +23,26 @@ export default function CheckoutForm({ slug }: { slug: string }) {
     queryKey: ['cart', slug],
     queryFn: async () => (await cartApi.view(slug)).data.data,
   })
+
+  const { data: pickupPoints } = useQuery({
+    queryKey: ['store-pickup-points', slug],
+    queryFn: async () => (await storePickupApi.list(slug)).data.data,
+  })
+
+  // Only points that actually have a zone can price a delivery.
+  const deliverablePoints = (pickupPoints ?? []).filter((p) => p.zones.length > 0)
+  const hasDelivery = deliverablePoints.length > 0
+  const [pointId, setPointId] = useState('')
+  const [zoneId, setZoneId] = useState('')
+
+  // Auto-pick the only point so the customer just chooses a zone.
+  useEffect(() => {
+    if (deliverablePoints.length === 1 && pointId === '') setPointId(deliverablePoints[0].id)
+  }, [deliverablePoints, pointId])
+
+  const selectedPoint = deliverablePoints.find((p) => p.id === pointId)
+  const selectedZone = selectedPoint?.zones.find((z) => z.id === zoneId)
+  const shipping = selectedZone?.fee ?? 0
 
   const {
     register,
@@ -97,7 +118,11 @@ export default function CheckoutForm({ slug }: { slug: string }) {
       )}
 
       <div className="grid gap-8 md:grid-cols-[1fr_18rem]">
-        <form onSubmit={handleSubmit((data) => { setServerError(null); place.mutate(data) })} noValidate className="space-y-4">
+        <form
+          onSubmit={handleSubmit((data) => { setServerError(null); place.mutate({ ...data, deliveryZoneId: zoneId || undefined }) })}
+          noValidate
+          className="space-y-4"
+        >
           <Field label="Full name" error={errors.customerName?.message}>
             <input {...register('customerName', { required: 'Name is required' })} className={input(!!errors.customerName)} />
           </Field>
@@ -139,13 +164,50 @@ export default function CheckoutForm({ slug }: { slug: string }) {
             </Field>
           </div>
 
+          {hasDelivery && (
+            <div className="rounded-lg border border-gray-200 p-4">
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                <Truck className="h-4 w-4" /> Delivery
+              </div>
+              {deliverablePoints.length > 1 && (
+                <select
+                  value={pointId}
+                  onChange={(e) => { setPointId(e.target.value); setZoneId('') }}
+                  className={`${input(false)} mb-2`}
+                >
+                  <option value="" disabled>Choose a pickup point…</option>
+                  {deliverablePoints.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              )}
+              {selectedPoint && (
+                <div className="space-y-1">
+                  {selectedPoint.zones.map((z) => (
+                    <label
+                      key={z.id}
+                      className={`flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-sm ${zoneId === z.id ? 'border-gray-900 bg-gray-50' : 'border-gray-200'}`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <input type="radio" name="deliveryZone" checked={zoneId === z.id} onChange={() => setZoneId(z.id)} />
+                        {z.name}
+                      </span>
+                      <span className="font-medium">{money.format(z.fee)}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <Field label="Order notes" hint="optional">
             <textarea {...register('notes')} rows={2} className={input(false)} />
           </Field>
 
+          {hasDelivery && !selectedZone && (
+            <p className="text-sm text-gray-500">Choose a delivery zone to continue.</p>
+          )}
           <button
             type="submit"
-            disabled={place.isPending}
+            disabled={place.isPending || (hasDelivery && !selectedZone)}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-3 font-medium text-white hover:bg-gray-800 disabled:opacity-60"
           >
             {place.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Banknote className="h-5 w-5" />}
@@ -169,9 +231,19 @@ export default function CheckoutForm({ slug }: { slug: string }) {
               ))}
             </ul>
           )}
-          <div className="mt-4 flex justify-between border-t border-gray-200 pt-3 font-semibold">
-            <span>Total</span>
-            <span>{money.format(cart?.subtotal ?? 0)}</span>
+          <div className="mt-4 space-y-1 border-t border-gray-200 pt-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Subtotal</span>
+              <span>{money.format(cart?.subtotal ?? 0)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Shipping</span>
+              <span>{selectedZone ? money.format(shipping) : hasDelivery ? 'Select a zone' : 'Free'}</span>
+            </div>
+            <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold">
+              <span>Total</span>
+              <span>{money.format((cart?.subtotal ?? 0) + shipping)}</span>
+            </div>
           </div>
         </aside>
       </div>
