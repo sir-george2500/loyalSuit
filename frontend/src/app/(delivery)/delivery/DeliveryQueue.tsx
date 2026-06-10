@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
-import { Package, Loader2, MapPin, ArrowRight, X } from 'lucide-react'
+import { Package, Loader2, MapPin, ArrowRight, X, Check } from 'lucide-react'
 import { deliveryAgentApi } from '@/lib/api/delivery'
 import type { Delivery, DeliveryStatus } from '@/types'
 
@@ -37,6 +37,7 @@ function errorMessage(err: unknown, fallback: string): string {
 export default function DeliveryQueue() {
   const queryClient = useQueryClient()
   const [failing, setFailing] = useState<Delivery | null>(null)
+  const [completing, setCompleting] = useState<Delivery | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const { data, isLoading, isError } = useQuery({
@@ -93,25 +94,75 @@ export default function DeliveryQueue() {
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            {NEXT_STATUSES[d.status].map((next) =>
-              next === 'FAILED' ? (
-                <button key={next} className="btn btn-outline btn-error btn-sm"
-                  onClick={() => { setError(null); setFailing(d) }}>
-                  Can’t deliver
-                </button>
-              ) : (
+            {NEXT_STATUSES[d.status].map((next) => {
+              if (next === 'FAILED') {
+                return (
+                  <button key={next} className="btn btn-outline btn-error btn-sm"
+                    onClick={() => { setError(null); setFailing(d) }}>
+                    Can’t deliver
+                  </button>
+                )
+              }
+              if (next === 'DELIVERED') {
+                return (
+                  <button key={next} className="btn btn-success btn-sm gap-1"
+                    onClick={() => { setError(null); setCompleting(d) }}>
+                    <Check className="h-4 w-4" /> Delivered
+                  </button>
+                )
+              }
+              return (
                 <button key={next} className="btn btn-primary btn-sm gap-1" disabled={advance.isPending}
                   onClick={() => { setError(null); advance.mutate({ id: d.id, status: next }) }}>
                   {advance.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                   {statusLabel(next)}
                 </button>
-              ),
-            )}
+              )
+            })}
           </div>
         </div>
       ))}
 
       {failing && <FailModal delivery={failing} onClose={() => setFailing(null)} onDone={() => { invalidate(); setFailing(null) }} />}
+      {completing && <CompleteModal delivery={completing} onClose={() => setCompleting(null)} onDone={() => { invalidate(); setCompleting(null) }} />}
+    </div>
+  )
+}
+
+function CompleteModal({ delivery, onClose, onDone }: { delivery: Delivery; onClose: () => void; onDone: () => void }) {
+  const [recipient, setRecipient] = useState('')
+  const [note, setNote] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const complete = useMutation({
+    mutationFn: () => deliveryAgentApi.complete(delivery.id, { recipientName: recipient.trim(), note: note.trim() || undefined }),
+    onSuccess: onDone,
+    onError: (err) => setError(errorMessage(err, 'Could not complete the delivery.')),
+  })
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-sm rounded-xl bg-gray-800 p-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Confirm delivery · {delivery.orderNumber}</h3>
+          <button onClick={onClose} className="btn btn-circle btn-ghost btn-sm"><X className="h-4 w-4" /></button>
+        </div>
+        {error && <p className="mt-2 text-sm text-error">{error}</p>}
+        <label className="mt-3 block text-sm">
+          <span className="text-gray-400">Received by</span>
+          <input value={recipient} onChange={(e) => setRecipient(e.target.value)} autoFocus
+            placeholder="Recipient name" className="input input-bordered mt-1 w-full bg-gray-900 text-white" />
+        </label>
+        <label className="mt-3 block text-sm">
+          <span className="text-gray-400">Note (optional)</span>
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2}
+            placeholder="e.g. left with neighbour" className="textarea textarea-bordered mt-1 w-full bg-gray-900 text-white" />
+        </label>
+        <button className="btn btn-success btn-block mt-4"
+          disabled={recipient.trim() === '' || complete.isPending} onClick={() => complete.mutate()}>
+          {complete.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Mark delivered
+        </button>
+      </div>
     </div>
   )
 }

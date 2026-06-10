@@ -65,6 +65,17 @@ public class Delivery extends TenantScopedEntity {
     @Column(name = "failure_reason", length = 500)
     private String failureReason;
 
+    /** Proof of delivery, captured at completion: who took it, an optional note, and an
+     *  optional signature/photo URL. Null until the delivery is marked delivered. */
+    @Column(name = "recipient_name")
+    private String recipientName;
+
+    @Column(name = "pod_note", length = 500)
+    private String podNote;
+
+    @Column(name = "proof_image_url", length = 500)
+    private String proofImageUrl;
+
     @Version
     @Column(nullable = false)
     private long version;
@@ -85,6 +96,15 @@ public class Delivery extends TenantScopedEntity {
         this.agentName = agentName;
         this.status = DeliveryStatus.ASSIGNED;
         this.assignedAt = Instant.now();
+    }
+
+    /** Complete the delivery with proof: marks it DELIVERED (only valid from IN_TRANSIT)
+     *  and records who received it. */
+    public void markDelivered(String recipientName, String note, String proofImageUrl) {
+        advanceTo(DeliveryStatus.DELIVERED, null);
+        this.recipientName = recipientName;
+        this.podNote = note;
+        this.proofImageUrl = proofImageUrl;
     }
 
     /** Advance along the lifecycle; {@code reason} is required only for FAILED. */

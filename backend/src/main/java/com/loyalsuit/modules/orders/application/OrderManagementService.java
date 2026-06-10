@@ -85,6 +85,25 @@ public class OrderManagementService {
         return OrderResponse.from(saved, items);
     }
 
+    /**
+     * Collaboration API for fulfilment: a cash-on-delivery order is paid the moment its
+     * delivery completes. Idempotent — already-paid orders are a no-op, so a delivery that
+     * (only ever) completes once can't double-settle. Mirrors {@link #markPaid} without the
+     * "already paid" rejection, since the caller isn't a human re-clicking.
+     */
+    @Transactional
+    public void settleCashOnDelivery(UUID orderId, UUID tenantId) {
+        Order order = load(orderId, tenantId);
+        if (order.getPaymentStatus() != PaymentStatus.UNPAID) {
+            return;
+        }
+        order.setPaymentStatus(PaymentStatus.PAID);
+        Order saved = orderRepository.save(order);
+
+        List<OrderItem> items = orderItemRepository.findByOrderId(saved.getId());
+        commissionService.settleOrder(tenantId, saved.getId(), saved.getOrderNumber(), vendorLines(items));
+    }
+
     /** Maps the order's vendor lines (house products excluded) into commission lines. */
     private static List<CommissionLine> vendorLines(List<OrderItem> items) {
         return items.stream()

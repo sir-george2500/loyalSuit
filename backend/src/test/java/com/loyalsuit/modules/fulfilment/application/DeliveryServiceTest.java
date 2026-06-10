@@ -4,7 +4,9 @@ import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.modules.fulfilment.application.dto.AdvanceDeliveryRequest;
 import com.loyalsuit.modules.fulfilment.application.dto.AssignDeliveryRequest;
+import com.loyalsuit.modules.fulfilment.application.dto.CompleteDeliveryRequest;
 import com.loyalsuit.modules.fulfilment.application.dto.DeliveryResponse;
+import com.loyalsuit.modules.orders.application.OrderManagementService;
 import com.loyalsuit.modules.fulfilment.domain.Delivery;
 import com.loyalsuit.modules.fulfilment.domain.DeliveryAgent;
 import com.loyalsuit.modules.fulfilment.domain.DeliveryEvent;
@@ -46,6 +48,7 @@ class DeliveryServiceTest {
     @Mock private DeliveryEventRepository eventRepository;
     @Mock private DeliveryAgentRepository agentRepository;
     @Mock private OrderRepository orderRepository;
+    @Mock private OrderManagementService orderManagementService;
     @Mock private AppUserRepository userRepository;
 
     @InjectMocks private DeliveryService service;
@@ -105,6 +108,12 @@ class DeliveryServiceTest {
         AdvanceDeliveryRequest request = new AdvanceDeliveryRequest();
         request.setStatus(status);
         request.setNote(note);
+        return request;
+    }
+
+    private CompleteDeliveryRequest completeRequest(String recipient) {
+        CompleteDeliveryRequest request = new CompleteDeliveryRequest();
+        request.setRecipientName(recipient);
         return request;
     }
 
@@ -201,13 +210,25 @@ class DeliveryServiceTest {
 
     @Test
     void advance_anIllegalTransition_isRejected() {
-        // Arrange — ASSIGNED can't jump straight to DELIVERED
+        // Arrange — ASSIGNED can't skip straight to IN_TRANSIT
         when(deliveryRepository.findByIdAndTenantId(deliveryId, tenantId)).thenReturn(Optional.of(delivery(DeliveryStatus.ASSIGNED)));
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.advance(deliveryId, tenantId, actorId, advanceTo(DeliveryStatus.IN_TRANSIT, null)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("can't move");
+        verify(deliveryRepository, never()).save(any());
+    }
+
+    @Test
+    void advance_toDelivered_isBlocked_directingToComplete() {
+        // Arrange — DELIVERED must go through the complete (proof) path, not plain advance
+        when(deliveryRepository.findByIdAndTenantId(deliveryId, tenantId)).thenReturn(Optional.of(delivery(DeliveryStatus.IN_TRANSIT)));
 
         // Act & Assert
         assertThatThrownBy(() -> service.advance(deliveryId, tenantId, actorId, advanceTo(DeliveryStatus.DELIVERED, null)))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("can't move");
+                .hasMessageContaining("complete action");
         verify(deliveryRepository, never()).save(any());
     }
 
@@ -237,6 +258,52 @@ class DeliveryServiceTest {
         assertThat(delivery.status()).isEqualTo("FAILED");
         assertThat(delivery.failureReason()).isEqualTo("Customer unreachable");
         assertThat(delivery.failedAt()).isNotNull();
+    }
+
+    // ---- complete (proof of delivery + COD settlement) ----------------------
+
+    @Test
+    void complete_capturesProof_marksDelivered_andSettlesCashOnDelivery() {
+        // Arrange — an in-transit delivery
+        when(deliveryRepository.findByIdAndTenantId(deliveryId, tenantId)).thenReturn(Optional.of(delivery(DeliveryStatus.IN_TRANSIT)));
+        stubDeliverySave();
+
+        // Act
+        DeliveryResponse delivery = service.complete(deliveryId, tenantId, actorId, completeRequest("Ada Lovelace"));
+
+        // Assert — delivered with proof, and the order's cash is settled
+        assertThat(delivery.status()).isEqualTo("DELIVERED");
+        assertThat(delivery.recipientName()).isEqualTo("Ada Lovelace");
+        assertThat(delivery.deliveredAt()).isNotNull();
+        verify(orderManagementService).settleCashOnDelivery(orderId, tenantId);
+        verify(eventRepository).save(any(DeliveryEvent.class));
+    }
+
+    @Test
+    void complete_fromAStateThatIsNotInTransit_isRejected() {
+        // Arrange — still only ASSIGNED, can't be completed
+        when(deliveryRepository.findByIdAndTenantId(deliveryId, tenantId)).thenReturn(Optional.of(delivery(DeliveryStatus.ASSIGNED)));
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.complete(deliveryId, tenantId, actorId, completeRequest("Ada")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("can't move");
+        verify(orderManagementService, never()).settleCashOnDelivery(any(), any());
+    }
+
+    @Test
+    void completeAsAgent_isRejected_whenTheDeliveryIsNotTheirs() {
+        // Arrange
+        when(agentRepository.findByUserId(agentUserId)).thenReturn(Optional.of(agent(true)));
+        Delivery other = delivery(DeliveryStatus.IN_TRANSIT);
+        other.setAgentId(UUID.randomUUID());
+        when(deliveryRepository.findByIdAndTenantId(deliveryId, tenantId)).thenReturn(Optional.of(other));
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.completeAsAgent(deliveryId, tenantId, agentUserId, completeRequest("Ada")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("not assigned to you");
+        verify(orderManagementService, never()).settleCashOnDelivery(any(), any());
     }
 
     // ---- agent self-service -------------------------------------------------
