@@ -12,6 +12,9 @@ public interface DeliveryRepository {
     Delivery save(Delivery delivery);
     Optional<Delivery> findByIdAndTenantId(UUID id, UUID tenantId);
     Optional<Delivery> findByOrderIdAndTenantId(UUID orderId, UUID tenantId);
+    /** Lookup by order alone (order_id is globally unique) — for public order tracking,
+     *  where the order has already been verified by the caller. */
+    Optional<Delivery> findByOrderId(UUID orderId);
     Page<Delivery> findByTenantId(UUID tenantId, Pageable pageable);
     Page<Delivery> findByTenantIdAndStatus(UUID tenantId, DeliveryStatus status, Pageable pageable);
     /** An agent's still-open deliveries (ASSIGNED / PICKED_UP / IN_TRANSIT) — their work queue. */

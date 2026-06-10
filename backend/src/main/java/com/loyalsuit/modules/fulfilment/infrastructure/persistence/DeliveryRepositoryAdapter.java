@@ -34,6 +34,11 @@ public class DeliveryRepositoryAdapter implements DeliveryRepository {
     }
 
     @Override
+    public Optional<Delivery> findByOrderId(UUID orderId) {
+        return jpa.findByOrderId(orderId);
+    }
+
+    @Override
     public Page<Delivery> findByTenantId(UUID tenantId, Pageable pageable) {
         return jpa.findByTenantIdOrderByCreatedAtDesc(tenantId, pageable);
     }

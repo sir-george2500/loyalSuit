@@ -2,13 +2,25 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import type { AxiosError } from 'axios'
-import { ArrowLeft, Loader2, PackageSearch, Undo2, CheckCircle2 } from 'lucide-react'
-import { orderTrackingApi } from '@/lib/api/orderTracking'
+import { ArrowLeft, Loader2, PackageSearch, Undo2, CheckCircle2, Truck } from 'lucide-react'
+import { orderTrackingApi, deliveryTrackingApi } from '@/lib/api/orderTracking'
 import { returnsApi } from '@/lib/api/returns'
-import type { OrderResponse } from '@/types'
+import type { DeliveryTracking, OrderResponse } from '@/types'
+
+const DELIVERY_STEPS: Array<{ key: string; label: string }> = [
+  { key: 'PREPARING', label: 'Preparing' },
+  { key: 'ASSIGNED', label: 'Assigned to courier' },
+  { key: 'PICKED_UP', label: 'Picked up' },
+  { key: 'IN_TRANSIT', label: 'Out for delivery' },
+  { key: 'DELIVERED', label: 'Delivered' },
+]
+
+function formatStamp(ts: string): string {
+  return new Date(ts).toLocaleString()
+}
 
 interface LookupForm {
   orderNumber: string
@@ -105,10 +117,61 @@ export default function TrackOrder({ slug }: { slug: string }) {
             <span>{money.format(order.total)}</span>
           </div>
 
+          <DeliveryProgress slug={slug} orderNumber={order.orderNumber} email={getValues('email').trim()} />
+
           {order.status === 'DELIVERED' && (
             <ReturnRequestPanel slug={slug} orderNumber={order.orderNumber} email={getValues('email').trim()} />
           )}
         </div>
+      )}
+    </div>
+  )
+}
+
+function DeliveryProgress({ slug, orderNumber, email }: { slug: string; orderNumber: string; email: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['delivery-tracking', slug, orderNumber, email],
+    queryFn: async () => (await deliveryTrackingApi.track(slug, orderNumber, email)).data.data as DeliveryTracking,
+  })
+
+  if (isLoading || !data) return null
+
+  const failed = data.status === 'FAILED'
+  const stampFor = (key: string) => data.timeline.find((s) => s.status === key)?.occurredAt
+  const reachedIndex = DELIVERY_STEPS.findIndex((s) => s.key === data.status)
+  // PREPARING (no delivery yet) counts as reaching the first step.
+  const currentIndex = data.status === 'PREPARING' ? 0 : reachedIndex
+
+  return (
+    <div className="mt-4 border-t border-gray-100 pt-3">
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+        <Truck className="h-4 w-4" /> Delivery
+      </div>
+
+      {failed ? (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          We couldn’t complete this delivery. The store will be in touch.
+        </p>
+      ) : (
+        <ol className="space-y-2">
+          {DELIVERY_STEPS.map((step, i) => {
+            const reached = i <= currentIndex
+            const stamp = stampFor(step.key)
+            return (
+              <li key={step.key} className="flex items-start gap-3 text-sm">
+                <span className={`mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full ${reached ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div className="min-w-0">
+                  <span className={reached ? 'text-gray-800' : 'text-gray-400'}>{step.label}</span>
+                  {stamp && <span className="ml-2 text-xs text-gray-400">{formatStamp(stamp)}</span>}
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+
+      {data.recipientName && (
+        <p className="mt-2 text-xs text-gray-500">Received by {data.recipientName}</p>
       )}
     </div>
   )
