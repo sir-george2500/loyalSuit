@@ -644,6 +644,40 @@ export interface Timesheet {
   entries: Attendance[]
 }
 
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface LeaveType {
+  id: string
+  name: string
+  annualAllowanceDays: number
+  paid: boolean
+  active: boolean
+  createdAt: string
+}
+
+export interface LeaveRequest {
+  id: string
+  employeeId: string
+  leaveTypeId: string
+  leaveTypeName: string
+  startDate: string
+  endDate: string
+  days: number
+  reason?: string | null
+  status: LeaveStatus
+  decisionNote?: string | null
+  createdAt: string
+}
+
+export interface LeaveBalance {
+  leaveTypeId: string
+  leaveTypeName: string
+  year: number
+  allowanceDays: number
+  takenDays: number
+  remainingDays: number
+}
+
 export type NotificationType = 'ORDER_PLACED' | 'ORDER_DELIVERED' | 'PAYOUT_PAID' | 'GENERAL'
 
 export interface AppNotification {
