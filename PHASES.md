@@ -41,7 +41,7 @@ into another's tables — they collaborate through application services / events
 | **promotions** | coupons, flash deals | ✅ Phase 8: coupons + flash deals live |
 | **loyalty** | points earn / redeem | ✅ Phase 8: earn on paid orders, redeem at checkout |
 | **affiliate** | referral codes, rewards | ✅ Phase 8: registry + attribution + reward ledger live |
-| **hrm** | employees, attendance, payroll | 🔄 Phase 9: roster + attendance + leave (types/requests/balances) live |
+| **hrm** | employees, attendance, payroll | 🔄 Phase 9: roster + attendance + leave + payroll live (9e awards left) |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
 | **notifications** | email, in-app inbox | 🟡 in-app inbox live (Phase 8f); transactional email live; SMS/push planned |
 
@@ -479,8 +479,16 @@ store, optionally linked to a login user. The plan gate is a shared check the mo
   (PENDING → approve/reject) with an inclusive day count snapshotted at creation; approval
   is balance-checked (allowance − approved days taken this year). Per-employee balances are
   computed, not stored. Admin Leave page: Requests queue, Leave types, and Balances tabs.
-- [ ] **9d — Payroll.** A pay run over a period produces payslips from base salary (± unpaid
-  leave / attendance), with a payslip ledger and status (draft → finalised → paid).
+- [x] **9d — Payroll.** A `PayRun` over a period (start, end, label) with a lifecycle
+  DRAFT → FINALISED → PAID. Creating a draft generates one `Payslip` per **active** employee:
+  gross = monthly base salary; a daily rate (base ÷ days in period) prices **unpaid-leave**
+  days (approved leave of unpaid types overlapping the period) into a deduction; an owner can
+  add an `otherDeductions` adjustment per slip while the run is DRAFT; net = gross − unpaid-leave
+  deduction − other deductions. Finalise locks the run (no recompute/edits); pay marks it PAID.
+  Every figure is snapshotted on the slip so a later salary/leave change can't rewrite history.
+  Endpoints (owner-only, plan-gated): create/list/get runs, finalise, pay, and edit a draft
+  payslip. Admin Payroll page: runs list, new-run modal, run detail with payslip table and
+  finalise/pay actions. Reuses `HrmAccess`, the roster (9a), and approved leave (9c).
 - [ ] **9e — Awards / recognition.** Record employee awards/recognitions shown on their profile.
 
 ---

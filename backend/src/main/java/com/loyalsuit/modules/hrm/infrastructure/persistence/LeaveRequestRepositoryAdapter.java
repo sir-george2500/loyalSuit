@@ -49,4 +49,10 @@ public class LeaveRequestRepositoryAdapter implements LeaveRequestRepository {
         return jpa.findByTenantIdAndEmployeeIdAndStatusAndStartDateBetween(
                 tenantId, employeeId, LeaveStatus.APPROVED, from, to);
     }
+
+    @Override
+    public List<LeaveRequest> findApprovedOverlapping(UUID tenantId, LocalDate periodStart, LocalDate periodEnd) {
+        return jpa.findByTenantIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                tenantId, LeaveStatus.APPROVED, periodEnd, periodStart);
+    }
 }

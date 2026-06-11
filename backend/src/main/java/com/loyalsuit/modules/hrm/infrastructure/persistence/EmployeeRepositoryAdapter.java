@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,5 +36,10 @@ public class EmployeeRepositoryAdapter implements EmployeeRepository {
     @Override
     public Page<Employee> findByTenantIdAndStatus(UUID tenantId, EmployeeStatus status, Pageable pageable) {
         return jpa.findByTenantIdAndStatusOrderByCreatedAtDesc(tenantId, status, pageable);
+    }
+
+    @Override
+    public List<Employee> findActiveByTenantId(UUID tenantId) {
+        return jpa.findByTenantIdAndStatusOrderByFullNameAsc(tenantId, EmployeeStatus.ACTIVE);
     }
 }

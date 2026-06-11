@@ -678,6 +678,38 @@ export interface LeaveBalance {
   remainingDays: number
 }
 
+export type PayRunStatus = 'DRAFT' | 'FINALISED' | 'PAID'
+
+export interface PayRun {
+  id: string
+  label: string
+  periodStart: string
+  periodEnd: string
+  status: PayRunStatus
+  paidAt?: string | null
+  payslipCount: number
+  totalNet: number
+  createdAt: string
+}
+
+export interface Payslip {
+  id: string
+  payRunId: string
+  employeeId: string
+  employeeName: string
+  baseSalary: number
+  unpaidLeaveDays: number
+  unpaidLeaveDeduction: number
+  otherDeductions: number
+  netPay: number
+  note?: string | null
+}
+
+export interface PayRunDetail {
+  run: PayRun
+  payslips: Payslip[]
+}
+
 export type NotificationType = 'ORDER_PLACED' | 'ORDER_DELIVERED' | 'PAYOUT_PAID' | 'GENERAL'
 
 export interface AppNotification {

@@ -23,4 +23,7 @@ interface LeaveRequestJpaRepository extends JpaRepository<LeaveRequest, UUID> {
 
     List<LeaveRequest> findByTenantIdAndEmployeeIdAndStatusAndStartDateBetween(
             UUID tenantId, UUID employeeId, LeaveStatus status, LocalDate from, LocalDate to);
+
+    List<LeaveRequest> findByTenantIdAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+            UUID tenantId, LeaveStatus status, LocalDate periodEnd, LocalDate periodStart);
 }
