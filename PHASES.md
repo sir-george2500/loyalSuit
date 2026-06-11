@@ -41,7 +41,7 @@ into another's tables — they collaborate through application services / events
 | **promotions** | coupons, flash deals | ✅ Phase 8: coupons + flash deals live |
 | **loyalty** | points earn / redeem | ✅ Phase 8: earn on paid orders, redeem at checkout |
 | **affiliate** | referral codes, rewards | ✅ Phase 8: registry + attribution + reward ledger live |
-| **hrm** | employees, attendance, payroll | 🔄 Phase 9a: plan-gated employee roster live |
+| **hrm** | employees, attendance, payroll | 🔄 Phase 9: employee roster + attendance/timesheets live |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
 | **notifications** | email, in-app inbox | 🟡 in-app inbox live (Phase 8f); transactional email live; SMS/push planned |
 
@@ -472,8 +472,9 @@ store, optionally linked to a login user. The plan gate is a shared check the mo
   Owner CRUD + roster, gated to PROFESSIONAL/ENTERPRISE plans (a BASIC tenant is told to
   upgrade). The gate (`HrmAccess.require`) is reused by every later HRM slice. Admin
   Employees page with status filter + add/edit modal; the BASIC plan sees an upgrade card.
-- [ ] **9b — Attendance.** Clock in / out (or admin-entered), daily attendance records and a
-  timesheet view; hours computed per day/period.
+- [x] **9b — Attendance.** Clock in / out (or admin-entered), daily attendance records (one
+  per employee per day) and a timesheet view; hours derived per day and totalled per period.
+  Admin Attendance page: employee picker, date range, clock-in/out, record-day modal, totals.
 - [ ] **9c — Leave.** Leave types + per-employee balances; request → approve/reject;
   approved leave deducts balance and shows on the roster.
 - [ ] **9d — Payroll.** A pay run over a period produces payslips from base salary (± unpaid
