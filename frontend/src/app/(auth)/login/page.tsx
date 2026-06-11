@@ -11,11 +11,17 @@ import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/authStore'
 import { homeForRole } from '@/lib/auth/roles'
 import { loginSchema, type LoginFormData } from '@/lib/validations/auth'
+import type { UserProfile } from '@/types'
 
 // Only allow internal redirect targets — prevents open-redirect via ?next=https://evil.com
 function safeNext(raw: string | null): string | null {
   if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw
   return null
+}
+
+function errorText(err: unknown): string {
+  return (err as AxiosError<{ message?: string }>)?.response?.data?.message ??
+    'Unable to sign in. Please check your connection and try again.'
 }
 
 function LoginForm() {
@@ -27,6 +33,9 @@ function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  // When the account has 2FA, login returns a challenge instead of a token.
+  const [mfaToken, setMfaToken] = useState<string | null>(null)
+  const [mfaCode, setMfaCode] = useState('')
 
   const {
     register,
@@ -43,17 +52,37 @@ function LoginForm() {
     setServerError(null)
     try {
       const res = await authApi.login(data.email, data.password)
-      const { token, expiresIn, user } = res.data.data
-      signIn(token, expiresIn, user)
-      // Honor an explicit, safe return target; otherwise land where the role belongs.
-      router.push(next ?? homeForRole(user.role))
-      router.refresh()
+      const result = res.data.data
+      if (result.mfaRequired && result.mfaToken) {
+        // Hold here for the second factor rather than completing the session.
+        setMfaToken(result.mfaToken)
+        setLoading(false)
+        return
+      }
+      land(result)
     } catch (err) {
-      const axiosErr = err as AxiosError<{ message?: string }>
-      setServerError(
-        axiosErr.response?.data?.message ??
-          'Unable to sign in. Please check your connection and try again.'
-      )
+      setServerError(errorText(err))
+      setLoading(false)
+    }
+  }
+
+  const land = (result: { token?: string; expiresIn: number; user?: UserProfile }) => {
+    if (!result.token || !result.user) return
+    signIn(result.token, result.expiresIn, result.user)
+    // Honor an explicit, safe return target; otherwise land where the role belongs.
+    router.push(next ?? homeForRole(result.user.role))
+    router.refresh()
+  }
+
+  const submitMfa = async () => {
+    if (!mfaToken) return
+    setLoading(true)
+    setServerError(null)
+    try {
+      const res = await authApi.completeMfa(mfaToken, mfaCode.trim())
+      land(res.data.data)
+    } catch (err) {
+      setServerError(errorText(err))
       setLoading(false)
     }
   }
@@ -73,6 +102,48 @@ function LoginForm() {
 
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
+            {mfaToken ? (
+              <>
+                <h1 className="text-2xl font-bold">Two-factor verification</h1>
+                <p className="mb-2 text-sm text-base-content/60">
+                  Enter the 6-digit code from your authenticator app, or a recovery code.
+                </p>
+                {serverError && (
+                  <div role="alert" className="alert alert-error text-sm"><span>{serverError}</span></div>
+                )}
+                <div className="form-control">
+                  <label className="label" htmlFor="mfaCode">
+                    <span className="label-text font-medium">Verification code</span>
+                  </label>
+                  <input
+                    id="mfaCode"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && mfaCode.trim() && submitMfa()}
+                    inputMode="text"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    placeholder="123456"
+                    className="input input-bordered w-full tracking-widest"
+                  />
+                </div>
+                <button
+                  onClick={submitMfa}
+                  disabled={loading || mfaCode.trim() === ''}
+                  className="btn btn-primary mt-3 w-full"
+                >
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {loading ? 'Verifying…' : 'Verify'}
+                </button>
+                <button
+                  onClick={() => { setMfaToken(null); setMfaCode(''); setServerError(null) }}
+                  className="btn btn-ghost btn-sm mt-1"
+                >
+                  Back to sign in
+                </button>
+              </>
+            ) : (
+            <>
             <h1 className="text-2xl font-bold">Welcome back</h1>
             <p className="mb-2 text-sm text-base-content/60">Sign in to your account</p>
 
@@ -145,6 +216,8 @@ function LoginForm() {
                 Sign up free
               </Link>
             </p>
+            </>
+            )}
           </div>
         </div>
 

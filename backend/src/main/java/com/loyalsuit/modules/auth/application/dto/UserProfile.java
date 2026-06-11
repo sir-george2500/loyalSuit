@@ -14,6 +14,7 @@ public class UserProfile {
     private final String avatarUrl;
     private final String role;
     private final UUID tenantId;
+    private final boolean twoFactorEnabled;
 
     public UserProfile(AppUser user) {
         this.id = user.getId();
@@ -22,5 +23,6 @@ public class UserProfile {
         this.avatarUrl = user.getAvatarUrl();
         this.role = user.getRole().name();
         this.tenantId = user.getTenantId();
+        this.twoFactorEnabled = user.isTwoFactorEnabled();
     }
 }

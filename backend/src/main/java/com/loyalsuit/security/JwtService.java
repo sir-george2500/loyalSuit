@@ -30,6 +30,10 @@ public class JwtService {
         this.expirationSeconds = expirationSeconds;
     }
 
+    /** Short-lived window for completing a 2FA challenge after the password step. */
+    private static final long MFA_CHALLENGE_SECONDS = 300;
+    private static final String MFA_PURPOSE = "mfa";
+
     public String issueToken(UUID userId, String email, String role, UUID tenantId) {
         Instant now = Instant.now();
         return Jwts.builder()
@@ -43,6 +47,30 @@ public class JwtService {
                 .compact();
     }
 
+    /**
+     * Issues a short-lived token that proves the password step passed but 2FA is still pending.
+     * It carries a {@code purpose=mfa} claim so it can never be used as a bearer token.
+     */
+    public String issueMfaChallenge(UUID userId) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("purpose", MFA_PURPOSE)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(MFA_CHALLENGE_SECONDS)))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    /** Validates an MFA challenge token and returns the user it was issued for. */
+    public UUID parseMfaChallenge(String token) {
+        Claims claims = parse(token);
+        if (!MFA_PURPOSE.equals(claims.get("purpose", String.class))) {
+            throw new IllegalArgumentException("Not an MFA challenge token");
+        }
+        return UUID.fromString(claims.getSubject());
+    }
+
     public Claims parse(String token) {
         return Jwts.parser()
                 .verifyWith(signingKey)
@@ -52,6 +80,10 @@ public class JwtService {
     }
 
     public UserPrincipal toPrincipal(Claims claims) {
+        // An MFA challenge token is not a credential — refuse to build a principal from one.
+        if (MFA_PURPOSE.equals(claims.get("purpose", String.class))) {
+            throw new IllegalArgumentException("MFA challenge token cannot authenticate a request");
+        }
         String tenantIdRaw = claims.get("tenantId", String.class);
         return new UserPrincipal(
                 UUID.fromString(claims.getSubject()),

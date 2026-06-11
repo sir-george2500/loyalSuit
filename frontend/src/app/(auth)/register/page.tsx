@@ -67,6 +67,8 @@ export default function RegisterPage() {
         password: data.password,
       })
       const { token, expiresIn, user } = res.data.data
+      // Registration always returns a full session (2FA can only be added later).
+      if (!token || !user) throw new Error('Unexpected response')
       signIn(token, expiresIn, user)
       // Registration provisions a tenant + TENANT_ADMIN, so this lands in /admin —
       // routing by role keeps it correct if that ever changes.
