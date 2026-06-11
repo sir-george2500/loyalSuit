@@ -28,5 +28,9 @@ app:
   jwt:
     secret: test-only-jwt-secret-key-that-is-at-least-32-bytes-long-0123456789
     expiration-seconds: 3600
+  # Off by default so the suite isn't throttled; the rate-limit test re-enables it
+  # with low limits via @SpringBootTest(properties = ...).
+  rate-limit:
+    enabled: false
 
 # Logging is configured by logback-spring.xml (the "test" springProfile block).

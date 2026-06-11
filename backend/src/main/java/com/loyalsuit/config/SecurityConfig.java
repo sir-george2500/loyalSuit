@@ -1,8 +1,11 @@
 package com.loyalsuit.config;
 
+import com.loyalsuit.common.ratelimit.RateLimitFilter;
+import com.loyalsuit.common.web.SecurityHeadersFilter;
 import com.loyalsuit.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -29,6 +32,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtFilter;
+    private final RateLimitFilter rateLimitFilter;
+    private final SecurityHeadersFilter securityHeadersFilter;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -40,7 +45,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                 // Authentication endpoints (register / login / password reset) are public.
                 .requestMatchers(
@@ -67,7 +72,10 @@ public class SecurityConfig {
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            // Headers first (every response), then throttle, then authenticate.
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter, JwtAuthFilter.class)
+            .addFilterBefore(securityHeadersFilter, RateLimitFilter.class);
 
         return http.build();
     }
@@ -75,6 +83,23 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // These filters are wired into the security chain above (after CORS), so a 429 still carries
+    // CORS headers. Disable Boot's automatic registration into the outer servlet chain to avoid
+    // running them twice / short-circuiting before CORS.
+    @Bean
+    public FilterRegistrationBean<RateLimitFilter> rateLimitRegistration(RateLimitFilter filter) {
+        FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<SecurityHeadersFilter> securityHeadersRegistration(SecurityHeadersFilter filter) {
+        FilterRegistrationBean<SecurityHeadersFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     @Bean
