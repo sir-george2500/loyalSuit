@@ -621,6 +621,29 @@ export interface Employee {
   createdAt: string
 }
 
+export type AttendanceStatus = 'PRESENT' | 'LATE' | 'HALF_DAY' | 'ABSENT'
+
+export interface Attendance {
+  id: string
+  employeeId: string
+  workDate: string
+  checkIn?: string | null
+  checkOut?: string | null
+  hoursWorked: number
+  status: AttendanceStatus
+  note?: string | null
+  createdAt: string
+}
+
+export interface Timesheet {
+  employeeId: string
+  from: string
+  to: string
+  daysPresent: number
+  totalHours: number
+  entries: Attendance[]
+}
+
 export type NotificationType = 'ORDER_PLACED' | 'ORDER_DELIVERED' | 'PAYOUT_PAID' | 'GENERAL'
 
 export interface AppNotification {
