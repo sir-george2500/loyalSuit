@@ -41,6 +41,13 @@ public class AppUser extends TenantScopedEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
+    /** Base32 TOTP secret, set at 2FA setup; retained while 2FA is enabled, null otherwise. */
+    @Column(name = "two_factor_secret")
+    private String twoFactorSecret;
+
+    @Column(name = "two_factor_enabled", nullable = false)
+    private boolean twoFactorEnabled = false;
+
     public AppUser(UUID tenantId, String email, String passwordHash, String fullName, UserRole role) {
         this.setTenantId(tenantId);
         this.email = email;

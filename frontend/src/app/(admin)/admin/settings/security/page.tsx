@@ -10,6 +10,7 @@ import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/authStore'
 import { getToken, decodeJwt } from '@/lib/auth/session'
 import { changePasswordSchema, type ChangePasswordFormData } from '@/lib/validations/auth'
+import TwoFactorCard from './TwoFactorCard'
 
 function SessionCard() {
   const token = typeof window !== 'undefined' ? getToken() : null
@@ -166,20 +167,7 @@ export default function SecuritySettingsPage() {
 
       <SessionCard />
 
-      {/* Two-factor — planned */}
-      <div className="card bg-base-100 shadow-sm">
-        <div className="card-body">
-          <div className="flex items-center justify-between">
-            <h2 className="card-title text-base">
-              <ShieldCheck className="h-4 w-4" /> Two-factor authentication
-            </h2>
-            <span className="badge badge-ghost">soon</span>
-          </div>
-          <p className="text-sm text-base-content/50">
-            Add an extra layer of security with TOTP-based 2FA. Arrives in the security hardening phase.
-          </p>
-        </div>
-      </div>
+      <TwoFactorCard />
 
       {/* Sign out */}
       <div className="card bg-base-100 shadow-sm">

@@ -99,13 +99,27 @@ export interface UserProfile {
   avatarUrl?: string
   role: UserRole
   tenantId: string
+  twoFactorEnabled?: boolean
 }
 
 export interface AuthResponse {
-  token: string
-  tokenType: string
+  token?: string
+  tokenType?: string
   expiresIn: number
-  user: UserProfile
+  user?: UserProfile
+  /** When true, the password step passed but a 2FA code is required to finish. */
+  mfaRequired?: boolean
+  /** Short-lived challenge token to submit with the 2FA code. */
+  mfaToken?: string
+}
+
+export interface TwoFactorSetup {
+  secret: string
+  otpauthUri: string
+}
+
+export interface TwoFactorEnableResult {
+  recoveryCodes: string[]
 }
 
 export interface OnboardingStatus {

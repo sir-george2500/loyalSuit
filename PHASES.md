@@ -509,8 +509,12 @@ manager, CDN, live deploy target) are scaffolded + documented, then wired when i
   probes (`/actuator/health/{readiness,liveness}`). Filters run inside the security chain
   (after CORS) so a 429 still carries CORS headers. Tunable via `app.rate-limit.*`; off in
   the test profile. Tests: limiter unit, 429-on-throttle integration, headers present.
-- [ ] **10b — Two-factor auth (TOTP).** Owner/admin TOTP 2FA: enrol (secret + otpauth URI),
-  confirm, enforce as a second login step, single-use hashed recovery codes; Settings → Security UI.
+- [x] **10b — Two-factor auth (TOTP).** Hand-rolled RFC 6238 TOTP (no new dependency): enrol
+  (`/2fa/setup` → secret + otpauth URI), confirm (`/2fa/enable` → 10 single-use hashed recovery
+  codes shown once), disable (password re-auth). Login with 2FA on returns a short-lived
+  challenge token (`purpose=mfa`, rejected by the JWT filter so it can't authenticate) completed
+  at `/login/2fa` with an authenticator or recovery code. Frontend: login 2FA step + Settings →
+  Security card (enrol/recovery/disable). Tests: TOTP round-trip + full enrol→challenge→complete flow.
 - [ ] **10c — GDPR & consent.** Right-to-access data export and right-to-erasure (account
   delete/anonymise) endpoints; storefront cookie-consent banner with a stored preference.
 - [ ] **10d — CI/CD & containers.** Multi-stage prod Dockerfiles (backend jar, frontend

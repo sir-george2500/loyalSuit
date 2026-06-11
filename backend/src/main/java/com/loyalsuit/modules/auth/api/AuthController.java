@@ -7,6 +7,7 @@ import com.loyalsuit.modules.auth.application.dto.AuthResponse;
 import com.loyalsuit.modules.auth.application.dto.ChangePasswordRequest;
 import com.loyalsuit.modules.auth.application.dto.ForgotPasswordRequest;
 import com.loyalsuit.modules.auth.application.dto.LoginRequest;
+import com.loyalsuit.modules.auth.application.dto.MfaLoginRequest;
 import com.loyalsuit.modules.auth.application.dto.RegisterRequest;
 import com.loyalsuit.modules.auth.application.dto.ResetPasswordRequest;
 import com.loyalsuit.modules.auth.application.dto.UserProfile;
@@ -44,6 +45,12 @@ public class AuthController {
     @Operation(summary = "Authenticate with email and password")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(authService.login(request)));
+    }
+
+    @PostMapping("/login/2fa")
+    @Operation(summary = "Complete a 2FA login challenge with an authenticator or recovery code")
+    public ResponseEntity<ApiResponse<AuthResponse>> completeMfa(@Valid @RequestBody MfaLoginRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(authService.completeMfaLogin(request)));
     }
 
     @GetMapping("/me")

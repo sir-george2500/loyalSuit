@@ -6,6 +6,7 @@ import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.modules.auth.application.dto.AuthResponse;
 import com.loyalsuit.modules.auth.application.dto.ChangePasswordRequest;
 import com.loyalsuit.modules.auth.application.dto.LoginRequest;
+import com.loyalsuit.modules.auth.application.dto.MfaLoginRequest;
 import com.loyalsuit.modules.auth.application.dto.RegisterRequest;
 import com.loyalsuit.modules.auth.application.dto.UserProfile;
 import com.loyalsuit.modules.audit.application.AuditActor;
@@ -38,6 +39,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuditService auditService;
+    private final TwoFactorService twoFactorService;
 
     /**
      * Registers a new business owner: provisions a tenant and a TENANT_ADMIN user,
@@ -99,9 +101,49 @@ public class AuthService {
             throw new BusinessException("This account has been deactivated", HttpStatus.FORBIDDEN);
         }
 
+        // Password is correct; if 2FA is on, hold the token behind a short-lived challenge.
+        if (user.isTwoFactorEnabled()) {
+            log.info("Login password ok; 2FA challenge issued for email={}", email);
+            return AuthResponse.mfaChallenge(jwtService.issueMfaChallenge(user.getId()));
+        }
+
         log.info("Login success: email={} role={}", email, user.getRole());
         auditService.recordSuccess(AuditAction.LOGIN_SUCCEEDED, actorOf(user),
                 "USER", user.getId().toString(), "Login succeeded");
+        return buildAuthResponse(user);
+    }
+
+    /**
+     * Completes a 2FA login: validates the challenge token, then the authenticator/recovery code.
+     * The challenge token alone is never a credential — it can only be redeemed here.
+     */
+    @Transactional
+    public AuthResponse completeMfaLogin(MfaLoginRequest request) {
+        UUID userId;
+        try {
+            userId = jwtService.parseMfaChallenge(request.getMfaToken());
+        } catch (RuntimeException e) {
+            throw new BusinessException("Your verification session has expired — sign in again",
+                    HttpStatus.UNAUTHORIZED);
+        }
+
+        AppUser user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("Invalid email or password", HttpStatus.UNAUTHORIZED));
+
+        if (!user.isActive() || !user.isTwoFactorEnabled()) {
+            throw new BusinessException("Invalid email or password", HttpStatus.UNAUTHORIZED);
+        }
+
+        if (!twoFactorService.verifySecondFactor(user, request.getCode().trim())) {
+            log.warn("Failed 2FA: bad code for email={}", user.getEmail());
+            auditService.recordFailure(AuditAction.LOGIN_FAILED, actorOf(user),
+                    "USER", user.getId().toString(), "Invalid two-factor code");
+            throw new BusinessException("That code isn't valid", HttpStatus.UNAUTHORIZED);
+        }
+
+        log.info("Login success (2FA): email={} role={}", user.getEmail(), user.getRole());
+        auditService.recordSuccess(AuditAction.LOGIN_SUCCEEDED, actorOf(user),
+                "USER", user.getId().toString(), "Login succeeded with 2FA");
         return buildAuthResponse(user);
     }
 
