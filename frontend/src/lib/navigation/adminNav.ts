@@ -19,6 +19,7 @@ import {
   UserCog,
   IdCard,
   CalendarClock,
+  CalendarOff,
   CreditCard,
   FileText,
   Building2,
@@ -110,6 +111,7 @@ export const ADMIN_NAV: NavSection[] = [
     items: [
       { label: 'Employees', href: '/admin/employees', icon: IdCard, roles: OWNER_ROLES, status: 'available' },
       { label: 'Attendance', href: '/admin/attendance', icon: CalendarClock, roles: OWNER_ROLES, status: 'available' },
+      { label: 'Leave', href: '/admin/leave', icon: CalendarOff, roles: OWNER_ROLES, status: 'available' },
       { label: 'Customers', href: '/admin/customers', icon: Users, roles: STORE_ROLES, status: 'soon' },
       { label: 'Staff & Roles', href: '/admin/staff', icon: UserCog, roles: OWNER_ROLES, status: 'soon' },
     ],
