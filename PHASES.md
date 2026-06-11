@@ -515,8 +515,14 @@ manager, CDN, live deploy target) are scaffolded + documented, then wired when i
   challenge token (`purpose=mfa`, rejected by the JWT filter so it can't authenticate) completed
   at `/login/2fa` with an authenticator or recovery code. Frontend: login 2FA step + Settings →
   Security card (enrol/recovery/disable). Tests: TOTP round-trip + full enrol→challenge→complete flow.
-- [ ] **10c — GDPR & consent.** Right-to-access data export and right-to-erasure (account
-  delete/anonymise) endpoints; storefront cookie-consent banner with a stored preference.
+- [x] **10c — GDPR & consent.** Right-to-access export and right-to-erasure built on an
+  extensible `PersonalDataContributor` / `PersonalDataEraser` port pair (modules plug in, the
+  privacy module depends on none of them). Export = profile + each module's section; erasure
+  anonymises the core account (PII scrubbed, deactivated, 2FA cleared) and runs each module's
+  eraser — orders keep the row but scrub customer PII, notifications are deleted. Owners are
+  blocked from self-erasure (would orphan the tenant). Contributors live in notifications +
+  orders. Frontend: Settings → Privacy card (download data / delete account) + storefront
+  cookie-consent banner. Tests: export sections, owner guard, customer anonymisation.
 - [ ] **10d — CI/CD & containers.** Multi-stage prod Dockerfiles (backend jar, frontend
   standalone), a GitHub Actions pipeline (lint → test → build on PR), a prod-like
   docker-compose, and a deploy runbook (target TBD with the user).

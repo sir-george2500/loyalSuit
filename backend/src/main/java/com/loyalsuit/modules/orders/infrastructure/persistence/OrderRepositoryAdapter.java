@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -50,5 +51,10 @@ public class OrderRepositoryAdapter implements OrderRepository {
     @Override
     public Page<Order> findByTenantIdAndStatus(UUID tenantId, OrderStatus status, Pageable pageable) {
         return jpa.findByTenantIdAndStatusOrderByCreatedAtDesc(tenantId, status, pageable);
+    }
+
+    @Override
+    public List<Order> findByTenantIdAndCustomerId(UUID tenantId, UUID customerId) {
+        return jpa.findByTenantIdAndCustomerIdOrderByCreatedAtDesc(tenantId, customerId);
     }
 }

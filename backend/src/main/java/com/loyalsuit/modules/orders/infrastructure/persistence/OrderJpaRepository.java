@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,4 +17,5 @@ interface OrderJpaRepository extends JpaRepository<Order, UUID> {
     boolean existsByOrderNumber(String orderNumber);
     Page<Order> findByTenantIdOrderByCreatedAtDesc(UUID tenantId, Pageable pageable);
     Page<Order> findByTenantIdAndStatusOrderByCreatedAtDesc(UUID tenantId, OrderStatus status, Pageable pageable);
+    List<Order> findByTenantIdAndCustomerIdOrderByCreatedAtDesc(UUID tenantId, UUID customerId);
 }
