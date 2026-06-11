@@ -710,6 +710,19 @@ export interface PayRunDetail {
   payslips: Payslip[]
 }
 
+export type AwardCategory = 'PERFORMANCE' | 'MILESTONE' | 'TEAMWORK' | 'INNOVATION' | 'OTHER'
+
+export interface Award {
+  id: string
+  employeeId: string
+  title: string
+  category: AwardCategory
+  awardedOn: string
+  description?: string | null
+  awardedBy?: string | null
+  createdAt: string
+}
+
 export type NotificationType = 'ORDER_PLACED' | 'ORDER_DELIVERED' | 'PAYOUT_PAID' | 'GENERAL'
 
 export interface AppNotification {
