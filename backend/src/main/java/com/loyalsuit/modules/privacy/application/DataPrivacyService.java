@@ -2,6 +2,7 @@ package com.loyalsuit.modules.privacy.application;
 
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
+import com.loyalsuit.common.security.TokenRevocationService;
 import com.loyalsuit.modules.audit.application.AuditActor;
 import com.loyalsuit.modules.audit.application.AuditService;
 import com.loyalsuit.modules.audit.domain.AuditAction;
@@ -45,6 +46,7 @@ public class DataPrivacyService {
     private final TwoFactorRecoveryCodeRepository recoveryCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+    private final TokenRevocationService tokenRevocationService;
 
     @Transactional(readOnly = true)
     public Map<String, Object> export(UUID userId, UUID tenantId) {
@@ -85,6 +87,8 @@ public class DataPrivacyService {
         user.setTwoFactorSecret(null);
         userRepository.save(user);
         recoveryCodeRepository.deleteByUserId(userId);
+        // Stateless JWTs already issued are now revoked, so the old token can't keep working.
+        tokenRevocationService.revokeAllTokens(userId);
 
         log.info("Account anonymised for userId={}", userId);
         auditService.recordSuccess(AuditAction.ACCOUNT_ANONYMISED,

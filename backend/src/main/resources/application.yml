@@ -131,6 +131,15 @@ springdoc:
     version: v1
     description: Multivendor ECommerce & POS Platform API
 
+sentry:
+  # Error tracking. Disabled until a DSN is supplied, so it's a no-op in dev/test.
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENV:production}
+  # Sample a fraction of transactions for performance monitoring (0.0–1.0).
+  traces-sample-rate: ${SENTRY_TRACES_RATE:0.1}
+  # Never capture request bodies / headers — they may contain personal data.
+  send-default-pii: false
+
 management:
   endpoints:
     web:

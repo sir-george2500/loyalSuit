@@ -1,5 +1,6 @@
 package com.loyalsuit.security;
 
+import com.loyalsuit.common.security.TokenRevocationService;
 import com.loyalsuit.tenant.TenantContext;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -26,6 +27,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtService jwtService;
+    private final TokenRevocationService tokenRevocationService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -38,13 +40,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 Claims claims = jwtService.parse(token);
                 UserPrincipal principal = jwtService.toPrincipal(claims);
 
-                if (principal.getTenantId() != null) {
-                    TenantContext.setCurrentTenantId(principal.getTenantId());
-                }
+                if (tokenRevocationService.isRevoked(principal.getUserId(), claims.getIssuedAt().toInstant())) {
+                    log.debug("Rejected revoked token for userId={}", principal.getUserId());
+                } else {
+                    if (principal.getTenantId() != null) {
+                        TenantContext.setCurrentTenantId(principal.getTenantId());
+                    }
 
-                var auth = new UsernamePasswordAuthenticationToken(
-                        principal, null, principal.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                    var auth = new UsernamePasswordAuthenticationToken(
+                            principal, null, principal.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             } catch (JwtException | IllegalArgumentException e) {
                 log.debug("Rejected JWT: {}", e.getMessage());
             }

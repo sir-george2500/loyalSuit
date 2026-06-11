@@ -25,6 +25,7 @@
         <cloudinary.version>1.39.0</cloudinary.version>
         <pdfbox.version>3.0.3</pdfbox.version>
         <testcontainers.version>1.20.4</testcontainers.version>
+        <sentry.version>7.14.0</sentry.version>
     </properties>
 
     <dependencies>
@@ -52,6 +53,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Error tracking. Inert unless SENTRY_DSN is set, so it's a no-op in dev/test. -->
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+            <version>${sentry.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

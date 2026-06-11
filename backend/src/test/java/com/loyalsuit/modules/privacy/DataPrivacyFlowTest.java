@@ -93,5 +93,9 @@ class DataPrivacyFlowTest {
         assertThat(after.getEmail()).startsWith("deleted-").endsWith("@anonymized.invalid");
         assertThat(after.getFullName()).isEqualTo("Deleted user");
         assertThat(after.isActive()).isFalse();
+
+        // ...and the token that was valid moments ago is now revoked (10e).
+        mvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + token))
+                .andExpect(status().is4xxClientError());
     }
 }

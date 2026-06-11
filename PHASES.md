@@ -531,8 +531,13 @@ manager, CDN, live deploy target) are scaffolded + documented, then wired when i
   stale Supabase ones, healthchecks + `service_healthy` gating), added `.dockerignore`s, a root
   `.env.example`, and a full `docs/DEPLOY.md` runbook (config → migrate → run → verify → upgrade
   → rollback). Target-agnostic: the images run on any Docker host / PaaS.
-- [ ] **10e — Observability & ops (infra).** Sentry SDK wiring, metrics dashboards, daily
-  backups + tested restore, CDN, DB index/query audit — wired once the infra/accounts exist.
+- [~] **10e — Observability & ops.** Code parts done: a **JWT revocation service** (in-memory,
+  user-level; closes the post-deletion stale-token gap from 10c — the deleted user's token is now
+  rejected), **Sentry SDK wiring** guarded by `SENTRY_DSN` (inert in dev/test; `send-default-pii`
+  off), and a **DB index/query audit** (`docs/DB_AUDIT.md` — coverage verified complete, no
+  missing indexes block GA). Still infra-dependent (need accounts/decisions): a live Sentry
+  project, daily backups + tested restore, a CDN, and sharing the revocation/rate-limit state via
+  Redis for multi-node.
 
 ---
 
