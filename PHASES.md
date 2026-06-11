@@ -41,7 +41,7 @@ into another's tables — they collaborate through application services / events
 | **promotions** | coupons, flash deals | ✅ Phase 8: coupons + flash deals live |
 | **loyalty** | points earn / redeem | ✅ Phase 8: earn on paid orders, redeem at checkout |
 | **affiliate** | referral codes, rewards | ✅ Phase 8: registry + attribution + reward ledger live |
-| **hrm** | employees, attendance, payroll | 🔄 Phase 9: roster + attendance + leave + payroll live (9e awards left) |
+| **hrm** | employees, attendance, payroll | ✅ Phase 9: roster, attendance, leave, payroll, awards (plan-gated) |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
 | **notifications** | email, in-app inbox | 🟡 in-app inbox live (Phase 8f); transactional email live; SMS/push planned |
 
@@ -457,7 +457,7 @@ New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `no
   vendor). Storefront/admin `/notifications` page. V29. _(Email delivery on top of `notify`,
   and more event hooks, are a fast-follow.)_
 
-## Phase 9 — HRM  ⟵ IN PROGRESS
+## Phase 9 — HRM  ✅ COMPLETE
 **Goal:** run the people side of a store — who works here, when they're in, time off, and
 what they're paid — as a plan-gated module (PROFESSIONAL / ENTERPRISE only).
 **Exit criteria:** an admin manages an employee roster; an employee's attendance and leave
@@ -489,7 +489,9 @@ store, optionally linked to a login user. The plan gate is a shared check the mo
   Endpoints (owner-only, plan-gated): create/list/get runs, finalise, pay, and edit a draft
   payslip. Admin Payroll page: runs list, new-run modal, run detail with payslip table and
   finalise/pay actions. Reuses `HrmAccess`, the roster (9a), and approved leave (9c).
-- [ ] **9e — Awards / recognition.** Record employee awards/recognitions shown on their profile.
+- [x] **9e — Awards / recognition.** Record employee awards/recognitions (title, category,
+  date, who gave it) shown on their profile; owner-managed, plan-gated. Admin Awards page:
+  employee picker → award cards with add and delete.
 
 ---
 
