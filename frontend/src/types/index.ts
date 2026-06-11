@@ -603,6 +603,24 @@ export interface Affiliate {
   createdAt: string
 }
 
+export type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN'
+export type EmployeeStatus = 'ACTIVE' | 'ON_LEAVE' | 'TERMINATED'
+
+export interface Employee {
+  id: string
+  fullName: string
+  email?: string | null
+  phone?: string | null
+  jobTitle: string
+  department?: string | null
+  employmentType: EmploymentType
+  status: EmployeeStatus
+  hireDate: string
+  baseSalary: number
+  userId?: string | null
+  createdAt: string
+}
+
 export type NotificationType = 'ORDER_PLACED' | 'ORDER_DELIVERED' | 'PAYOUT_PAID' | 'GENERAL'
 
 export interface AppNotification {

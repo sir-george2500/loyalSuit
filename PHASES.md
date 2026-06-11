@@ -41,7 +41,7 @@ into another's tables — they collaborate through application services / events
 | **promotions** | coupons, flash deals | ✅ Phase 8: coupons + flash deals live |
 | **loyalty** | points earn / redeem | ✅ Phase 8: earn on paid orders, redeem at checkout |
 | **affiliate** | referral codes, rewards | ✅ Phase 8: registry + attribution + reward ledger live |
-| **hrm** | employees, attendance, payroll | ⬜ planned |
+| **hrm** | employees, attendance, payroll | 🔄 Phase 9a: plan-gated employee roster live |
 | **marketing** | coupons, flash deals, loyalty, affiliate | ⬜ planned |
 | **notifications** | email, in-app inbox | 🟡 in-app inbox live (Phase 8f); transactional email live; SMS/push planned |
 
@@ -457,8 +457,28 @@ New module(s): `promotions` (coupons + flash deals), `loyalty`, `affiliate`, `no
   vendor). Storefront/admin `/notifications` page. V29. _(Email delivery on top of `notify`,
   and more event hooks, are a fast-follow.)_
 
-## Phase 9 — HRM
-- [ ] Employees, attendance, leave, payroll, awards (feature-gated by plan)
+## Phase 9 — HRM  ⟵ IN PROGRESS
+**Goal:** run the people side of a store — who works here, when they're in, time off, and
+what they're paid — as a plan-gated module (PROFESSIONAL / ENTERPRISE only).
+**Exit criteria:** an admin manages an employee roster; an employee's attendance and leave
+are tracked; a pay run produces correct payslips; every HRM endpoint is gated by plan and
+owner-scoped. A BASIC tenant gets a clear "upgrade" response, never data.
+
+New module: `hrm` (hexagonal, tenant-scoped). An `Employee` is a person who works for the
+store, optionally linked to a login user. The plan gate is a shared check the module applies.
+
+- [x] **9a — Employee records + roster (plan-gated).** `Employee` (name, contact, job title,
+  department, employment type, status, hire date, base salary; optional link to a user).
+  Owner CRUD + roster, gated to PROFESSIONAL/ENTERPRISE plans (a BASIC tenant is told to
+  upgrade). The gate (`HrmAccess.require`) is reused by every later HRM slice. Admin
+  Employees page with status filter + add/edit modal; the BASIC plan sees an upgrade card.
+- [ ] **9b — Attendance.** Clock in / out (or admin-entered), daily attendance records and a
+  timesheet view; hours computed per day/period.
+- [ ] **9c — Leave.** Leave types + per-employee balances; request → approve/reject;
+  approved leave deducts balance and shows on the roster.
+- [ ] **9d — Payroll.** A pay run over a period produces payslips from base salary (± unpaid
+  leave / attendance), with a payslip ledger and status (draft → finalised → paid).
+- [ ] **9e — Awards / recognition.** Record employee awards/recognitions shown on their profile.
 
 ---
 
