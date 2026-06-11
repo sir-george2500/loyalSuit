@@ -523,9 +523,14 @@ manager, CDN, live deploy target) are scaffolded + documented, then wired when i
   blocked from self-erasure (would orphan the tenant). Contributors live in notifications +
   orders. Frontend: Settings → Privacy card (download data / delete account) + storefront
   cookie-consent banner. Tests: export sections, owner guard, customer anonymisation.
-- [ ] **10d — CI/CD & containers.** Multi-stage prod Dockerfiles (backend jar, frontend
-  standalone), a GitHub Actions pipeline (lint → test → build on PR), a prod-like
-  docker-compose, and a deploy runbook (target TBD with the user).
+- [x] **10d — CI/CD & containers.** GitHub Actions CI (`ci.yml`: backend `mvn test`+package on
+  H2, frontend lint→type-check→test→build) and an image publish workflow (`release.yml`: builds
+  + pushes both images to GHCR on main/`v*` tags via the repo token). Fixed the frontend prod
+  build (`output: 'standalone'`, the Dockerfile relied on it) and made `NEXT_PUBLIC_API_URL` a
+  build arg (it's inlined at build time). Modernised `docker-compose.yml` (real env vars, drops
+  stale Supabase ones, healthchecks + `service_healthy` gating), added `.dockerignore`s, a root
+  `.env.example`, and a full `docs/DEPLOY.md` runbook (config → migrate → run → verify → upgrade
+  → rollback). Target-agnostic: the images run on any Docker host / PaaS.
 - [ ] **10e — Observability & ops (infra).** Sentry SDK wiring, metrics dashboards, daily
   backups + tested restore, CDN, DB index/query audit — wired once the infra/accounts exist.
 
