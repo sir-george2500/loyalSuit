@@ -19,4 +19,7 @@ public interface LeaveRequestRepository {
 
     /** Approved leave for one employee whose range starts within [from, to] — used for balances. */
     List<LeaveRequest> findApproved(UUID tenantId, UUID employeeId, LocalDate from, LocalDate to);
+
+    /** All approved leave for the tenant overlapping [periodStart, periodEnd] — used by payroll. */
+    List<LeaveRequest> findApprovedOverlapping(UUID tenantId, LocalDate periodStart, LocalDate periodEnd);
 }
