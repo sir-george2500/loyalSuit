@@ -6,8 +6,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,5 +42,16 @@ public class NotificationRepositoryAdapter implements NotificationRepository {
     @Override
     public int markAllRead(UUID tenantId, UUID recipientId) {
         return jpa.markAllRead(tenantId, recipientId, Instant.now());
+    }
+
+    @Override
+    public List<Notification> findAllByRecipient(UUID tenantId, UUID recipientId) {
+        return jpa.findByTenantIdAndRecipientIdOrderByCreatedAtDesc(tenantId, recipientId);
+    }
+
+    @Override
+    @Transactional
+    public int deleteByRecipient(UUID tenantId, UUID recipientId) {
+        return jpa.deleteByTenantIdAndRecipientId(tenantId, recipientId);
     }
 }

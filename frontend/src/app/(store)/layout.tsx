@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ShoppingCart, Search, User } from 'lucide-react'
+import CookieConsent from '@/components/CookieConsent'
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,6 +22,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
         </div>
       </header>
       <main>{children}</main>
+      <CookieConsent />
     </div>
   )
 }

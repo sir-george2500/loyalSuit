@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { getToken, decodeJwt } from '@/lib/auth/session'
 import { changePasswordSchema, type ChangePasswordFormData } from '@/lib/validations/auth'
 import TwoFactorCard from './TwoFactorCard'
+import PrivacyCard from './PrivacyCard'
 
 function SessionCard() {
   const token = typeof window !== 'undefined' ? getToken() : null
@@ -168,6 +169,8 @@ export default function SecuritySettingsPage() {
       <SessionCard />
 
       <TwoFactorCard />
+
+      <PrivacyCard />
 
       {/* Sign out */}
       <div className="card bg-base-100 shadow-sm">
