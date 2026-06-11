@@ -495,15 +495,29 @@ store, optionally linked to a login user. The plan gate is a shared check the mo
 
 ---
 
-## Phase 10 — Hardening & GA
+## Phase 10 — Hardening & GA  ⟵ IN PROGRESS
 **Exit criteria:** OWASP Top-10 reviewed; 60%+ coverage on auth/payments/orders;
 load-tested; one-command reproducible deploy; runbook written.
 
-- [ ] Rate limiting, 2FA, API key rotation, secret manager
-- [ ] Sentry + metrics dashboards + health/readiness probes
-- [ ] Dockerized prod images, GitHub Actions CI/CD (lint→test→build→deploy)
-- [ ] Automated daily backups + tested restore; CDN; DB index/query audit
-- [ ] GDPR data export/delete; cookie consent
+Sliced into code-deliverable units; infra-dependent items (real Sentry project, secret
+manager, CDN, live deploy target) are scaffolded + documented, then wired when infra exists.
+
+- [x] **10a — Security hardening.** In-app fixed-window rate limiting (tight on `/auth/*`,
+  looser on the rest, keyed by client IP via X-Forwarded-For; 429 + Retry-After), a
+  security-headers filter (HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy,
+  CSP — strict for the API, swagger-friendly for the docs), and Actuator readiness/liveness
+  probes (`/actuator/health/{readiness,liveness}`). Filters run inside the security chain
+  (after CORS) so a 429 still carries CORS headers. Tunable via `app.rate-limit.*`; off in
+  the test profile. Tests: limiter unit, 429-on-throttle integration, headers present.
+- [ ] **10b — Two-factor auth (TOTP).** Owner/admin TOTP 2FA: enrol (secret + otpauth URI),
+  confirm, enforce as a second login step, single-use hashed recovery codes; Settings → Security UI.
+- [ ] **10c — GDPR & consent.** Right-to-access data export and right-to-erasure (account
+  delete/anonymise) endpoints; storefront cookie-consent banner with a stored preference.
+- [ ] **10d — CI/CD & containers.** Multi-stage prod Dockerfiles (backend jar, frontend
+  standalone), a GitHub Actions pipeline (lint → test → build on PR), a prod-like
+  docker-compose, and a deploy runbook (target TBD with the user).
+- [ ] **10e — Observability & ops (infra).** Sentry SDK wiring, metrics dashboards, daily
+  backups + tested restore, CDN, DB index/query audit — wired once the infra/accounts exist.
 
 ---
 

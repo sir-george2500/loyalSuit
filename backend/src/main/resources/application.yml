@@ -108,6 +108,14 @@ app:
     # value (>= 32 chars) in production via the APP_JWT_SECRET env var.
     secret: ${APP_JWT_SECRET:change-me-in-production-this-is-a-dev-only-secret-key-0123456789}
     expiration-seconds: ${APP_JWT_EXPIRATION:86400}
+  rate-limit:
+    # Per-client throttling. Auth endpoints are tight (credential-stuffing defence);
+    # the rest of the API gets a looser budget. Tune per deployment via env vars.
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    auth-limit: ${RATE_LIMIT_AUTH:10}
+    auth-window-seconds: ${RATE_LIMIT_AUTH_WINDOW:60}
+    api-limit: ${RATE_LIMIT_API:150}
+    api-window-seconds: ${RATE_LIMIT_API_WINDOW:60}
   cors:
     allowed-origins:
       - ${FRONTEND_URL:http://localhost:3000}
@@ -131,7 +139,14 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+      # Expose Kubernetes-style readiness/liveness probes under /actuator/health/{readiness,liveness}.
+      probes:
+        enabled: true
   health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
     # Redis is an optional cache, not a hard dependency. A flaky RedisLabs
     # connection must not flip the whole app to DOWN or fail readiness.
     redis:
