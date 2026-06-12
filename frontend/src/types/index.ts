@@ -304,6 +304,15 @@ export interface StoreView {
   logoUrl?: string | null
 }
 
+export interface StoreSummary {
+  name: string
+  slug: string
+  currency: string
+  country?: string | null
+  logoUrl?: string | null
+  productCount: number
+}
+
 export interface StoreCategory {
   name: string
   slug: string

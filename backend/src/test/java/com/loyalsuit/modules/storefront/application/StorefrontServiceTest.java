@@ -96,6 +96,40 @@ class StorefrontServiceTest {
         assertThatThrownBy(() -> service.getStore("ghost")).isInstanceOf(NotFoundException.class);
     }
 
+    // ---- marketplace index: only stocked, active stores ---------------------
+
+    @Test
+    void listStores_returnsStockedStores_orderedByProductCount() {
+        // Arrange — two active stores with products, plus an empty one
+        Tenant big = store(true);
+        Tenant small = new Tenant("Bravo", "bravo");
+        UUID smallId = UUID.randomUUID();
+        ReflectionTestUtils.setField(small, "id", smallId);
+        Tenant empty = new Tenant("Ghost", "ghost");
+        UUID emptyId = UUID.randomUUID();
+        ReflectionTestUtils.setField(empty, "id", emptyId);
+
+        when(tenantRepository.findAllActive()).thenReturn(List.of(small, big, empty));
+        when(productRepository.countActiveProductsByTenant(any()))
+                .thenReturn(java.util.Map.of(tenantId, 5L, smallId, 2L)); // empty store absent → 0
+
+        // Act
+        var result = service.listStores();
+
+        // Assert — empty store hidden, busiest store first
+        assertThat(result).extracting(s -> s.slug()).containsExactly("acme", "bravo");
+        assertThat(result.get(0).productCount()).isEqualTo(5L);
+    }
+
+    @Test
+    void listStores_isEmptyWhenNoActiveStores() {
+        // Arrange
+        when(tenantRepository.findAllActive()).thenReturn(List.of());
+
+        // Act & Assert
+        assertThat(service.listStores()).isEmpty();
+    }
+
     // ---- products: only ACTIVE, with batch lookups --------------------------
 
     @Test

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,5 +27,7 @@ public interface ProductRepository {
     Page<Product> findByCategoryIdAndTenantId(UUID categoryId, UUID tenantId, Pageable pageable);
     boolean existsBySlugAndTenantId(String slug, UUID tenantId);
     boolean existsByCategoryIdAndTenantId(UUID categoryId, UUID tenantId);
+    /** Active-product counts keyed by tenant id, for the marketplace index (one grouped query). */
+    Map<UUID, Long> countActiveProductsByTenant(Collection<UUID> tenantIds);
     void deleteById(UUID id);
 }

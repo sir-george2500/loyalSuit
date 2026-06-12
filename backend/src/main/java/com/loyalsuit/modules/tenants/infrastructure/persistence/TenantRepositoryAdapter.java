@@ -5,6 +5,7 @@ import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,5 +33,10 @@ public class TenantRepositoryAdapter implements TenantRepository {
     @Override
     public boolean existsBySlug(String slug) {
         return jpa.existsBySlug(slug);
+    }
+
+    @Override
+    public List<Tenant> findAllActive() {
+        return jpa.findByActiveTrueOrderByNameAsc();
     }
 }

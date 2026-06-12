@@ -6,6 +6,7 @@ import com.loyalsuit.modules.storefront.application.StorefrontService;
 import com.loyalsuit.modules.storefront.application.dto.StoreCategory;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductDetail;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductSummary;
+import com.loyalsuit.modules.storefront.application.dto.StoreSummary;
 import com.loyalsuit.modules.storefront.application.dto.StoreView;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +34,12 @@ import java.util.List;
 public class StoreController {
 
     private final StorefrontService storefrontService;
+
+    @GetMapping
+    @Operation(summary = "List all browsable stores (the public marketplace index)")
+    public ResponseEntity<ApiResponse<List<StoreSummary>>> stores() {
+        return ResponseEntity.ok(ApiResponse.ok(storefrontService.listStores()));
+    }
 
     @GetMapping("/{storeSlug}")
     @Operation(summary = "Get a store's public profile")

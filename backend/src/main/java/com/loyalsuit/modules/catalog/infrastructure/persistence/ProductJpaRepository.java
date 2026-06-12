@@ -34,4 +34,12 @@ interface ProductJpaRepository extends JpaRepository<Product, UUID> {
     Page<Product> findByCategoryIdAndTenantId(UUID categoryId, UUID tenantId, Pageable pageable);
     boolean existsBySlugAndTenantId(String slug, UUID tenantId);
     boolean existsByCategoryIdAndTenantId(UUID categoryId, UUID tenantId);
+
+    @Query("""
+            SELECT p.tenantId AS tenantId, COUNT(p) AS total FROM Product p
+            WHERE p.status = com.loyalsuit.modules.catalog.domain.ProductStatus.ACTIVE
+              AND p.tenantId IN :tenantIds
+            GROUP BY p.tenantId
+            """)
+    List<TenantProductCount> countActiveByTenant(@Param("tenantIds") Collection<UUID> tenantIds);
 }

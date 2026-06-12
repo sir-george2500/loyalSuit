@@ -4,6 +4,7 @@ import type {
   StoreCategory,
   StoreProductDetail,
   StoreProductSummary,
+  StoreSummary,
   StoreView,
 } from '@/types'
 
@@ -23,6 +24,11 @@ async function storeFetch<T>(path: string): Promise<T | null> {
   if (!res.ok) throw new Error(`Storefront request failed: ${res.status}`)
   const body = (await res.json()) as ApiResponse<T>
   return body.data
+}
+
+/** The public marketplace index — every browsable store. Never 404s; worst case an empty list. */
+export function getStores() {
+  return storeFetch<StoreSummary[]>('')
 }
 
 export function getStore(slug: string) {

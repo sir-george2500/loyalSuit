@@ -14,6 +14,7 @@ import com.loyalsuit.modules.inventory.domain.port.StockRepository;
 import com.loyalsuit.modules.storefront.application.dto.StoreCategory;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductDetail;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductSummary;
+import com.loyalsuit.modules.storefront.application.dto.StoreSummary;
 import com.loyalsuit.modules.storefront.application.dto.StoreVariant;
 import com.loyalsuit.modules.storefront.application.dto.StoreView;
 import com.loyalsuit.modules.tenants.domain.Tenant;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,6 +49,26 @@ public class StorefrontService {
     private final ProductVariantRepository variantRepository;
     private final ProductMediaRepository mediaRepository;
     private final StockRepository stockRepository;
+
+    /**
+     * The public marketplace index: every active store that has at least one published product, so a
+     * shopper landing here always sees somewhere they can actually buy. Counts are fetched in a single
+     * grouped query (no per-store round trips), and stores are ordered by how stocked they are.
+     */
+    public List<StoreSummary> listStores() {
+        List<Tenant> active = tenantRepository.findAllActive();
+        if (active.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, Long> counts = productRepository.countActiveProductsByTenant(
+                active.stream().map(Tenant::getId).toList());
+        return active.stream()
+                .map(t -> StoreSummary.from(t, counts.getOrDefault(t.getId(), 0L)))
+                .filter(s -> s.productCount() > 0) // hide empty stores — nothing to shop there yet
+                .sorted(Comparator.comparingLong(StoreSummary::productCount).reversed()
+                        .thenComparing(StoreSummary::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
 
     public StoreView getStore(String storeSlug) {
         return StoreView.from(requireStore(storeSlug));
