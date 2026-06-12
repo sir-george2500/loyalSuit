@@ -98,6 +98,12 @@ cloudinary:
 app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
   frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  marketplace:
+    # The flagship store that *is* the public marketplace. New sellers join it as
+    # vendors; the public storefront, search, cart and checkout all resolve this slug.
+    slug: ${MARKETPLACE_SLUG:loyalsuit}
+    name: ${MARKETPLACE_NAME:LoyalSuit}
+    currency: ${MARKETPLACE_CURRENCY:USD}
   mail:
     # Transactional email sender identity. Sending is best-effort: a missing or
     # failing SMTP config logs a warning but never breaks the request.
