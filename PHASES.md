@@ -179,6 +179,12 @@ are correct under concurrency; storefront can read published products.
       Server Components render the storefront (store home + product detail) with
       ISR caching. Read-model aggregator (`storefront` module) + public-access tests.
       (Host/subdomain resolution and server-side cache-aside deferred.)
+- [x] **Public marketplace index** (`GET /api/v1/store`) — anonymous cross-tenant
+      list of every active store that has ≥1 published product, so a visitor can shop
+      without logging in. Active-product counts come from one grouped query (no N+1),
+      stores ordered by how stocked they are. `StoreSummary` DTO (name/slug/currency/
+      country/logo/productCount). Next.js `/store` renders the marketplace grid; the
+      landing page links to it ("Marketplace"/"Shop"/"Browse the marketplace").
 - [ ] List/detail performance: pagination, indexes, cache-aside for hot listings
 
 ---

@@ -32,6 +32,11 @@ class StorefrontPublicAccessTest {
     private StorefrontService storefrontService;
 
     @Test
+    void marketplaceIndex_isPublic() throws Exception {
+        mvc.perform(get("/api/v1/store")).andExpect(status().isOk());
+    }
+
+    @Test
     void store_isPublic() throws Exception {
         mvc.perform(get("/api/v1/store/acme")).andExpect(status().isOk());
     }

@@ -10,8 +10,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
@@ -78,6 +80,15 @@ public class ProductRepositoryAdapter implements ProductRepository {
     @Override
     public boolean existsByCategoryIdAndTenantId(UUID categoryId, UUID tenantId) {
         return jpa.existsByCategoryIdAndTenantId(categoryId, tenantId);
+    }
+
+    @Override
+    public Map<UUID, Long> countActiveProductsByTenant(Collection<UUID> tenantIds) {
+        if (tenantIds.isEmpty()) {
+            return Map.of();
+        }
+        return jpa.countActiveByTenant(tenantIds).stream()
+                .collect(Collectors.toMap(TenantProductCount::getTenantId, TenantProductCount::getTotal));
     }
 
     @Override

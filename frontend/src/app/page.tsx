@@ -107,12 +107,16 @@ export default function LandingPage() {
           </div>
 
           <div className="hidden items-center gap-8 md:flex">
+            <Link href="/store" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Marketplace</Link>
             <a href="#features" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Features</a>
             <a href="#for-who" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Who is it for?</a>
             <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
           </div>
 
           <div className="flex items-center gap-3">
+            <Link href="/store" className="hidden text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors sm:inline">
+              Shop
+            </Link>
             <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
               Sign in
             </Link>
@@ -151,10 +155,10 @@ export default function LandingPage() {
               Start free trial <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/login"
-              className="rounded-xl border border-white/30 px-6 py-3 text-base font-medium text-white hover:bg-white/10 transition-colors"
+              href="/store"
+              className="flex items-center gap-2 rounded-xl border border-white/30 px-6 py-3 text-base font-medium text-white hover:bg-white/10 transition-colors"
             >
-              Sign in to your account
+              <Store className="h-4 w-4" /> Browse the marketplace
             </Link>
           </div>
 
