@@ -1,5 +1,6 @@
 import type {
   ApiResponse,
+  MarketplaceProductResult,
   PageResponse,
   StoreCategory,
   StoreProductDetail,
@@ -29,6 +30,13 @@ async function storeFetch<T>(path: string): Promise<T | null> {
 /** The public marketplace index — every browsable store. Never 404s; worst case an empty list. */
 export function getStores() {
   return storeFetch<StoreSummary[]>('')
+}
+
+/** Cross-store product search. A blank query returns an empty page (server-enforced). */
+export function searchProducts(query: string, page = 0) {
+  const params = new URLSearchParams({ q: query })
+  if (page) params.set('page', String(page))
+  return storeFetch<PageResponse<MarketplaceProductResult>>(`/search?${params.toString()}`)
 }
 
 export function getStore(slug: string) {

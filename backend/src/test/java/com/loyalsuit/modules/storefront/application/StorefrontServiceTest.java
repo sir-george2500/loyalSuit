@@ -32,6 +32,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -128,6 +129,37 @@ class StorefrontServiceTest {
 
         // Act & Assert
         assertThat(service.listStores()).isEmpty();
+    }
+
+    // ---- cross-store product search -----------------------------------------
+
+    @Test
+    void search_returnsHitsPairedWithTheirStore() {
+        // Arrange — one active store, one matching product with a primary image
+        UUID productId = UUID.randomUUID();
+        Product p = product("widget", ProductStatus.ACTIVE, productId);
+        ProductMedia media = new ProductMedia(tenantId, productId, "pid", "https://cdn/widget.png");
+
+        when(tenantRepository.findAllActive()).thenReturn(List.of(store(true)));
+        when(productRepository.searchActiveAcrossTenants(any(), eq("wid"), any()))
+                .thenReturn(new PageImpl<>(List.of(p)));
+        when(mediaRepository.findByProductIdInAndPrimaryTrue(List.of(productId))).thenReturn(List.of(media));
+
+        // Act
+        var result = service.search("wid", PageRequest.of(0, 24)).getContent();
+
+        // Assert — the product carries its store's identity and currency
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).productSlug()).isEqualTo("widget");
+        assertThat(result.get(0).storeSlug()).isEqualTo("acme");
+        assertThat(result.get(0).imageUrl()).isEqualTo("https://cdn/widget.png");
+    }
+
+    @Test
+    void search_blankQuery_returnsEmpty_withoutTouchingTheCatalogue() {
+        // Act & Assert — a blank query must not dump the whole catalogue
+        assertThat(service.search("   ", PageRequest.of(0, 24)).getContent()).isEmpty();
+        org.mockito.Mockito.verifyNoInteractions(productRepository);
     }
 
     // ---- products: only ACTIVE, with batch lookups --------------------------

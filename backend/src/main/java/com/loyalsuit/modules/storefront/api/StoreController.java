@@ -5,6 +5,7 @@ import com.loyalsuit.common.response.PageResponse;
 import com.loyalsuit.modules.storefront.application.StorefrontService;
 import com.loyalsuit.modules.storefront.application.dto.StoreCategory;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductDetail;
+import com.loyalsuit.modules.storefront.application.dto.MarketplaceProductResult;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductSummary;
 import com.loyalsuit.modules.storefront.application.dto.StoreSummary;
 import com.loyalsuit.modules.storefront.application.dto.StoreView;
@@ -39,6 +40,14 @@ public class StoreController {
     @Operation(summary = "List all browsable stores (the public marketplace index)")
     public ResponseEntity<ApiResponse<List<StoreSummary>>> stores() {
         return ResponseEntity.ok(ApiResponse.ok(storefrontService.listStores()));
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Search products across all stores")
+    public ResponseEntity<ApiResponse<PageResponse<MarketplaceProductResult>>> search(
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 24) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(storefrontService.search(q, pageable)));
     }
 
     @GetMapping("/{storeSlug}")

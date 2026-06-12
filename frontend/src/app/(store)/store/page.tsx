@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Store as StoreIcon, Package, ArrowRight } from 'lucide-react'
 import { getStores } from '@/lib/api/storefront'
+import MarketplaceSearchBar from '@/components/store/MarketplaceSearchBar'
 import type { StoreSummary } from '@/types'
 
 export const metadata: Metadata = {
@@ -20,6 +21,9 @@ export default async function MarketplacePage() {
         <p className="mt-3 text-lg text-gray-500">
           Browse every store on LoyalSuit and shop their products — no account needed.
         </p>
+        <div className="mx-auto mt-6 max-w-xl">
+          <MarketplaceSearchBar />
+        </div>
       </header>
 
       {stores.length > 0 ? (

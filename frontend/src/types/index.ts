@@ -313,6 +313,18 @@ export interface StoreSummary {
   productCount: number
 }
 
+export interface MarketplaceProductResult {
+  productId: string
+  productName: string
+  productSlug: string
+  price: number
+  compareAtPrice?: number | null
+  imageUrl?: string | null
+  storeName: string
+  storeSlug: string
+  currency: string
+}
+
 export interface StoreCategory {
   name: string
   slug: string

@@ -20,6 +20,11 @@ public interface ProductRepository {
     Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable);
     /** Active products whose name, SKU, or barcode matches the query (case-insensitive). */
     Page<Product> searchActive(UUID tenantId, String query, Pageable pageable);
+    /**
+     * Cross-store search: ACTIVE products by name (case-insensitive) within the given tenants —
+     * used by the public marketplace. The caller restricts {@code tenantIds} to active stores.
+     */
+    Page<Product> searchActiveAcrossTenants(Collection<UUID> tenantIds, String query, Pageable pageable);
     Page<Product> findByTenantIdAndStatusAndCategoryId(
             UUID tenantId, ProductStatus status, UUID categoryId, Pageable pageable);
     Page<Product> findByTenantId(UUID tenantId, Pageable pageable);

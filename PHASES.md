@@ -185,6 +185,13 @@ are correct under concurrency; storefront can read published products.
       stores ordered by how stocked they are. `StoreSummary` DTO (name/slug/currency/
       country/logo/productCount). Next.js `/store` renders the marketplace grid; the
       landing page links to it ("Marketplace"/"Shop"/"Browse the marketplace").
+- [x] **Cross-store product search** (`GET /api/v1/store/search?q=`) — anonymous,
+      Amazon-style: matches ACTIVE products by name across every active store, each
+      hit paired with its store (name/slug/currency) so the card links straight to
+      `/store/{slug}/products/{slug}`. Blank query short-circuits (no full-catalogue
+      dump); store lookups + primary images batched (no N+1). `MarketplaceProductResult`
+      DTO. Frontend `/store/search` results page + a GET search bar wired into the
+      store header and marketplace index (works without JS).
 - [ ] List/detail performance: pagination, indexes, cache-aside for hot listings
 
 ---

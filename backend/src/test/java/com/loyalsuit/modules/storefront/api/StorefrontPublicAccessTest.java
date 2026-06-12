@@ -37,6 +37,11 @@ class StorefrontPublicAccessTest {
     }
 
     @Test
+    void search_isPublic() throws Exception {
+        mvc.perform(get("/api/v1/store/search").param("q", "widget")).andExpect(status().isOk());
+    }
+
+    @Test
     void store_isPublic() throws Exception {
         mvc.perform(get("/api/v1/store/acme")).andExpect(status().isOk());
     }

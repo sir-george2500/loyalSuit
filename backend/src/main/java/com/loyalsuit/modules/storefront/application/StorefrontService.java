@@ -11,6 +11,7 @@ import com.loyalsuit.modules.catalog.domain.port.ProductMediaRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductVariantRepository;
 import com.loyalsuit.modules.inventory.domain.port.StockRepository;
+import com.loyalsuit.modules.storefront.application.dto.MarketplaceProductResult;
 import com.loyalsuit.modules.storefront.application.dto.StoreCategory;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductDetail;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductSummary;
@@ -68,6 +69,46 @@ public class StorefrontService {
                 .sorted(Comparator.comparingLong(StoreSummary::productCount).reversed()
                         .thenComparing(StoreSummary::name, String.CASE_INSENSITIVE_ORDER))
                 .toList();
+    }
+
+    /**
+     * Cross-store product search for the marketplace. Matches ACTIVE products by name across every
+     * active store, pairing each hit with the store that sells it. A blank query returns nothing
+     * (rather than the entire catalogue). Store lookups and primary images are batched — no N+1.
+     */
+    public PageResponse<MarketplaceProductResult> search(String query, Pageable pageable) {
+        String q = query == null ? "" : query.trim();
+        if (q.isBlank()) {
+            return new PageResponse<>(Page.empty(pageable));
+        }
+        List<Tenant> active = tenantRepository.findAllActive();
+        if (active.isEmpty()) {
+            return new PageResponse<>(Page.empty(pageable));
+        }
+
+        Map<UUID, Tenant> stores = active.stream()
+                .collect(Collectors.toMap(Tenant::getId, t -> t));
+        Page<Product> page = productRepository.searchActiveAcrossTenants(stores.keySet(), q, pageable);
+
+        Map<UUID, String> primaryImages = mediaRepository
+                .findByProductIdInAndPrimaryTrue(page.getContent().stream().map(Product::getId).toList())
+                .stream()
+                .collect(Collectors.toMap(ProductMedia::getProductId, ProductMedia::getUrl, (a, b) -> a));
+
+        Instant now = Instant.now();
+        return new PageResponse<>(page.map(p -> {
+            Tenant store = stores.get(p.getTenantId());
+            return new MarketplaceProductResult(
+                    p.getId(),
+                    p.getName(),
+                    p.getSlug(),
+                    p.effectivePrice(now),
+                    p.onSale(now) ? p.getPrice() : p.getCompareAtPrice(),
+                    primaryImages.get(p.getId()),
+                    store.getName(),
+                    store.getSlug(),
+                    store.getCurrency());
+        }));
     }
 
     public StoreView getStore(String storeSlug) {
