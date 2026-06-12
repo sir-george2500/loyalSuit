@@ -18,6 +18,8 @@ public interface ProductRepository {
     List<Product> findByIdInAndTenantId(Collection<UUID> ids, UUID tenantId);
     Optional<Product> findBySlugAndTenantId(String slug, UUID tenantId);
     Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable);
+    /** ACTIVE products ordered house-first (the marketplace operator's own products, then vendors'). */
+    Page<Product> findActiveByTenantHouseFirst(UUID tenantId, Pageable pageable);
     /** Active products whose name, SKU, or barcode matches the query (case-insensitive). */
     Page<Product> searchActive(UUID tenantId, String query, Pageable pageable);
     Page<Product> findByTenantIdAndStatusAndCategoryId(

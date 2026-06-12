@@ -57,6 +57,8 @@ public class SecurityConfig {
                 // Public storefront endpoints (these resolve tenant from the URL/host,
                 // NOT from a JWT principal — see StoreController in Phase 2).
                 .requestMatchers(HttpMethod.GET, "/api/v1/store/**").permitAll()
+                // Public LoyalSuit marketplace (resolves the canonical flagship store server-side).
+                .requestMatchers(HttpMethod.GET, "/api/v1/marketplace/**").permitAll()
                 // Guest carts are anonymous: cart mutations resolve tenant by slug and
                 // a client cart token (no DB persistence, prices recomputed server-side).
                 .requestMatchers("/api/v1/store/*/cart", "/api/v1/store/*/cart/**").permitAll()

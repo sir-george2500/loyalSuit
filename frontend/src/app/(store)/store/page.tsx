@@ -1,71 +1,123 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
-import { Store as StoreIcon, Package, ArrowRight } from 'lucide-react'
-import { getStores } from '@/lib/api/storefront'
-import type { StoreSummary } from '@/types'
+import { notFound } from 'next/navigation'
+import { Package, ChevronLeft, ChevronRight } from 'lucide-react'
+import { getMarketplace, getMarketplaceCategories, getMarketplaceProducts } from '@/lib/api/marketplace'
+import MarketplaceSearchBar from '@/components/store/MarketplaceSearchBar'
+import MarketplaceCard from '@/components/store/MarketplaceCard'
 
 export const metadata: Metadata = {
-  title: 'Marketplace — LoyalSuit',
-  description: 'Browse every store on LoyalSuit and shop their products.',
+  title: 'LoyalSuit — Shop',
+  description: 'Shop LoyalSuit and its sellers — one marketplace, no account needed.',
 }
 
-export default async function MarketplacePage() {
-  const stores = (await getStores()) ?? []
+type Search = { category?: string; page?: string }
+
+export default async function MarketplacePage({
+  searchParams,
+}: {
+  searchParams: Promise<Search>
+}) {
+  const { category, page } = await searchParams
+  const pageIndex = Math.max(0, Number(page ?? 0) || 0)
+
+  const store = await getMarketplace()
+  if (!store) notFound()
+
+  const [categories, products] = await Promise.all([
+    getMarketplaceCategories(),
+    getMarketplaceProducts({ category, page: pageIndex }),
+  ])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <header className="mb-10 text-center">
-        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Marketplace</h1>
-        <p className="mt-3 text-lg text-gray-500">
-          Browse every store on LoyalSuit and shop their products — no account needed.
-        </p>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <header className="mb-8 text-center">
+        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">{store.name}</h1>
+        <p className="mt-2 text-gray-500">Everything from LoyalSuit and our sellers, in one place.</p>
+        <div className="mx-auto mt-6 max-w-xl">
+          <MarketplaceSearchBar />
+        </div>
       </header>
 
-      {stores.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {stores.map((store) => (
-            <StoreCard key={store.slug} store={store} />
+      {/* Category filter */}
+      {categories && categories.length > 0 && (
+        <nav className="mb-6 flex flex-wrap justify-center gap-2">
+          <CategoryChip active={!category}>All</CategoryChip>
+          {categories.map((c) => (
+            <CategoryChip key={c.slug} category={c.slug} active={category === c.slug}>
+              {c.name}
+            </CategoryChip>
           ))}
-        </div>
+        </nav>
+      )}
+
+      {products && products.content.length > 0 ? (
+        <>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {products.content.map((p) => (
+              <MarketplaceCard key={p.productId} product={p} storeSlug={store.slug} currency={store.currency} />
+            ))}
+          </div>
+
+          <div className="mt-8 flex items-center justify-between text-sm text-gray-500">
+            <span>
+              Page {products.page + 1} of {Math.max(products.totalPages, 1)}
+            </span>
+            <div className="flex gap-2">
+              {!products.first && (
+                <Link
+                  href={pageHref(category, products.page - 1)}
+                  className="inline-flex items-center gap-1 rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Prev
+                </Link>
+              )}
+              {!products.last && (
+                <Link
+                  href={pageHref(category, products.page + 1)}
+                  className="inline-flex items-center gap-1 rounded border border-gray-300 px-3 py-1.5 hover:bg-gray-50"
+                >
+                  Next <ChevronRight className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
+          </div>
+        </>
       ) : (
-        <div className="flex flex-col items-center gap-3 py-24 text-center text-gray-400">
-          <StoreIcon className="h-12 w-12" />
-          <p className="text-lg">No stores are open yet.</p>
-          <p className="text-sm">Check back soon — new sellers are joining all the time.</p>
+        <div className="flex flex-col items-center gap-2 py-20 text-center text-gray-400">
+          <Package className="h-10 w-10" />
+          <p>No products here yet.</p>
         </div>
       )}
     </div>
   )
 }
 
-function StoreCard({ store }: { store: StoreSummary }) {
+function pageHref(category: string | undefined, page: number): string {
+  const params = new URLSearchParams()
+  if (category) params.set('category', category)
+  if (page > 0) params.set('page', String(page))
+  const qs = params.toString()
+  return `/store${qs ? `?${qs}` : ''}`
+}
+
+function CategoryChip({
+  category,
+  active,
+  children,
+}: {
+  category?: string
+  active: boolean
+  children: React.ReactNode
+}) {
   return (
     <Link
-      href={`/store/${store.slug}`}
-      className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-primary-300 hover:shadow-md"
+      href={category ? `/store?category=${category}` : '/store'}
+      className={`rounded-full px-3 py-1 text-sm ${
+        active ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+      }`}
     >
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-        {store.logoUrl ? (
-          <Image src={store.logoUrl} alt={store.name} fill sizes="64px" className="object-cover" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-gray-300">
-            <StoreIcon className="h-7 w-7" />
-          </div>
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <h2 className="truncate text-lg font-semibold text-gray-900">{store.name}</h2>
-        <p className="mt-0.5 flex items-center gap-1.5 text-sm text-gray-500">
-          <Package className="h-3.5 w-3.5" />
-          {store.productCount} {store.productCount === 1 ? 'product' : 'products'}
-          {store.country && <span className="text-gray-300">·</span>}
-          {store.country && <span>{store.country}</span>}
-        </p>
-      </div>
-
-      <ArrowRight className="h-5 w-5 shrink-0 text-gray-300 transition-colors group-hover:text-primary-600" />
+      {children}
     </Link>
   )
 }

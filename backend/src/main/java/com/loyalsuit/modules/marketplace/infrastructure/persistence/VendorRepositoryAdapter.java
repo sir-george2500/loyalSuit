@@ -8,6 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,5 +47,10 @@ public class VendorRepositoryAdapter implements VendorRepository {
     @Override
     public Page<Vendor> findByTenantIdAndStatus(UUID tenantId, VendorStatus status, Pageable pageable) {
         return jpa.findByTenantIdAndStatusOrderByCreatedAtDesc(tenantId, status, pageable);
+    }
+
+    @Override
+    public List<Vendor> findByTenantIdAndIdIn(UUID tenantId, Collection<UUID> ids) {
+        return ids.isEmpty() ? List.of() : jpa.findByTenantIdAndIdIn(tenantId, ids);
     }
 }
