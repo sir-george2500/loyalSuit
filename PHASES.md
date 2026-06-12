@@ -547,6 +547,34 @@ manager, CDN, live deploy target) are scaffolded + documented, then wired when i
 
 ---
 
+## Phase 11 — Single-marketplace pivot (LoyalSuit IS the marketplace)  ⟵ IN PROGRESS
+
+**Why:** the platform was built Shopify-style (every signup spawns its own isolated
+store). The product vision is Amazon/Jumia-style: **one** marketplace — *LoyalSuit* —
+where the operator sells and **other sellers join as vendors**. The Phase-5 vendor
+system (apply → admin approve → commission → payout, products carry `vendor_id`)
+already provides the multi-seller machinery; this phase re-points the public
+experience at a single flagship tenant instead of a list of independent stores.
+
+- [x] **11a — Flagship store bootstrap.** Canonical `loyalsuit` tenant config
+      (`app.marketplace.{slug,name,currency}`, `MarketplaceProperties`) + an
+      idempotent startup `MarketplaceBootstrap` (find-or-create by slug) so the
+      flagship store exists in every environment, including tests (H2/create-drop,
+      no Flyway). Bootstrap test (exists after boot + idempotent).
+- [ ] **11b — Public storefront = LoyalSuit.** `/store`, search, cart, checkout
+      resolve the canonical tenant; marketplace home shows its products (house first)
+      with vendor attribution. (Supersedes the cross-*tenant* framing of the index/
+      search — "stores" become "vendors".)
+- [ ] **11c — Signup joins LoyalSuit.** `register` puts new people into the flagship
+      tenant (CUSTOMER); "Sell on LoyalSuit" → existing vendor application → admin
+      approves → VENDOR can list products. (Tenant infra retained.)
+- [ ] **11d — Vendor storefronts + "Sold by {vendor}".** `/store/vendor/{slug}`;
+      attribution on cards + product detail.
+- [ ] **11e — Vendor product management + onboarding polish.** Sellers manage only
+      their own products; prominent "Sell on LoyalSuit" CTA; dashboard wayfinding.
+
+---
+
 ## Test accounts (Phase 1, dev only)
 
 Seeded into Postgres by `DevDataSeeder` (idempotent, `dev` profile). All belong to
