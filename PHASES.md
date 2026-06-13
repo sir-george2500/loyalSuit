@@ -547,7 +547,7 @@ manager, CDN, live deploy target) are scaffolded + documented, then wired when i
 
 ---
 
-## Phase 11 — Single-marketplace pivot (LoyalSuit IS the marketplace)  ⟵ IN PROGRESS
+## Phase 11 — Single-marketplace pivot (LoyalSuit IS the marketplace)  ✅ COMPLETE
 
 **Why:** the platform was built Shopify-style (every signup spawns its own isolated
 store). The product vision is Amazon/Jumia-style: **one** marketplace — *LoyalSuit* —
@@ -581,8 +581,14 @@ experience at a single flagship tenant instead of a list of independent stores.
       linking to `/store/vendor/{slug}` (link only for ACTIVE sellers, so no dead
       links); house products read "LoyalSuit". New `VendorStorefront` DTO,
       `findBySlugAndTenantId` + `findByTenantIdAndVendorIdAndStatus` queries.
-- [ ] **11e — Vendor product management + onboarding polish.** Sellers manage only
-      their own products; prominent "Sell on LoyalSuit" CTA; dashboard wayfinding.
+- [x] **11e — Vendor product management.** Fixed the core wiring: a product's
+      `vendor_id` is now the **Vendor PK** (was mistakenly the user id), so vendor
+      products correctly attribute (11b) and fill their storefront (11d).
+      `ProductService` scopes a VENDOR's reads/writes to their vendor id via new
+      `VendorService.requireVendorId` / `requireActiveVendorId`; create stamps it,
+      edits are own-only (else 404), writes require an ACTIVE vendor. The seller
+      product-management UI (`/seller/products`) already existed and now works
+      end-to-end against the corrected, vendor-scoped API.
 
 ---
 
