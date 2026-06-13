@@ -24,4 +24,11 @@ public class MarketplaceProperties {
 
     /** Default currency for the flagship store. */
     private String currency = "USD";
+
+    /**
+     * Optional operator admin, seeded once at startup so vendor applications can be approved.
+     * Only created when BOTH email and password are set — there is never a default credential.
+     */
+    private String adminEmail = "";
+    private String adminPassword = "";
 }

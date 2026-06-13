@@ -64,8 +64,14 @@ class DataPrivacyFlowTest {
 
     @Test
     void deleteAccount_isForbiddenForOwners() throws Exception {
-        String token = register("owner.delete@test.dev").path("token").asText();
+        // Arrange — a store owner (TENANT_ADMIN) can't self-erase here; it would orphan their store.
+        // (Registration now creates CUSTOMERs on the marketplace, so we mint an owner directly.)
+        AppUser owner = userRepository.save(new AppUser(
+                UUID.randomUUID(), "owner.delete@test.dev", passwordEncoder.encode("Sup3rSecret!"),
+                "Olive Owner", UserRole.TENANT_ADMIN));
+        String token = jwtService.issueToken(owner.getId(), owner.getEmail(), "TENANT_ADMIN", owner.getTenantId());
 
+        // Act & Assert
         mvc.perform(post("/api/v1/privacy/delete-account")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)

@@ -16,8 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Seeds a demo tenant and one user per role so the app is usable out of the box
- * in development. Runs only under the "dev" profile and is idempotent.
+ * Seeds one user per role into the flagship LoyalSuit marketplace so the app is usable out of the
+ * box in development — including an admin who can approve vendor applications. Runs only under the
+ * "dev" profile and is idempotent. (The marketplace tenant itself is ensured by MarketplaceBootstrap.)
  */
 @Slf4j
 @Component
@@ -25,9 +26,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DevDataSeeder implements CommandLineRunner {
 
-    private static final String DEMO_TENANT_SLUG = "demo";
     private static final String DEFAULT_PASSWORD = "Admin@Test123";
 
+    private final MarketplaceProperties marketplaceProperties;
     private final TenantRepository tenantRepository;
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -45,12 +46,13 @@ public class DevDataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        Tenant tenant = tenantRepository.findBySlug(DEMO_TENANT_SLUG)
-                .orElseGet(() -> tenantRepository.save(new Tenant("Demo Store", DEMO_TENANT_SLUG)));
+        // Seed users into the flagship marketplace (find-or-create — order-independent of the bootstrap).
+        Tenant tenant = tenantRepository.findBySlug(marketplaceProperties.getSlug())
+                .orElseGet(() -> tenantRepository.save(
+                        new Tenant(marketplaceProperties.getName(), marketplaceProperties.getSlug())));
 
-        // The demo store ships pre-configured, so seeded owner accounts land on the
-        // dashboard instead of the setup wizard. Idempotent — also backfills a demo
-        // tenant created before onboarding existed.
+        // The flagship store ships pre-configured, so seeded owner accounts land on the
+        // dashboard instead of the setup wizard. Idempotent.
         if (!tenant.isOnboarded()) {
             tenant.setCurrency("USD");
             tenant.setTimezone("UTC");

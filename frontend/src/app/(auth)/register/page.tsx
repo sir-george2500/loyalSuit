@@ -70,8 +70,8 @@ export default function RegisterPage() {
       // Registration always returns a full session (2FA can only be added later).
       if (!token || !user) throw new Error('Unexpected response')
       signIn(token, expiresIn, user)
-      // Registration provisions a tenant + TENANT_ADMIN, so this lands in /admin —
-      // routing by role keeps it correct if that ever changes.
+      // Registration creates a shopper (CUSTOMER) on the LoyalSuit marketplace, so this
+      // lands in /store. Routing by role keeps it correct for any role.
       router.push(homeForRole(user.role))
       router.refresh()
     } catch (err) {
@@ -102,7 +102,7 @@ export default function RegisterPage() {
           <div className="card-body">
             <h1 className="text-2xl font-bold">Create your account</h1>
             <p className="mb-2 text-sm text-base-content/60">
-              14-day free trial · No credit card required
+              Shop LoyalSuit and our sellers — want to sell? You can apply after signing up.
             </p>
 
             {serverError && (

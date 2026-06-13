@@ -2,19 +2,25 @@ package com.loyalsuit.config;
 
 import com.loyalsuit.modules.tenants.domain.Tenant;
 import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
+import com.loyalsuit.modules.users.domain.AppUser;
+import com.loyalsuit.modules.users.domain.UserRole;
+import com.loyalsuit.modules.users.domain.port.AppUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Locale;
 
 /**
- * Ensures the flagship marketplace store exists on startup. LoyalSuit is a single-marketplace
- * platform: this canonical tenant is the storefront everyone shops, and the store new sellers
- * join as vendors. Idempotent (find-or-create by slug) so it is safe on every boot and in every
- * environment — including tests, which build a fresh schema and have no Flyway seed to rely on.
+ * Ensures the flagship marketplace store (and, optionally, its operator admin) exists on startup.
+ * LoyalSuit is a single-marketplace platform: this canonical tenant is the storefront everyone
+ * shops and the store new sellers join as vendors. Idempotent (find-or-create by slug / email) so
+ * it is safe on every boot and in every environment — including tests, which build a fresh schema
+ * and have no Flyway seed to rely on.
  */
 @Slf4j
 @Component
@@ -23,17 +29,18 @@ public class MarketplaceBootstrap implements CommandLineRunner {
 
     private final MarketplaceProperties properties;
     private final TenantRepository tenantRepository;
+    private final AppUserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) {
-        tenantRepository.findBySlug(properties.getSlug()).ifPresentOrElse(
-                existing -> log.debug("Flagship marketplace store '{}' present (id={})",
-                        existing.getSlug(), existing.getId()),
-                this::seedFlagship);
+        Tenant marketplace = tenantRepository.findBySlug(properties.getSlug())
+                .orElseGet(this::seedFlagship);
+        seedOperatorAdmin(marketplace);
     }
 
-    private void seedFlagship() {
+    private Tenant seedFlagship() {
         Tenant flagship = new Tenant(properties.getName(), properties.getSlug());
         flagship.setCurrency(properties.getCurrency());
         flagship.setActive(true);
@@ -41,5 +48,22 @@ public class MarketplaceBootstrap implements CommandLineRunner {
         flagship.setOnboardedAt(Instant.now());
         Tenant saved = tenantRepository.save(flagship);
         log.info("Seeded flagship marketplace store '{}' (id={})", saved.getSlug(), saved.getId());
+        return saved;
+    }
+
+    /**
+     * Create the marketplace operator (a TENANT_ADMIN of the flagship store) so vendor applications
+     * can be approved. Only runs when both email and password are configured — no default credential.
+     */
+    private void seedOperatorAdmin(Tenant marketplace) {
+        String email = properties.getAdminEmail().trim().toLowerCase(Locale.ROOT);
+        String password = properties.getAdminPassword();
+        if (email.isBlank() || password.isBlank() || userRepository.existsByEmail(email)) {
+            return;
+        }
+        userRepository.save(new AppUser(
+                marketplace.getId(), email, passwordEncoder.encode(password),
+                "Marketplace Admin", UserRole.TENANT_ADMIN));
+        log.info("Seeded marketplace operator admin '{}'", email);
     }
 }

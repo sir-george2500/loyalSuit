@@ -75,8 +75,8 @@ export default function BecomeSeller() {
       <>
         <div className="mb-4 text-center">
           <Store className="mx-auto h-10 w-10 text-primary" />
-          <h2 className="mt-2 text-xl font-bold">Sell on this store</h2>
-          <p className="text-sm text-base-content/60">Apply to become a vendor. An admin reviews each application.</p>
+          <h2 className="mt-2 text-xl font-bold">Sell on LoyalSuit</h2>
+          <p className="text-sm text-base-content/60">Open your own store on the LoyalSuit marketplace. An admin reviews each application.</p>
         </div>
         {apply.isError && (
           <div role="alert" className="alert alert-error mb-3 text-sm">
