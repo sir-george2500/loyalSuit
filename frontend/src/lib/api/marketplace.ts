@@ -4,6 +4,7 @@ import type {
   PageResponse,
   StoreCategory,
   StoreView,
+  VendorStorefront,
 } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
@@ -46,4 +47,19 @@ export function searchMarketplace(query: string, page = 0) {
   const params = new URLSearchParams({ q: query })
   if (page) params.set('page', String(page))
   return mpFetch<PageResponse<MarketplaceProductCard>>(`/search?${params.toString()}`)
+}
+
+/** A vendor's public storefront profile (null on 404 — unknown or not-yet-approved vendor). */
+export function getVendor(slug: string) {
+  return mpFetch<VendorStorefront>(`/vendors/${encodeURIComponent(slug)}`)
+}
+
+/** A vendor's products. */
+export function getVendorProducts(slug: string, page = 0) {
+  const params = new URLSearchParams()
+  if (page) params.set('page', String(page))
+  const qs = params.toString()
+  return mpFetch<PageResponse<MarketplaceProductCard>>(
+    `/vendors/${encodeURIComponent(slug)}/products${qs ? `?${qs}` : ''}`
+  )
 }

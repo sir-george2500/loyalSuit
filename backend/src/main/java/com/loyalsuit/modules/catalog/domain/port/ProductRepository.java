@@ -26,6 +26,9 @@ public interface ProductRepository {
             UUID tenantId, ProductStatus status, UUID categoryId, Pageable pageable);
     Page<Product> findByTenantId(UUID tenantId, Pageable pageable);
     Page<Product> findByTenantIdAndVendorId(UUID tenantId, UUID vendorId, Pageable pageable);
+    /** A vendor's publicly visible (ACTIVE) products, for their storefront page. */
+    Page<Product> findByTenantIdAndVendorIdAndStatus(
+            UUID tenantId, UUID vendorId, ProductStatus status, Pageable pageable);
     Page<Product> findByCategoryIdAndTenantId(UUID categoryId, UUID tenantId, Pageable pageable);
     boolean existsBySlugAndTenantId(String slug, UUID tenantId);
     boolean existsByCategoryIdAndTenantId(UUID categoryId, UUID tenantId);

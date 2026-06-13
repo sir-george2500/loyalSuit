@@ -6,6 +6,8 @@ import com.loyalsuit.modules.storefront.application.MarketplaceService;
 import com.loyalsuit.modules.storefront.application.dto.MarketplaceProductCard;
 import com.loyalsuit.modules.storefront.application.dto.StoreCategory;
 import com.loyalsuit.modules.storefront.application.dto.StoreView;
+import com.loyalsuit.modules.storefront.application.dto.VendorStorefront;
+import org.springframework.web.bind.annotation.PathVariable;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -58,5 +60,19 @@ public class MarketplaceController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 24) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(marketplaceService.search(q, pageable)));
+    }
+
+    @GetMapping("/vendors/{vendorSlug}")
+    @Operation(summary = "Get a vendor's public storefront profile")
+    public ResponseEntity<ApiResponse<VendorStorefront>> vendor(@PathVariable String vendorSlug) {
+        return ResponseEntity.ok(ApiResponse.ok(marketplaceService.vendor(vendorSlug)));
+    }
+
+    @GetMapping("/vendors/{vendorSlug}/products")
+    @Operation(summary = "Browse a vendor's products")
+    public ResponseEntity<ApiResponse<PageResponse<MarketplaceProductCard>>> vendorProducts(
+            @PathVariable String vendorSlug,
+            @PageableDefault(size = 24) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.ok(marketplaceService.vendorProducts(vendorSlug, pageable)));
     }
 }

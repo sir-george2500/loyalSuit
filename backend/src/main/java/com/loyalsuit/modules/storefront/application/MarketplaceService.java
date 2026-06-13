@@ -11,10 +11,12 @@ import com.loyalsuit.modules.catalog.domain.port.CategoryRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductMediaRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
 import com.loyalsuit.modules.marketplace.domain.Vendor;
+import com.loyalsuit.modules.marketplace.domain.VendorStatus;
 import com.loyalsuit.modules.marketplace.domain.port.VendorRepository;
 import com.loyalsuit.modules.storefront.application.dto.MarketplaceProductCard;
 import com.loyalsuit.modules.storefront.application.dto.StoreCategory;
 import com.loyalsuit.modules.storefront.application.dto.StoreView;
+import com.loyalsuit.modules.storefront.application.dto.VendorStorefront;
 import com.loyalsuit.modules.tenants.domain.Tenant;
 import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
 import lombok.RequiredArgsConstructor;
@@ -89,7 +91,20 @@ public class MarketplaceService {
         return toCards(tenant, productRepository.searchActive(tenant.getId(), q, pageable));
     }
 
-    /** Map a product page to cards, batching category names, primary images, and vendor names. */
+    /** A vendor's public storefront profile within the marketplace (only ACTIVE vendors are visible). */
+    public VendorStorefront vendor(String vendorSlug) {
+        return VendorStorefront.from(requireActiveVendor(vendorSlug));
+    }
+
+    /** The ACTIVE products on a vendor's storefront. */
+    public PageResponse<MarketplaceProductCard> vendorProducts(String vendorSlug, Pageable pageable) {
+        Tenant tenant = marketplaceTenant();
+        Vendor vendor = requireActiveVendor(vendorSlug);
+        return toCards(tenant, productRepository.findByTenantIdAndVendorIdAndStatus(
+                tenant.getId(), vendor.getId(), ProductStatus.ACTIVE, pageable));
+    }
+
+    /** Map a product page to cards, batching category names, primary images, and seller attribution. */
     private PageResponse<MarketplaceProductCard> toCards(Tenant tenant, Page<Product> page) {
         List<Product> products = page.getContent();
 
@@ -104,19 +119,33 @@ public class MarketplaceService {
                 .filter(java.util.Objects::nonNull)
                 .distinct()
                 .toList();
-        Map<UUID, String> vendorNames = vendorRepository.findByTenantIdAndIdIn(tenant.getId(), vendorIds).stream()
-                .collect(Collectors.toMap(Vendor::getId, Vendor::getStoreName));
+        Map<UUID, Vendor> vendorsById = vendorRepository.findByTenantIdAndIdIn(tenant.getId(), vendorIds).stream()
+                .collect(Collectors.toMap(Vendor::getId, v -> v));
 
         Instant now = Instant.now();
-        return new PageResponse<>(page.map(p -> new MarketplaceProductCard(
-                p.getId(),
-                p.getName(),
-                p.getSlug(),
-                p.effectivePrice(now),
-                p.onSale(now) ? p.getPrice() : p.getCompareAtPrice(),
-                primaryImages.get(p.getId()),
-                p.getCategoryId() != null ? categoryNames.get(p.getCategoryId()) : null,
-                p.getVendorId() != null ? vendorNames.get(p.getVendorId()) : null)));
+        return new PageResponse<>(page.map(p -> {
+            Vendor vendor = p.getVendorId() != null ? vendorsById.get(p.getVendorId()) : null;
+            // Only link to a storefront the public can actually see (an ACTIVE vendor).
+            boolean linkable = vendor != null && vendor.getStatus() == VendorStatus.ACTIVE;
+            return new MarketplaceProductCard(
+                    p.getId(),
+                    p.getName(),
+                    p.getSlug(),
+                    p.effectivePrice(now),
+                    p.onSale(now) ? p.getPrice() : p.getCompareAtPrice(),
+                    primaryImages.get(p.getId()),
+                    p.getCategoryId() != null ? categoryNames.get(p.getCategoryId()) : null,
+                    vendor != null ? vendor.getStoreName() : null,
+                    linkable ? vendor.getSlug() : null);
+        }));
+    }
+
+    /** Resolve an ACTIVE vendor by slug within the marketplace, or 404 (pending/suspended are hidden). */
+    private Vendor requireActiveVendor(String vendorSlug) {
+        Tenant tenant = marketplaceTenant();
+        return vendorRepository.findBySlugAndTenantId(vendorSlug, tenant.getId())
+                .filter(v -> v.getStatus() == VendorStatus.ACTIVE)
+                .orElseThrow(() -> new NotFoundException("Vendor", vendorSlug));
     }
 
     /** Resolve the one canonical marketplace store; it is seeded at startup, so this should always exist. */

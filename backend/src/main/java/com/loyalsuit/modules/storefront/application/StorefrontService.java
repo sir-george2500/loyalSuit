@@ -11,6 +11,9 @@ import com.loyalsuit.modules.catalog.domain.port.ProductMediaRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductVariantRepository;
 import com.loyalsuit.modules.inventory.domain.port.StockRepository;
+import com.loyalsuit.modules.marketplace.domain.Vendor;
+import com.loyalsuit.modules.marketplace.domain.VendorStatus;
+import com.loyalsuit.modules.marketplace.domain.port.VendorRepository;
 import com.loyalsuit.modules.storefront.application.dto.StoreCategory;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductDetail;
 import com.loyalsuit.modules.storefront.application.dto.StoreProductSummary;
@@ -49,6 +52,7 @@ public class StorefrontService {
     private final ProductVariantRepository variantRepository;
     private final ProductMediaRepository mediaRepository;
     private final StockRepository stockRepository;
+    private final VendorRepository vendorRepository;
 
     /**
      * The public marketplace index: every active store that has at least one published product, so a
@@ -139,6 +143,11 @@ public class StorefrontService {
 
         boolean inStock = stockRepository.hasStock(product.getId(), tenant.getId());
 
+        // Seller attribution: a vendor product is "Sold by {vendor}"; a house product by the store.
+        Vendor vendor = product.getVendorId() == null ? null
+                : vendorRepository.findByIdAndTenantId(product.getVendorId(), tenant.getId()).orElse(null);
+        boolean linkable = vendor != null && vendor.getStatus() == VendorStatus.ACTIVE;
+
         Instant now = Instant.now();
         return new StoreProductDetail(
                 product.getId(),
@@ -151,7 +160,9 @@ public class StorefrontService {
                 categoryName,
                 images,
                 variants,
-                inStock);
+                inStock,
+                vendor != null ? vendor.getStoreName() : null,
+                linkable ? vendor.getSlug() : null);
     }
 
     /** Resolve an active store by slug, or 404. Suspended/inactive stores are hidden. */

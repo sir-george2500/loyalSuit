@@ -7,6 +7,8 @@ import java.util.UUID;
 /**
  * Full storefront product page. Exposes only customer-facing data and an
  * {@code inStock} boolean — never exact quantities, SKUs, or internal status.
+ * {@code soldBy} is the seller (vendor store name, or null = sold by the store directly);
+ * {@code soldBySlug} links to that vendor's storefront, set only for ACTIVE vendors.
  */
 public record StoreProductDetail(
         UUID id,
@@ -19,5 +21,7 @@ public record StoreProductDetail(
         String categoryName,
         List<String> images,
         List<StoreVariant> variants,
-        boolean inStock) {
+        boolean inStock,
+        String soldBy,
+        String soldBySlug) {
 }

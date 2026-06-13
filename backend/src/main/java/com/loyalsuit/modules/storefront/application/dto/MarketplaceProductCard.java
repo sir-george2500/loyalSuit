@@ -6,6 +6,8 @@ import java.util.UUID;
 /**
  * A product tile on the LoyalSuit marketplace. {@code soldBy} is the vendor's store name, or
  * {@code null} when LoyalSuit sells it directly (a "house" product) — the UI shows "LoyalSuit" then.
+ * {@code soldBySlug} links to the vendor's storefront, and is only set for ACTIVE vendors (so the
+ * UI never links to a hidden/suspended seller's page).
  */
 public record MarketplaceProductCard(
         UUID productId,
@@ -15,5 +17,6 @@ public record MarketplaceProductCard(
         BigDecimal compareAtPrice,
         String imageUrl,
         String categoryName,
-        String soldBy) {
+        String soldBy,
+        String soldBySlug) {
 }

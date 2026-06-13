@@ -6,7 +6,9 @@ import com.loyalsuit.modules.catalog.domain.ProductStatus;
 import com.loyalsuit.modules.catalog.domain.port.CategoryRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductMediaRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
+import com.loyalsuit.common.exception.NotFoundException;
 import com.loyalsuit.modules.marketplace.domain.Vendor;
+import com.loyalsuit.modules.marketplace.domain.VendorStatus;
 import com.loyalsuit.modules.marketplace.domain.port.VendorRepository;
 import com.loyalsuit.modules.storefront.application.dto.MarketplaceProductCard;
 import com.loyalsuit.modules.tenants.domain.Tenant;
@@ -26,6 +28,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -79,6 +82,7 @@ class MarketplaceServiceTest {
         UUID vendorProdId = UUID.randomUUID();
         UUID vendorId = UUID.randomUUID();
         Vendor vendor = new Vendor(tenantId, UUID.randomUUID(), "Bright Goods", "bright-goods");
+        vendor.setStatus(VendorStatus.ACTIVE);
         ReflectionTestUtils.setField(vendor, "id", vendorId);
 
         when(tenantRepository.findBySlug("loyalsuit")).thenReturn(Optional.of(flagship()));
@@ -92,10 +96,27 @@ class MarketplaceServiceTest {
         // Act
         List<MarketplaceProductCard> cards = service.products(null, PageRequest.of(0, 24)).getContent();
 
-        // Assert — house product carries no vendor (UI shows LoyalSuit); vendor product is attributed
+        // Assert — house product has no seller (UI shows LoyalSuit); vendor product links to its store
         assertThat(cards).extracting(MarketplaceProductCard::slug).containsExactly("house-mug", "vendor-cap");
         assertThat(cards.get(0).soldBy()).isNull();
+        assertThat(cards.get(0).soldBySlug()).isNull();
         assertThat(cards.get(1).soldBy()).isEqualTo("Bright Goods");
+        assertThat(cards.get(1).soldBySlug()).isEqualTo("bright-goods");
+    }
+
+    @Test
+    void vendor_returnsActiveStorefront_butHidesNonActive() {
+        // Arrange
+        Vendor pending = new Vendor(tenantId, UUID.randomUUID(), "Bright Goods", "bright-goods");
+        when(tenantRepository.findBySlug("loyalsuit")).thenReturn(Optional.of(flagship()));
+        when(vendorRepository.findBySlugAndTenantId("bright-goods", tenantId)).thenReturn(Optional.of(pending));
+
+        // Act & Assert — a PENDING vendor has no public storefront
+        assertThatThrownBy(() -> service.vendor("bright-goods")).isInstanceOf(NotFoundException.class);
+
+        // ...but an ACTIVE one does
+        pending.setStatus(VendorStatus.ACTIVE);
+        assertThat(service.vendor("bright-goods").storeName()).isEqualTo("Bright Goods");
     }
 
     @Test
