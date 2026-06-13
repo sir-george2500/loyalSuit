@@ -1,0 +1,107 @@
+package com.loyalsuit.modules.storefront.application;
+
+import com.loyalsuit.config.MarketplaceProperties;
+import com.loyalsuit.modules.catalog.domain.Product;
+import com.loyalsuit.modules.catalog.domain.ProductStatus;
+import com.loyalsuit.modules.catalog.domain.port.CategoryRepository;
+import com.loyalsuit.modules.catalog.domain.port.ProductMediaRepository;
+import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
+import com.loyalsuit.modules.marketplace.domain.Vendor;
+import com.loyalsuit.modules.marketplace.domain.port.VendorRepository;
+import com.loyalsuit.modules.storefront.application.dto.MarketplaceProductCard;
+import com.loyalsuit.modules.tenants.domain.Tenant;
+import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class MarketplaceServiceTest {
+
+    @Mock private TenantRepository tenantRepository;
+    @Mock private ProductRepository productRepository;
+    @Mock private CategoryRepository categoryRepository;
+    @Mock private ProductMediaRepository mediaRepository;
+    @Mock private VendorRepository vendorRepository;
+
+    private final MarketplaceProperties properties = new MarketplaceProperties();
+    private MarketplaceService service;
+    private UUID tenantId;
+
+    @BeforeEach
+    void setUp() {
+        properties.setSlug("loyalsuit");
+        properties.setName("LoyalSuit");
+        tenantId = UUID.randomUUID();
+        service = new MarketplaceService(
+                properties, tenantRepository, productRepository, categoryRepository, mediaRepository, vendorRepository);
+    }
+
+    private Tenant flagship() {
+        Tenant t = new Tenant("LoyalSuit", "loyalsuit");
+        ReflectionTestUtils.setField(t, "id", tenantId);
+        t.setActive(true);
+        return t;
+    }
+
+    private Product product(String slug, UUID id, UUID vendorId) {
+        Product p = new Product(tenantId, "Widget", slug, BigDecimal.valueOf(20));
+        p.setStatus(ProductStatus.ACTIVE);
+        ReflectionTestUtils.setField(p, "id", id);
+        if (vendorId != null) {
+            p.setVendorId(vendorId);
+        }
+        return p;
+    }
+
+    @Test
+    void products_houseFirst_attributeVendorElseLoyalSuit() {
+        // Arrange — a house product (no vendor) and a vendor product
+        UUID houseId = UUID.randomUUID();
+        UUID vendorProdId = UUID.randomUUID();
+        UUID vendorId = UUID.randomUUID();
+        Vendor vendor = new Vendor(tenantId, UUID.randomUUID(), "Bright Goods", "bright-goods");
+        ReflectionTestUtils.setField(vendor, "id", vendorId);
+
+        when(tenantRepository.findBySlug("loyalsuit")).thenReturn(Optional.of(flagship()));
+        when(productRepository.findActiveByTenantHouseFirst(eq(tenantId), any()))
+                .thenReturn(new PageImpl<>(List.of(product("house-mug", houseId, null),
+                        product("vendor-cap", vendorProdId, vendorId))));
+        when(categoryRepository.findAllByTenantId(tenantId)).thenReturn(List.of());
+        when(mediaRepository.findByProductIdInAndPrimaryTrue(anyList())).thenReturn(List.of());
+        when(vendorRepository.findByTenantIdAndIdIn(eq(tenantId), anyCollection())).thenReturn(List.of(vendor));
+
+        // Act
+        List<MarketplaceProductCard> cards = service.products(null, PageRequest.of(0, 24)).getContent();
+
+        // Assert — house product carries no vendor (UI shows LoyalSuit); vendor product is attributed
+        assertThat(cards).extracting(MarketplaceProductCard::slug).containsExactly("house-mug", "vendor-cap");
+        assertThat(cards.get(0).soldBy()).isNull();
+        assertThat(cards.get(1).soldBy()).isEqualTo("Bright Goods");
+    }
+
+    @Test
+    void search_blankQuery_returnsEmpty_withoutResolvingTheStore() {
+        // Act & Assert — a blank query never hits the catalogue or store
+        assertThat(service.search("  ", PageRequest.of(0, 24)).getContent()).isEmpty();
+        verifyNoInteractions(tenantRepository, productRepository, vendorRepository);
+    }
+}

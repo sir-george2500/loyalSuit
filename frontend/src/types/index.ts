@@ -328,6 +328,18 @@ export interface StoreProductSummary {
   categoryName?: string | null
 }
 
+export interface MarketplaceProductCard {
+  productId: string
+  name: string
+  slug: string
+  price: number
+  compareAtPrice?: number | null
+  imageUrl?: string | null
+  categoryName?: string | null
+  /** Vendor store name, or null when LoyalSuit sells it directly (a house product). */
+  soldBy?: string | null
+}
+
 export interface StoreVariant {
   id: string
   name: string

@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,4 +17,5 @@ interface VendorJpaRepository extends JpaRepository<Vendor, UUID> {
     boolean existsBySlug(String slug);
     Page<Vendor> findByTenantIdOrderByCreatedAtDesc(UUID tenantId, Pageable pageable);
     Page<Vendor> findByTenantIdAndStatusOrderByCreatedAtDesc(UUID tenantId, VendorStatus status, Pageable pageable);
+    List<Vendor> findByTenantIdAndIdIn(UUID tenantId, Collection<UUID> ids);
 }

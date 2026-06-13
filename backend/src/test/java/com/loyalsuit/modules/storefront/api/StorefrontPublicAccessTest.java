@@ -1,5 +1,6 @@
 package com.loyalsuit.modules.storefront.api;
 
+import com.loyalsuit.modules.storefront.application.MarketplaceService;
 import com.loyalsuit.modules.storefront.application.StorefrontService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +32,27 @@ class StorefrontPublicAccessTest {
     @MockitoBean
     private StorefrontService storefrontService;
 
+    @MockitoBean
+    private MarketplaceService marketplaceService;
+
     @Test
     void marketplaceIndex_isPublic() throws Exception {
         mvc.perform(get("/api/v1/store")).andExpect(status().isOk());
+    }
+
+    @Test
+    void marketplaceStore_isPublic() throws Exception {
+        mvc.perform(get("/api/v1/marketplace")).andExpect(status().isOk());
+    }
+
+    @Test
+    void marketplaceProducts_isPublic() throws Exception {
+        mvc.perform(get("/api/v1/marketplace/products")).andExpect(status().isOk());
+    }
+
+    @Test
+    void marketplaceSearch_isPublic() throws Exception {
+        mvc.perform(get("/api/v1/marketplace/search").param("q", "mug")).andExpect(status().isOk());
     }
 
     @Test

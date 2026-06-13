@@ -561,10 +561,13 @@ experience at a single flagship tenant instead of a list of independent stores.
       idempotent startup `MarketplaceBootstrap` (find-or-create by slug) so the
       flagship store exists in every environment, including tests (H2/create-drop,
       no Flyway). Bootstrap test (exists after boot + idempotent).
-- [ ] **11b — Public storefront = LoyalSuit.** `/store`, search, cart, checkout
-      resolve the canonical tenant; marketplace home shows its products (house first)
-      with vendor attribution. (Supersedes the cross-*tenant* framing of the index/
-      search — "stores" become "vendors".)
+- [x] **11b — Public storefront = LoyalSuit.** Anonymous `/api/v1/marketplace/**`
+      facade (`MarketplaceService` resolves the canonical store server-side):
+      profile, categories, products (house-first via `findActiveByTenantHouseFirst`),
+      and name search — every card attributed `soldBy` (vendor name, null = LoyalSuit).
+      Batched category/image/vendor lookups (no N+1). Frontend `/store` is now the
+      LoyalSuit marketplace grid + `/store/search`, cards linking into the existing
+      per-store product/cart/checkout. (Supersedes the cross-*tenant* index/search.)
 - [ ] **11c — Signup joins LoyalSuit.** `register` puts new people into the flagship
       tenant (CUSTOMER); "Sell on LoyalSuit" → existing vendor application → admin
       approves → VENDOR can list products. (Tenant infra retained.)
