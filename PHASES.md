@@ -589,6 +589,11 @@ experience at a single flagship tenant instead of a list of independent stores.
       edits are own-only (else 404), writes require an ACTIVE vendor. The seller
       product-management UI (`/seller/products`) already existed and now works
       end-to-end against the corrected, vendor-scoped API.
+- [x] **11f — Hide suspended-vendor products from the public feed.** The marketplace
+      feed/search now show a product only if it's a house product (no vendor) or sold
+      by an ACTIVE vendor. The storefront read path supplies the active vendor ids and
+      the catalog query filters on them (`findVisible*` / `searchVisibleActive`), so
+      the catalog never reaches into the vendors table (module boundary preserved).
 
 ---
 

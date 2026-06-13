@@ -66,6 +66,9 @@ public class MarketplaceService {
     /** Browse the marketplace catalogue, house-first, optionally filtered by category. */
     public PageResponse<MarketplaceProductCard> products(String categorySlug, Pageable pageable) {
         Tenant tenant = marketplaceTenant();
+        // Only LoyalSuit's own products and those of ACTIVE vendors are public — suspended/pending
+        // sellers' products are hidden from the feed.
+        List<UUID> visibleVendorIds = vendorRepository.findActiveVendorIds(tenant.getId());
 
         Page<Product> page;
         if (categorySlug != null && !categorySlug.isBlank()) {
@@ -73,10 +76,10 @@ public class MarketplaceService {
                     .filter(Category::isActive)
                     .map(Category::getId)
                     .orElseThrow(() -> new NotFoundException("Category", categorySlug));
-            page = productRepository.findByTenantIdAndStatusAndCategoryId(
-                    tenant.getId(), ProductStatus.ACTIVE, categoryId, pageable);
+            page = productRepository.findVisibleActiveByCategory(
+                    tenant.getId(), categoryId, visibleVendorIds, pageable);
         } else {
-            page = productRepository.findActiveByTenantHouseFirst(tenant.getId(), pageable);
+            page = productRepository.findVisibleActiveHouseFirst(tenant.getId(), visibleVendorIds, pageable);
         }
         return toCards(tenant, page);
     }
@@ -88,7 +91,8 @@ public class MarketplaceService {
             return new PageResponse<>(Page.empty(pageable));
         }
         Tenant tenant = marketplaceTenant();
-        return toCards(tenant, productRepository.searchActive(tenant.getId(), q, pageable));
+        List<UUID> visibleVendorIds = vendorRepository.findActiveVendorIds(tenant.getId());
+        return toCards(tenant, productRepository.searchVisibleActive(tenant.getId(), q, visibleVendorIds, pageable));
     }
 
     /** A vendor's public storefront profile within the marketplace (only ACTIVE vendors are visible). */

@@ -18,10 +18,17 @@ public interface ProductRepository {
     List<Product> findByIdInAndTenantId(Collection<UUID> ids, UUID tenantId);
     Optional<Product> findBySlugAndTenantId(String slug, UUID tenantId);
     Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable);
-    /** ACTIVE products ordered house-first (the marketplace operator's own products, then vendors'). */
-    Page<Product> findActiveByTenantHouseFirst(UUID tenantId, Pageable pageable);
     /** Active products whose name, SKU, or barcode matches the query (case-insensitive). */
     Page<Product> searchActive(UUID tenantId, String query, Pageable pageable);
+
+    // --- Public marketplace feed: ACTIVE products that are either house products (no vendor) or
+    //     sold by an ACTIVE vendor. The caller supplies the visible vendor ids, so the catalog
+    //     never reaches into the vendors table. House products sort first. ---
+    Page<Product> findVisibleActiveHouseFirst(UUID tenantId, Collection<UUID> visibleVendorIds, Pageable pageable);
+    Page<Product> findVisibleActiveByCategory(
+            UUID tenantId, UUID categoryId, Collection<UUID> visibleVendorIds, Pageable pageable);
+    Page<Product> searchVisibleActive(
+            UUID tenantId, String query, Collection<UUID> visibleVendorIds, Pageable pageable);
     Page<Product> findByTenantIdAndStatusAndCategoryId(
             UUID tenantId, ProductStatus status, UUID categoryId, Pageable pageable);
     Page<Product> findByTenantId(UUID tenantId, Pageable pageable);

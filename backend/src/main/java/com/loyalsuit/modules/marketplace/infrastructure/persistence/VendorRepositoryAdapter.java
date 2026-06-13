@@ -58,4 +58,9 @@ public class VendorRepositoryAdapter implements VendorRepository {
     public List<Vendor> findByTenantIdAndIdIn(UUID tenantId, Collection<UUID> ids) {
         return ids.isEmpty() ? List.of() : jpa.findByTenantIdAndIdIn(tenantId, ids);
     }
+
+    @Override
+    public List<UUID> findActiveVendorIds(UUID tenantId) {
+        return jpa.findActiveVendorIds(tenantId);
+    }
 }
