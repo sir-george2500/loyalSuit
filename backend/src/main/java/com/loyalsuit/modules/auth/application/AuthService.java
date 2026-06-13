@@ -9,6 +9,7 @@ import com.loyalsuit.modules.auth.application.dto.LoginRequest;
 import com.loyalsuit.modules.auth.application.dto.MfaLoginRequest;
 import com.loyalsuit.modules.auth.application.dto.RegisterRequest;
 import com.loyalsuit.modules.auth.application.dto.UserProfile;
+import com.loyalsuit.config.MarketplaceProperties;
 import com.loyalsuit.modules.audit.application.AuditActor;
 import com.loyalsuit.modules.audit.application.AuditService;
 import com.loyalsuit.modules.audit.domain.AuditAction;
@@ -25,7 +26,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.Normalizer;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -40,10 +40,12 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuditService auditService;
     private final TwoFactorService twoFactorService;
+    private final MarketplaceProperties marketplaceProperties;
 
     /**
-     * Registers a new business owner: provisions a tenant and a TENANT_ADMIN user,
-     * then returns a signed token. The platform is the identity provider.
+     * Registers a new shopper on the LoyalSuit marketplace. Single-marketplace model: everyone signs
+     * up as a CUSTOMER of the one flagship store — signing up no longer spins up a separate store.
+     * Selling is a deliberate, approved step afterwards ("Sell on LoyalSuit" → vendor application).
      */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -53,25 +55,22 @@ public class AuthService {
             throw new ConflictException("An account with this email already exists");
         }
 
-        String businessName = (request.getBusinessName() != null && !request.getBusinessName().isBlank())
-                ? request.getBusinessName().trim()
-                : request.getFullName().trim() + "'s Store";
-
-        Tenant tenant = new Tenant(businessName, uniqueSlug(businessName));
-        tenant = tenantRepository.save(tenant);
+        Tenant marketplace = tenantRepository.findBySlug(marketplaceProperties.getSlug())
+                .orElseThrow(() -> new BusinessException(
+                        "The marketplace is not available right now", HttpStatus.SERVICE_UNAVAILABLE));
 
         AppUser user = new AppUser(
-                tenant.getId(),
+                marketplace.getId(),
                 email,
                 passwordEncoder.encode(request.getPassword()),
                 request.getFullName().trim(),
-                UserRole.TENANT_ADMIN
+                UserRole.CUSTOMER
         );
         user = userRepository.save(user);
 
-        log.info("New tenant registered: tenant='{}' admin={}", businessName, email);
+        log.info("New shopper registered on '{}': {}", marketplace.getSlug(), email);
         auditService.recordSuccess(AuditAction.USER_REGISTERED, actorOf(user),
-                "USER", user.getId().toString(), "Registered tenant '" + businessName + "'");
+                "USER", user.getId().toString(), "Registered on the LoyalSuit marketplace");
         return buildAuthResponse(user);
     }
 
@@ -187,21 +186,5 @@ public class AuthService {
         String token = jwtService.issueToken(
                 user.getId(), user.getEmail(), user.getRole().name(), user.getTenantId());
         return new AuthResponse(token, jwtService.getExpirationSeconds(), new UserProfile(user));
-    }
-
-    private String uniqueSlug(String base) {
-        String slug = Normalizer.normalize(base, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("(^-|-$)", "");
-        if (slug.isBlank()) {
-            slug = "store";
-        }
-        String candidate = slug;
-        while (tenantRepository.existsBySlug(candidate)) {
-            candidate = slug + "-" + UUID.randomUUID().toString().substring(0, 6);
-        }
-        return candidate;
     }
 }

@@ -2,8 +2,11 @@ package com.loyalsuit.modules.auth.application;
 
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
+import com.loyalsuit.config.MarketplaceProperties;
 import com.loyalsuit.modules.audit.application.AuditService;
 import com.loyalsuit.modules.auth.application.dto.ChangePasswordRequest;
+import com.loyalsuit.modules.auth.application.dto.RegisterRequest;
+import com.loyalsuit.modules.tenants.domain.Tenant;
 import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
 import com.loyalsuit.modules.users.domain.AppUser;
 import com.loyalsuit.modules.users.domain.UserRole;
@@ -12,6 +15,7 @@ import com.loyalsuit.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,6 +40,7 @@ class AuthServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
     @Mock private AuditService auditService;
+    @Mock private MarketplaceProperties marketplaceProperties;
 
     @InjectMocks private AuthService authService;
 
@@ -47,6 +52,42 @@ class AuthServiceTest {
         userId = UUID.randomUUID();
         user = new AppUser(UUID.randomUUID(), "owner@store.dev", "HASHED_CURRENT", "Owner", UserRole.TENANT_ADMIN);
         ReflectionTestUtils.setField(user, "id", userId);
+    }
+
+    @Test
+    void register_createsACustomerInTheMarketplace_withoutProvisioningAStore() {
+        // Arrange — the flagship store exists; a new person signs up as a shopper
+        UUID marketplaceId = UUID.randomUUID();
+        Tenant marketplace = new Tenant("LoyalSuit", "loyalsuit");
+        ReflectionTestUtils.setField(marketplace, "id", marketplaceId);
+
+        var request = new RegisterRequest();
+        request.setEmail("Shopper@Test.dev");
+        request.setPassword("Pa55word!");
+        request.setFullName("Sam Shopper");
+
+        when(userRepository.existsByEmail("shopper@test.dev")).thenReturn(false);
+        when(marketplaceProperties.getSlug()).thenReturn("loyalsuit");
+        when(tenantRepository.findBySlug("loyalsuit")).thenReturn(Optional.of(marketplace));
+        when(passwordEncoder.encode("Pa55word!")).thenReturn("HASH");
+        when(userRepository.save(any(AppUser.class))).thenAnswer(inv -> {
+            AppUser u = inv.getArgument(0);
+            ReflectionTestUtils.setField(u, "id", UUID.randomUUID()); // mimic JPA assigning the id
+            return u;
+        });
+        when(jwtService.issueToken(any(), any(), any(), any())).thenReturn("token");
+
+        // Act
+        authService.register(request);
+
+        // Assert — a CUSTOMER lands in the marketplace tenant; no new store is provisioned
+        ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
+        verify(userRepository).save(captor.capture());
+        AppUser saved = captor.getValue();
+        assertThat(saved.getRole()).isEqualTo(UserRole.CUSTOMER);
+        assertThat(saved.getTenantId()).isEqualTo(marketplaceId);
+        assertThat(saved.getEmail()).isEqualTo("shopper@test.dev");
+        verify(tenantRepository, never()).save(any());
     }
 
     @Test

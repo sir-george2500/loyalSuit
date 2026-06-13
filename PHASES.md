@@ -568,9 +568,13 @@ experience at a single flagship tenant instead of a list of independent stores.
       Batched category/image/vendor lookups (no N+1). Frontend `/store` is now the
       LoyalSuit marketplace grid + `/store/search`, cards linking into the existing
       per-store product/cart/checkout. (Supersedes the cross-*tenant* index/search.)
-- [ ] **11c — Signup joins LoyalSuit.** `register` puts new people into the flagship
-      tenant (CUSTOMER); "Sell on LoyalSuit" → existing vendor application → admin
-      approves → VENDOR can list products. (Tenant infra retained.)
+- [x] **11c — Signup joins LoyalSuit.** `register` now creates a CUSTOMER in the
+      flagship tenant (no new store provisioned); role-based redirect lands them in
+      `/store`. "Sell on LoyalSuit" is discoverable (store header + register copy) →
+      existing vendor application (`/become-seller`) → admin approves (`/admin/vendors`)
+      → VENDOR. Optional operator admin seeded from env (`MARKETPLACE_ADMIN_*`, no
+      default credential) so approvals work; dev seeder now seeds the LoyalSuit tenant.
+      (Tenant infra retained.) Register unit test + privacy owner-guard test updated.
 - [ ] **11d — Vendor storefronts + "Sold by {vendor}".** `/store/vendor/{slug}`;
       attribution on cards + product detail.
 - [ ] **11e — Vendor product management + onboarding polish.** Sellers manage only

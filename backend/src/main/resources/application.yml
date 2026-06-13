@@ -104,6 +104,10 @@ app:
     slug: ${MARKETPLACE_SLUG:loyalsuit}
     name: ${MARKETPLACE_NAME:LoyalSuit}
     currency: ${MARKETPLACE_CURRENCY:USD}
+    # Optional operator admin, seeded once so vendor applications can be approved.
+    # Only created when BOTH are set — there is never a default credential.
+    admin-email: ${MARKETPLACE_ADMIN_EMAIL:}
+    admin-password: ${MARKETPLACE_ADMIN_PASSWORD:}
   mail:
     # Transactional email sender identity. Sending is best-effort: a missing or
     # failing SMTP config logs a warning but never breaks the request.
