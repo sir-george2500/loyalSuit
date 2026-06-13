@@ -4,9 +4,9 @@ import { Package } from 'lucide-react'
 import type { MarketplaceProductCard } from '@/types'
 
 /**
- * A product tile on the LoyalSuit marketplace. Links into the existing per-store product page
+ * A product tile on the Loyal Spare Parts marketplace. Links into the existing per-store product page
  * (`/store/{slug}/products/{productSlug}`), which already handles detail, cart and checkout.
- * Shows the seller — the vendor's name, or "LoyalSuit" for house products.
+ * Shows the seller — the vendor's name, or "Loyal Spare Parts" for house products.
  */
 export default function MarketplaceCard({
   product,
@@ -17,7 +17,7 @@ export default function MarketplaceCard({
   storeSlug: string
   currency: string
 }) {
-  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' })
+  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'RWF' })
   return (
     <div className="group">
       <Link href={`/store/${storeSlug}/products/${product.slug}`}>
@@ -50,11 +50,11 @@ export default function MarketplaceCard({
       <p className="mt-0.5 truncate text-xs text-gray-500">
         Sold by{' '}
         {product.soldBySlug ? (
-          <Link href={`/store/vendor/${product.soldBySlug}`} className="text-primary-600 hover:underline">
+          <Link href={`/store/vendor/${product.soldBySlug}`} className="text-brand-600 hover:underline">
             {product.soldBy}
           </Link>
         ) : (
-          <span className="text-gray-700">{product.soldBy ?? 'LoyalSuit'}</span>
+          <span className="text-gray-700">{product.soldBy ?? 'Loyal Spare Parts'}</span>
         )}
       </p>
     </div>

@@ -9,7 +9,7 @@ import { Building2, Globe, Warehouse, Check, Loader2, ArrowLeft, ArrowRight } fr
 import type { AxiosError } from 'axios'
 import { onboardingApi } from '@/lib/api/onboarding'
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'NGN', 'GHS', 'KES', 'ZAR', 'INR', 'CAD', 'AUD', 'JPY', 'CNY']
+const CURRENCIES = ['RWF', 'USD', 'EUR', 'GBP', 'NGN', 'GHS', 'KES', 'ZAR', 'INR', 'CAD', 'AUD', 'JPY', 'CNY']
 const COUNTRIES = [
   { code: '', name: '— Select —' },
   { code: 'US', name: 'United States' },
@@ -65,7 +65,7 @@ export default function OnboardingWizard() {
   } = useForm<FormData>({
     resolver: yupResolver(schema),
     mode: 'onChange',
-    defaultValues: { currency: 'USD', timezone: 'UTC' },
+    defaultValues: { currency: 'RWF', timezone: 'UTC' },
   })
 
   // Pre-fill from any existing tenant profile; bail out if already onboarded.
@@ -82,7 +82,7 @@ export default function OnboardingWizard() {
         }
         reset({
           businessName: s.businessName ?? '',
-          currency: s.currency || 'USD',
+          currency: s.currency || 'RWF',
           country: s.country ?? '',
           phone: s.phone ?? '',
           timezone: s.timezone && s.timezone !== 'UTC' ? s.timezone : detectTimezone(),

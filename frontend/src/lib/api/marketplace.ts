@@ -10,7 +10,7 @@ import type {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
 /**
- * Server-side fetch for the public LoyalSuit marketplace — the single flagship storefront.
+ * Server-side fetch for the public Loyal Spare Parts marketplace — the single flagship storefront.
  * Anonymous (no auth header). The backend resolves the canonical store, so the frontend never
  * needs to know its slug. Briefly cached (ISR). Returns null on 404.
  */

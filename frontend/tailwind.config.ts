@@ -10,20 +10,35 @@ const config: Config & { daisyui?: Record<string, unknown> } = {
   theme: {
     extend: {
       colors: {
-        // Numbered brand scale (used for marketing gradients on the landing page).
-        // DaisyUI owns the semantic `primary`/`secondary`/etc. names.
+        // Loyal Spare Parts — Deep Blue ("Trust"). Numbered scale for gradients/accents; anchored
+        // on the brand primary #0d375b (=600). DaisyUI owns the flat `primary`/`secondary` names.
         brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50: '#eef3f8',
+          100: '#d7e3ef',
+          200: '#aec6dd',
+          300: '#7aa0c2',
+          400: '#3f6d99',
+          500: '#145892', // brand secondary blue
+          600: '#0d375b', // brand PRIMARY — Deep Blue
+          700: '#0a2c49',
+          800: '#082238',
+          900: '#06192a',
+          950: '#030f1a',
+        },
+        // Loyal Spare Parts — Vibrant Orange ("Innovation"). Named `flame` so it never shadows
+        // DaisyUI's flat `accent` utility. Anchored on #ff6600 (=500).
+        flame: {
+          50: '#fff3eb',
+          100: '#ffe0cc',
+          200: '#ffc199',
+          300: '#ff9751', // brand secondary orange (light)
+          400: '#ff7e2e',
+          500: '#ff6600', // brand PRIMARY — Vibrant Orange
+          600: '#ee6103', // brand secondary orange (dark)
+          700: '#c64f02',
+          800: '#9c3f04',
+          900: '#7e350a',
+          950: '#441903',
         },
       },
       fontFamily: {
@@ -36,22 +51,23 @@ const config: Config & { daisyui?: Record<string, unknown> } = {
   daisyui: {
     themes: [
       {
+        // Loyal Spare Parts brand theme — Deep Blue (trust) + Vibrant Orange (innovation).
         loyalsuit: {
-          primary: '#2563eb',
+          primary: '#0d375b', // Deep Blue
           'primary-content': '#ffffff',
-          secondary: '#7c3aed',
+          secondary: '#ff6600', // Vibrant Orange
           'secondary-content': '#ffffff',
-          accent: '#0891b2',
+          accent: '#145892', // secondary blue
           'accent-content': '#ffffff',
-          neutral: '#1f2937',
-          'neutral-content': '#f9fafb',
+          neutral: '#0d375b', // deep-blue chrome (sidebar, dark surfaces)
+          'neutral-content': '#ffffff',
           'base-100': '#ffffff',
-          'base-200': '#f7f8fa',
-          'base-300': '#eceef1',
-          'base-content': '#1f2937',
-          info: '#0ea5e9',
+          'base-200': '#f5f5f5', // brand neutral
+          'base-300': '#e0e0e0', // brand neutral
+          'base-content': '#0d375b',
+          info: '#145892',
           success: '#16a34a',
-          warning: '#d97706',
+          warning: '#ee6103',
           error: '#dc2626',
           '--rounded-box': '0.75rem',
           '--rounded-btn': '0.5rem',

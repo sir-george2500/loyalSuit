@@ -1,4 +1,5 @@
 import { Truck } from 'lucide-react'
+import Logo from '@/components/Logo'
 import { guardArea } from '@/lib/auth/server'
 
 export default async function DeliveryLayout({ children }: { children: React.ReactNode }) {
@@ -10,7 +11,7 @@ export default async function DeliveryLayout({ children }: { children: React.Rea
         <span className="flex items-center gap-2 text-lg font-bold">
           <Truck className="h-5 w-5" /> Deliveries
         </span>
-        <span className="text-sm text-gray-400">LoyalSuit</span>
+        <Logo href={null} className="h-7" chip />
       </header>
       <main className="mx-auto max-w-2xl p-4">{children}</main>
     </div>

@@ -12,7 +12,7 @@ type Search = { page?: string }
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params
   const vendor = await getVendor(slug)
-  return { title: vendor ? `${vendor.storeName} — LoyalSuit` : 'Vendor — LoyalSuit' }
+  return { title: vendor ? `${vendor.storeName} — Loyal Spare Parts` : 'Vendor — Loyal Spare Parts' }
 }
 
 export default async function VendorStorefrontPage({
@@ -34,7 +34,7 @@ export default async function VendorStorefrontPage({
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <p className="mb-4 text-sm text-gray-400">
-        <Link href="/store" className="hover:text-gray-600">LoyalSuit</Link> · Seller
+        <Link href="/store" className="hover:text-gray-600">Loyal Spare Parts</Link> · Seller
       </p>
 
       <header className="mb-8 flex items-center gap-4">
@@ -49,7 +49,7 @@ export default async function VendorStorefrontPage({
         </div>
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-gray-900">{vendor.storeName}</h1>
-          <p className="text-sm text-gray-400">Seller on LoyalSuit</p>
+          <p className="text-sm text-gray-400">Seller on Loyal Spare Parts</p>
           {vendor.description && <p className="mt-1 line-clamp-2 text-sm text-gray-600">{vendor.description}</p>}
         </div>
       </header>

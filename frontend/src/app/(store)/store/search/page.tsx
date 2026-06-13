@@ -5,7 +5,7 @@ import { getMarketplace, searchMarketplace } from '@/lib/api/marketplace'
 import MarketplaceSearchBar from '@/components/store/MarketplaceSearchBar'
 import MarketplaceCard from '@/components/store/MarketplaceCard'
 
-export const metadata: Metadata = { title: 'Search — LoyalSuit' }
+export const metadata: Metadata = { title: 'Search — Loyal Spare Parts' }
 
 type Search = { q?: string; page?: string }
 
@@ -30,8 +30,8 @@ export default async function MarketplaceSearchPage({
       {!query ? (
         <EmptyState
           icon={<Package className="h-10 w-10" />}
-          title="Search LoyalSuit"
-          subtitle="Find products from LoyalSuit and all our sellers."
+          title="Search Loyal Spare Parts"
+          subtitle="Find products from Loyal Spare Parts and all our sellers."
         />
       ) : results && store && results.content.length > 0 ? (
         <>

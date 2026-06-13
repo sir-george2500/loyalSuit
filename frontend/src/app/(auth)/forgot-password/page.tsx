@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { Loader2, ShoppingCart, MailCheck, ArrowLeft } from 'lucide-react'
+import { Loader2, MailCheck, ArrowLeft } from 'lucide-react'
+import Logo from '@/components/Logo'
 import { authApi } from '@/lib/api/auth'
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/lib/validations/auth'
 
@@ -39,12 +40,7 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-base-200 p-4">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-content">
-              <ShoppingCart className="h-6 w-6" />
-            </div>
-            <span className="text-2xl font-bold">LoyalSuit</span>
-          </Link>
+          <Logo href="/" className="mx-auto h-14" />
         </div>
 
         <div className="card bg-base-100 shadow-xl">

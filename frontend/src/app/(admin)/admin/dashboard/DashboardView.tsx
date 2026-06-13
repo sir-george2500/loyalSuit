@@ -18,12 +18,13 @@ import { dashboardApi } from '@/lib/api/dashboard'
 import Sparkline from '@/components/charts/Sparkline'
 import type { DashboardStats, KpiMetric, OrderStatus, RecentOrder } from '@/types'
 
+// Loyal Spare Parts operates in Rwanda — amounts are in Rwandan Francs (RWF, no minor unit).
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
-  currency: 'USD',
+  currency: 'RWF',
   maximumFractionDigits: 0,
 })
-const currencyPrecise = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const currencyPrecise = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 const number = new Intl.NumberFormat('en-US')
 
 function TrendBadge({ metric }: { metric: KpiMetric }) {

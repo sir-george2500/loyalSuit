@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { Eye, EyeOff, Loader2, ShoppingCart, CheckCircle2, XCircle } from 'lucide-react'
+import { Eye, EyeOff, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import Logo from '@/components/Logo'
 import type { AxiosError } from 'axios'
 import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/authStore'
@@ -70,7 +71,7 @@ export default function RegisterPage() {
       // Registration always returns a full session (2FA can only be added later).
       if (!token || !user) throw new Error('Unexpected response')
       signIn(token, expiresIn, user)
-      // Registration creates a shopper (CUSTOMER) on the LoyalSuit marketplace, so this
+      // Registration creates a shopper (CUSTOMER) on the Loyal Spare Parts marketplace, so this
       // lands in /store. Routing by role keeps it correct for any role.
       router.push(homeForRole(user.role))
       router.refresh()
@@ -90,19 +91,14 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-base-200 p-4">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-content">
-              <ShoppingCart className="h-6 w-6" />
-            </div>
-            <span className="text-2xl font-bold">LoyalSuit</span>
-          </Link>
+          <Logo href="/" className="mx-auto h-14" priority />
         </div>
 
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
             <h1 className="text-2xl font-bold">Create your account</h1>
             <p className="mb-2 text-sm text-base-content/60">
-              Shop LoyalSuit and our sellers — want to sell? You can apply after signing up.
+              Shop Loyal Spare Parts and our sellers — want to sell? You can apply after signing up.
             </p>
 
             {serverError && (

@@ -7,7 +7,7 @@ import { Ticket, AlertCircle, Loader2, Plus, Pencil, ChevronLeft, ChevronRight, 
 import { adminCouponApi, type CouponPayload } from '@/lib/api/coupons'
 import type { Coupon, DiscountType } from '@/types'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 function errorMessage(err: unknown, fallback: string): string {
   return (err as AxiosError<{ message?: string }>)?.response?.data?.message ?? fallback

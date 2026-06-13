@@ -21,7 +21,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<Pa
   const [store, product] = await Promise.all([getStore(slug), getStoreProduct(slug, productSlug)])
   if (!store || !product) notFound()
 
-  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: store.currency || 'USD' })
+  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: store.currency || 'RWF' })
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -72,11 +72,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<Pa
           <p className="mt-1 text-sm text-gray-500">
             Sold by{' '}
             {product.soldBySlug ? (
-              <Link href={`/store/vendor/${product.soldBySlug}`} className="text-primary-600 hover:underline">
+              <Link href={`/store/vendor/${product.soldBySlug}`} className="text-brand-600 hover:underline">
                 {product.soldBy}
               </Link>
             ) : (
-              <span className="text-gray-700">{product.soldBy ?? 'LoyalSuit'}</span>
+              <span className="text-gray-700">{product.soldBy ?? 'Loyal Spare Parts'}</span>
             )}
           </p>
 

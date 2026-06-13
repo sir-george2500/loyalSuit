@@ -6,7 +6,7 @@ import type { ApiResponse, CommissionEntry, CommissionStatus, PageResponse } fro
 import type { AxiosResponse } from 'axios'
 import { useState } from 'react'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 const STATUS_BADGE: Record<CommissionStatus, string> = {
   EARNED: 'badge-success',

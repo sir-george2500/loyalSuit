@@ -92,7 +92,7 @@ export default function CheckoutForm({ slug }: { slug: string }) {
       ),
   })
 
-  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: cart?.currency || 'USD' })
+  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: cart?.currency || 'RWF' })
 
   // ---- confirmation -------------------------------------------------------
   if (order) {

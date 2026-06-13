@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { ShoppingCart, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { clsx } from 'clsx'
+import Logo from '@/components/Logo'
 import { useAuthStore } from '@/stores/authStore'
 import { navForRole } from '@/lib/navigation/adminNav'
 import type { UserRole } from '@/types'
@@ -44,12 +45,7 @@ export default function AdminSidebar() {
     <aside className="flex w-64 flex-col bg-neutral text-neutral-content">
       {/* Brand */}
       <div className="border-b border-white/10 p-5">
-        <Link href="/admin/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-content">
-            <ShoppingCart className="h-5 w-5" />
-          </div>
-          <span className="text-lg font-bold">LoyalSuit</span>
-        </Link>
+        <Logo href="/admin/dashboard" className="h-9" chip />
       </div>
 
       {/* Navigation */}

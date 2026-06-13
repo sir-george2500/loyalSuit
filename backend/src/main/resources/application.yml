@@ -102,8 +102,8 @@ app:
     # The flagship store that *is* the public marketplace. New sellers join it as
     # vendors; the public storefront, search, cart and checkout all resolve this slug.
     slug: ${MARKETPLACE_SLUG:loyalsuit}
-    name: ${MARKETPLACE_NAME:LoyalSuit}
-    currency: ${MARKETPLACE_CURRENCY:USD}
+    name: ${MARKETPLACE_NAME:Loyal Spare Parts}
+    currency: ${MARKETPLACE_CURRENCY:RWF}
     # Optional operator admin, seeded once so vendor applications can be approved.
     # Only created when BOTH are set — there is never a default credential.
     admin-email: ${MARKETPLACE_ADMIN_EMAIL:}

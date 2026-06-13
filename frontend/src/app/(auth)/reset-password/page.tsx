@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { Eye, EyeOff, Loader2, ShoppingCart, CheckCircle2, XCircle, ShieldAlert } from 'lucide-react'
+import { Eye, EyeOff, Loader2, CheckCircle2, XCircle, ShieldAlert } from 'lucide-react'
+import Logo from '@/components/Logo'
 import type { AxiosError } from 'axios'
 import { authApi } from '@/lib/api/auth'
 import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations/auth'
@@ -192,12 +193,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen items-center justify-center bg-base-200 p-4">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-content">
-              <ShoppingCart className="h-6 w-6" />
-            </div>
-            <span className="text-2xl font-bold">LoyalSuit</span>
-          </Link>
+          <Logo href="/" className="mx-auto h-14" />
         </div>
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">{children}</div>
