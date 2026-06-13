@@ -5,6 +5,8 @@ import com.loyalsuit.modules.marketplace.domain.VendorStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
@@ -19,4 +21,11 @@ interface VendorJpaRepository extends JpaRepository<Vendor, UUID> {
     Page<Vendor> findByTenantIdOrderByCreatedAtDesc(UUID tenantId, Pageable pageable);
     Page<Vendor> findByTenantIdAndStatusOrderByCreatedAtDesc(UUID tenantId, VendorStatus status, Pageable pageable);
     List<Vendor> findByTenantIdAndIdIn(UUID tenantId, Collection<UUID> ids);
+
+    @Query("""
+            SELECT v.id FROM Vendor v
+            WHERE v.tenantId = :tenantId
+              AND v.status = com.loyalsuit.modules.marketplace.domain.VendorStatus.ACTIVE
+            """)
+    List<UUID> findActiveVendorIds(@Param("tenantId") UUID tenantId);
 }

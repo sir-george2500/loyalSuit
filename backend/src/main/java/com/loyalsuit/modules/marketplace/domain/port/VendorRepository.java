@@ -21,4 +21,6 @@ public interface VendorRepository {
     Page<Vendor> findByTenantIdAndStatus(UUID tenantId, VendorStatus status, Pageable pageable);
     /** Batch lookup for attribution — resolve many vendors at once (e.g. a product listing's sellers). */
     List<Vendor> findByTenantIdAndIdIn(UUID tenantId, Collection<UUID> ids);
+    /** Ids of the tenant's ACTIVE vendors — used to hide suspended/pending sellers from the public feed. */
+    List<UUID> findActiveVendorIds(UUID tenantId);
 }

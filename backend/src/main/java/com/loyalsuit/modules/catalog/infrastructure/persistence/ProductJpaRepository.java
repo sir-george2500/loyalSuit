@@ -29,9 +29,32 @@ interface ProductJpaRepository extends JpaRepository<Product, UUID> {
     @Query("""
             SELECT p FROM Product p
             WHERE p.tenantId = :tenantId AND p.status = com.loyalsuit.modules.catalog.domain.ProductStatus.ACTIVE
+              AND (p.vendorId IS NULL OR p.vendorId IN :vendorIds)
             ORDER BY CASE WHEN p.vendorId IS NULL THEN 0 ELSE 1 END, LOWER(p.name) ASC
             """)
-    Page<Product> findActiveByTenantHouseFirst(@Param("tenantId") UUID tenantId, Pageable pageable);
+    Page<Product> findVisibleActiveHouseFirst(
+            @Param("tenantId") UUID tenantId, @Param("vendorIds") Collection<UUID> vendorIds, Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Product p
+            WHERE p.tenantId = :tenantId AND p.status = com.loyalsuit.modules.catalog.domain.ProductStatus.ACTIVE
+              AND p.categoryId = :categoryId
+              AND (p.vendorId IS NULL OR p.vendorId IN :vendorIds)
+            ORDER BY CASE WHEN p.vendorId IS NULL THEN 0 ELSE 1 END, LOWER(p.name) ASC
+            """)
+    Page<Product> findVisibleActiveByCategory(
+            @Param("tenantId") UUID tenantId, @Param("categoryId") UUID categoryId,
+            @Param("vendorIds") Collection<UUID> vendorIds, Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Product p
+            WHERE p.tenantId = :tenantId AND p.status = com.loyalsuit.modules.catalog.domain.ProductStatus.ACTIVE
+              AND LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%'))
+              AND (p.vendorId IS NULL OR p.vendorId IN :vendorIds)
+            """)
+    Page<Product> searchVisibleActive(
+            @Param("tenantId") UUID tenantId, @Param("q") String q,
+            @Param("vendorIds") Collection<UUID> vendorIds, Pageable pageable);
     Optional<Product> findBySlugAndTenantId(String slug, UUID tenantId);
     Page<Product> findByTenantId(UUID tenantId, Pageable pageable);
     Page<Product> findByTenantIdAndVendorId(UUID tenantId, UUID vendorId, Pageable pageable);

@@ -33,6 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -86,7 +87,8 @@ class MarketplaceServiceTest {
         ReflectionTestUtils.setField(vendor, "id", vendorId);
 
         when(tenantRepository.findBySlug("loyalsuit")).thenReturn(Optional.of(flagship()));
-        when(productRepository.findActiveByTenantHouseFirst(eq(tenantId), any()))
+        when(vendorRepository.findActiveVendorIds(tenantId)).thenReturn(List.of(vendorId));
+        when(productRepository.findVisibleActiveHouseFirst(eq(tenantId), eq(List.of(vendorId)), any()))
                 .thenReturn(new PageImpl<>(List.of(product("house-mug", houseId, null),
                         product("vendor-cap", vendorProdId, vendorId))));
         when(categoryRepository.findAllByTenantId(tenantId)).thenReturn(List.of());
@@ -96,7 +98,8 @@ class MarketplaceServiceTest {
         // Act
         List<MarketplaceProductCard> cards = service.products(null, PageRequest.of(0, 24)).getContent();
 
-        // Assert — house product has no seller (UI shows LoyalSuit); vendor product links to its store
+        // Assert — the feed is filtered to active vendors (+ house), and attribution links the seller
+        verify(productRepository).findVisibleActiveHouseFirst(eq(tenantId), eq(List.of(vendorId)), any());
         assertThat(cards).extracting(MarketplaceProductCard::slug).containsExactly("house-mug", "vendor-cap");
         assertThat(cards.get(0).soldBy()).isNull();
         assertThat(cards.get(0).soldBySlug()).isNull();
