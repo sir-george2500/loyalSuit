@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { Package, Store, CheckCircle2, Circle, Clock, Ban, XCircle, ArrowRight, Loader2 } from 'lucide-react'
+import { Package, Store, ShoppingCart, CheckCircle2, Circle, Clock, Ban, XCircle, ArrowRight, Loader2 } from 'lucide-react'
 import { vendorApi } from '@/lib/api/vendors'
 import { productApi } from '@/lib/api/catalog'
+import { sellerOrderApi } from '@/lib/api/sellerOrders'
 import type { Vendor, VendorStatus } from '@/types'
 
 const STATUS_VIEW: Record<VendorStatus, { label: string; badge: string; icon: typeof Clock }> = {
@@ -36,7 +37,14 @@ export default function SellerDashboardView() {
     enabled: !!vendor, // only a vendor has a catalogue
   })
 
+  const { data: orders } = useQuery({
+    queryKey: ['seller-orders', 0],
+    queryFn: async () => (await sellerOrderApi.list(0)).data.data,
+    enabled: isApproved, // orders only exist once they're selling
+  })
+
   const productCount = products?.totalElements ?? 0
+  const orderCount = orders?.totalElements ?? 0
   const status = vendor ? STATUS_VIEW[vendor.status] : null
 
   const steps = [
@@ -57,7 +65,7 @@ export default function SellerDashboardView() {
   return (
     <div className="space-y-6">
       {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body p-5">
             <div className="flex items-center gap-3">
@@ -81,6 +89,20 @@ export default function SellerDashboardView() {
               <div>
                 <p className="text-sm text-base-content/60">Products</p>
                 <p className="text-lg font-semibold">{vendor ? productCount : '—'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                <ShoppingCart className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm text-base-content/60">Orders</p>
+                <p className="text-lg font-semibold">{isApproved ? orderCount : '—'}</p>
               </div>
             </div>
           </div>

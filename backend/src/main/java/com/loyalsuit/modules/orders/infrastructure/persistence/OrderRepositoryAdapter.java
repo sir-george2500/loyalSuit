@@ -54,6 +54,11 @@ public class OrderRepositoryAdapter implements OrderRepository {
     }
 
     @Override
+    public Page<Order> findOrdersForVendor(UUID tenantId, UUID vendorId, Pageable pageable) {
+        return jpa.findOrdersForVendor(tenantId, vendorId, pageable);
+    }
+
+    @Override
     public List<Order> findByTenantIdAndCustomerId(UUID tenantId, UUID customerId) {
         return jpa.findByTenantIdAndCustomerIdOrderByCreatedAtDesc(tenantId, customerId);
     }

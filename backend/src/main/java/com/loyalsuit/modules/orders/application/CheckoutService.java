@@ -185,7 +185,7 @@ public class CheckoutService {
         return OrderResponse.from(saved, items);
     }
 
-    /** The selling vendor for a product (their user id), snapshotted onto the order line. */
+    /** The selling vendor for a product (the Vendor id, or null for house products), snapshotted onto the line. */
     private UUID vendorIdOf(UUID productId, UUID tenantId) {
         return productRepository.findByIdAndTenantId(productId, tenantId)
                 .map(Product::getVendorId)
