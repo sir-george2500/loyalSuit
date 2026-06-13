@@ -47,9 +47,10 @@ public class ProductService {
      * everyone else sees the whole tenant catalog.
      */
     public PageResponse<ProductResponse> listForActor(UUID tenantId, UUID actorId, String actorRole, Pageable pageable) {
-        if (isVendor(actorRole)) {
+        UUID vendorScope = vendorScope(actorId, actorRole, false);
+        if (vendorScope != null) {
             return new PageResponse<>(
-                    productRepository.findByTenantIdAndVendorId(tenantId, actorId, pageable).map(ProductResponse::new));
+                    productRepository.findByTenantIdAndVendorId(tenantId, vendorScope, pageable).map(ProductResponse::new));
         }
         return listByTenant(tenantId, pageable);
     }
@@ -67,7 +68,7 @@ public class ProductService {
     }
 
     public ProductResponse getById(UUID id, UUID tenantId, UUID actorId, String actorRole) {
-        return new ProductResponse(loadForActor(id, tenantId, actorId, actorRole));
+        return new ProductResponse(loadForActor(id, tenantId, vendorScope(actorId, actorRole, false)));
     }
 
     /**
@@ -77,7 +78,7 @@ public class ProductService {
      */
     @Transactional
     public ProductResponse create(CreateProductRequest request, UUID tenantId, UUID actorId, String actorRole) {
-        requireActiveVendor(actorId, actorRole);
+        UUID vendorScope = vendorScope(actorId, actorRole, true);
         if (productRepository.existsBySlugAndTenantId(request.getSlug(), tenantId)) {
             throw new ConflictException("Product slug already exists: " + request.getSlug());
         }
@@ -89,7 +90,8 @@ public class ProductService {
         product.setSku(request.getSku());
         product.setBarcode(request.getBarcode());
         product.setCategoryId(request.getCategoryId());
-        product.setVendorId(VENDOR_ROLE.equals(actorRole) ? actorId : null);
+        // A vendor's products are stamped with their vendor id; admins/staff create house products.
+        product.setVendorId(vendorScope);
         product.setDigital(request.isDigital());
         applySale(product, request.getPrice(), request.getSalePrice(),
                 request.getSaleStartsAt(), request.getSaleEndsAt());
@@ -99,8 +101,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse update(UUID id, UpdateProductRequest request, UUID tenantId, UUID actorId, String actorRole) {
-        requireActiveVendor(actorId, actorRole);
-        Product product = loadForActor(id, tenantId, actorId, actorRole);
+        Product product = loadForActor(id, tenantId, vendorScope(actorId, actorRole, true));
 
         if (!product.getSlug().equals(request.getSlug())
                 && productRepository.existsBySlugAndTenantId(request.getSlug(), tenantId)) {
@@ -146,24 +147,21 @@ public class ProductService {
 
     @Transactional
     public ProductResponse publish(UUID id, UUID tenantId, UUID actorId, String actorRole) {
-        requireActiveVendor(actorId, actorRole);
-        Product product = loadForActor(id, tenantId, actorId, actorRole);
+        Product product = loadForActor(id, tenantId, vendorScope(actorId, actorRole, true));
         product.activate();
         return new ProductResponse(productRepository.save(product));
     }
 
     @Transactional
     public ProductResponse unpublish(UUID id, UUID tenantId, UUID actorId, String actorRole) {
-        requireActiveVendor(actorId, actorRole);
-        Product product = loadForActor(id, tenantId, actorId, actorRole);
+        Product product = loadForActor(id, tenantId, vendorScope(actorId, actorRole, true));
         product.deactivate();
         return new ProductResponse(productRepository.save(product));
     }
 
     @Transactional
     public ProductResponse archive(UUID id, UUID tenantId, UUID actorId, String actorRole) {
-        requireActiveVendor(actorId, actorRole);
-        Product product = loadForActor(id, tenantId, actorId, actorRole);
+        Product product = loadForActor(id, tenantId, vendorScope(actorId, actorRole, true));
         product.archive();
         return new ProductResponse(productRepository.save(product));
     }
@@ -180,24 +178,26 @@ public class ProductService {
                 .orElseThrow(() -> new NotFoundException("Product", id));
     }
 
-    /** Loads a tenant product, but a vendor may only ever touch their own (else 404). */
-    private Product loadForActor(UUID id, UUID tenantId, UUID actorId, String actorRole) {
+    /** Loads a tenant product; a scoped vendor (non-null scope) may only ever touch their own (else 404). */
+    private Product loadForActor(UUID id, UUID tenantId, UUID vendorScope) {
         Product product = loadProduct(id, tenantId);
-        if (isVendor(actorRole) && !actorId.equals(product.getVendorId())) {
+        if (vendorScope != null && !vendorScope.equals(product.getVendorId())) {
             throw new NotFoundException("Product", id);
         }
         return product;
     }
 
-    private boolean isVendor(String actorRole) {
-        return VENDOR_ROLE.equals(actorRole);
-    }
-
-    /** A vendor can only create/edit products while their account is active. */
-    private void requireActiveVendor(UUID actorId, String actorRole) {
-        if (isVendor(actorRole) && !vendorService.isActiveVendor(actorId)) {
-            throw new BusinessException("Your vendor account is not active");
+    /**
+     * The vendor id that scopes this actor's catalogue, or null for admins/staff (the whole tenant).
+     * For writes pass {@code requireActive=true} so a pending/suspended seller can't create or edit.
+     * Note this is the Vendor PK (resolved from the user), never the user id.
+     */
+    private UUID vendorScope(UUID actorId, String actorRole, boolean requireActive) {
+        if (!VENDOR_ROLE.equals(actorRole)) {
+            return null;
         }
+        return requireActive ? vendorService.requireActiveVendorId(actorId)
+                             : vendorService.requireVendorId(actorId);
     }
 
     /** A product may only reference a category that exists within the same tenant. */

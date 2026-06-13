@@ -63,6 +63,27 @@ public class VendorService {
                 .orElse(false);
     }
 
+    /**
+     * The acting vendor's id (the Vendor PK — not the user id), used to scope their catalogue for
+     * reads. Throws if the user has no vendor profile.
+     */
+    public UUID requireVendorId(UUID userId) {
+        return vendorRepository.findByUserId(userId)
+                .map(Vendor::getId)
+                .orElseThrow(() -> new BusinessException("No vendor profile for this account"));
+    }
+
+    /**
+     * The acting vendor's id, only when their account is ACTIVE — gates create/edit so a
+     * pending/suspended seller can't change the catalogue.
+     */
+    public UUID requireActiveVendorId(UUID userId) {
+        return vendorRepository.findByUserId(userId)
+                .filter(v -> v.getStatus() == VendorStatus.ACTIVE)
+                .map(Vendor::getId)
+                .orElseThrow(() -> new BusinessException("Your vendor account is not active"));
+    }
+
     public PageResponse<VendorResponse> list(UUID tenantId, VendorStatus status, Pageable pageable) {
         var page = status == null
                 ? vendorRepository.findByTenantId(tenantId, pageable)

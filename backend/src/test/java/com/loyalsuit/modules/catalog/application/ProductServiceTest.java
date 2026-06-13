@@ -49,12 +49,14 @@ class ProductServiceTest {
     private UUID tenantId;
     private UUID productId;
     private UUID actorId;
+    private UUID vendorPk; // the Vendor entity's id (≠ the user/actor id)
 
     @BeforeEach
     void setUp() {
         tenantId = UUID.randomUUID();
         productId = UUID.randomUUID();
         actorId = UUID.randomUUID();
+        vendorPk = UUID.randomUUID();
     }
 
     private CreateProductRequest createRequest() {
@@ -87,18 +89,20 @@ class ProductServiceTest {
 
     @Test
     void create_activeVendor_stampsTheirVendorId() {
-        when(vendorService.isActiveVendor(actorId)).thenReturn(true);
+        when(vendorService.requireActiveVendorId(actorId)).thenReturn(vendorPk);
         when(productRepository.existsBySlugAndTenantId("test-product", tenantId)).thenReturn(false);
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ProductResponse response = productService.create(createRequest(), tenantId, actorId, VENDOR);
 
-        assertThat(response.getVendorId()).isEqualTo(actorId);
+        // Stamped with the Vendor PK (so attribution/storefronts resolve), not the user id.
+        assertThat(response.getVendorId()).isEqualTo(vendorPk);
     }
 
     @Test
     void create_rejectsInactiveVendor() {
-        when(vendorService.isActiveVendor(actorId)).thenReturn(false);
+        when(vendorService.requireActiveVendorId(actorId))
+                .thenThrow(new BusinessException("Your vendor account is not active"));
 
         assertThatThrownBy(() -> productService.create(createRequest(), tenantId, actorId, VENDOR))
                 .isInstanceOf(BusinessException.class)
@@ -165,13 +169,14 @@ class ProductServiceTest {
 
     @Test
     void listForActor_vendorSeesOnlyTheirOwnProducts() {
-        when(productRepository.findByTenantIdAndVendorId(tenantId, actorId, PageRequest.of(0, 20)))
-                .thenReturn(new PageImpl<>(List.of(product(actorId))));
+        when(vendorService.requireVendorId(actorId)).thenReturn(vendorPk);
+        when(productRepository.findByTenantIdAndVendorId(tenantId, vendorPk, PageRequest.of(0, 20)))
+                .thenReturn(new PageImpl<>(List.of(product(vendorPk))));
 
         var page = productService.listForActor(tenantId, actorId, VENDOR, PageRequest.of(0, 20));
 
         assertThat(page.getContent()).hasSize(1);
-        verify(productRepository).findByTenantIdAndVendorId(tenantId, actorId, PageRequest.of(0, 20));
+        verify(productRepository).findByTenantIdAndVendorId(tenantId, vendorPk, PageRequest.of(0, 20));
         verify(productRepository, never()).findByTenantId(any(), any());
     }
 
@@ -188,6 +193,7 @@ class ProductServiceTest {
 
     @Test
     void getById_vendor404sOnAnotherVendorsProduct() {
+        when(vendorService.requireVendorId(actorId)).thenReturn(vendorPk);
         when(productRepository.findByIdAndTenantId(productId, tenantId))
                 .thenReturn(Optional.of(product(UUID.randomUUID()))); // owned by someone else
 
@@ -197,14 +203,15 @@ class ProductServiceTest {
 
     @Test
     void getById_vendorCanReadTheirOwnProduct() {
-        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product(actorId)));
+        when(vendorService.requireVendorId(actorId)).thenReturn(vendorPk);
+        when(productRepository.findByIdAndTenantId(productId, tenantId)).thenReturn(Optional.of(product(vendorPk)));
 
         assertThat(productService.getById(productId, tenantId, actorId, VENDOR)).isNotNull();
     }
 
     @Test
     void update_vendor404sOnAnotherVendorsProduct() {
-        when(vendorService.isActiveVendor(actorId)).thenReturn(true);
+        when(vendorService.requireActiveVendorId(actorId)).thenReturn(vendorPk);
         when(productRepository.findByIdAndTenantId(productId, tenantId))
                 .thenReturn(Optional.of(product(UUID.randomUUID())));
         var request = new UpdateProductRequest();
