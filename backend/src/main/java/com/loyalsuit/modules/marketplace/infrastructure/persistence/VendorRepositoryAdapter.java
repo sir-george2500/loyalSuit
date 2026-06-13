@@ -35,6 +35,11 @@ public class VendorRepositoryAdapter implements VendorRepository {
     }
 
     @Override
+    public Optional<Vendor> findBySlugAndTenantId(String slug, UUID tenantId) {
+        return jpa.findBySlugAndTenantId(slug, tenantId);
+    }
+
+    @Override
     public boolean existsBySlug(String slug) {
         return jpa.existsBySlug(slug);
     }

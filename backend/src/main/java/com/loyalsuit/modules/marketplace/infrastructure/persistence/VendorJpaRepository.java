@@ -14,6 +14,7 @@ import java.util.UUID;
 interface VendorJpaRepository extends JpaRepository<Vendor, UUID> {
     Optional<Vendor> findByIdAndTenantId(UUID id, UUID tenantId);
     Optional<Vendor> findByUserId(UUID userId);
+    Optional<Vendor> findBySlugAndTenantId(String slug, UUID tenantId);
     boolean existsBySlug(String slug);
     Page<Vendor> findByTenantIdOrderByCreatedAtDesc(UUID tenantId, Pageable pageable);
     Page<Vendor> findByTenantIdAndStatusOrderByCreatedAtDesc(UUID tenantId, VendorStatus status, Pageable pageable);

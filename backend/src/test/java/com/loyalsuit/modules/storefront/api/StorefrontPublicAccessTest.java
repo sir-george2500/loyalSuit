@@ -56,6 +56,16 @@ class StorefrontPublicAccessTest {
     }
 
     @Test
+    void marketplaceVendorStorefront_isPublic() throws Exception {
+        mvc.perform(get("/api/v1/marketplace/vendors/bright-goods")).andExpect(status().isOk());
+    }
+
+    @Test
+    void marketplaceVendorProducts_isPublic() throws Exception {
+        mvc.perform(get("/api/v1/marketplace/vendors/bright-goods/products")).andExpect(status().isOk());
+    }
+
+    @Test
     void store_isPublic() throws Exception {
         mvc.perform(get("/api/v1/store/acme")).andExpect(status().isOk());
     }

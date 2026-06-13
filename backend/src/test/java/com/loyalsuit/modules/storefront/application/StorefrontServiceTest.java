@@ -43,6 +43,7 @@ class StorefrontServiceTest {
     @Mock private ProductVariantRepository variantRepository;
     @Mock private ProductMediaRepository mediaRepository;
     @Mock private StockRepository stockRepository;
+    @Mock private com.loyalsuit.modules.marketplace.domain.port.VendorRepository vendorRepository;
 
     @InjectMocks private StorefrontService service;
 

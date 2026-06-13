@@ -47,6 +47,12 @@ public class ProductRepositoryAdapter implements ProductRepository {
     }
 
     @Override
+    public Page<Product> findByTenantIdAndVendorIdAndStatus(
+            UUID tenantId, UUID vendorId, ProductStatus status, Pageable pageable) {
+        return jpa.findByTenantIdAndVendorIdAndStatus(tenantId, vendorId, status, pageable);
+    }
+
+    @Override
     public Page<Product> findByTenantIdAndStatus(UUID tenantId, ProductStatus status, Pageable pageable) {
         return jpa.findByTenantIdAndStatus(tenantId, status, pageable);
     }

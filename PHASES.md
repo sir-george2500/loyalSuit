@@ -575,8 +575,12 @@ experience at a single flagship tenant instead of a list of independent stores.
       → VENDOR. Optional operator admin seeded from env (`MARKETPLACE_ADMIN_*`, no
       default credential) so approvals work; dev seeder now seeds the LoyalSuit tenant.
       (Tenant infra retained.) Register unit test + privacy owner-guard test updated.
-- [ ] **11d — Vendor storefronts + "Sold by {vendor}".** `/store/vendor/{slug}`;
-      attribution on cards + product detail.
+- [x] **11d — Vendor storefronts + "Sold by {vendor}".** Anonymous
+      `GET /api/v1/marketplace/vendors/{slug}` (+ `/products`) — only ACTIVE vendors
+      are public. Cards and the product-detail page now show **"Sold by {vendor}"**
+      linking to `/store/vendor/{slug}` (link only for ACTIVE sellers, so no dead
+      links); house products read "LoyalSuit". New `VendorStorefront` DTO,
+      `findBySlugAndTenantId` + `findByTenantIdAndVendorIdAndStatus` queries.
 - [ ] **11e — Vendor product management + onboarding polish.** Sellers manage only
       their own products; prominent "Sell on LoyalSuit" CTA; dashboard wayfinding.
 

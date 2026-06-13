@@ -14,6 +14,8 @@ public interface VendorRepository {
     Vendor save(Vendor vendor);
     Optional<Vendor> findByIdAndTenantId(UUID id, UUID tenantId);
     Optional<Vendor> findByUserId(UUID userId);
+    /** Resolve a vendor by its public slug within a store (used by public vendor storefronts). */
+    Optional<Vendor> findBySlugAndTenantId(String slug, UUID tenantId);
     boolean existsBySlug(String slug);
     Page<Vendor> findByTenantId(UUID tenantId, Pageable pageable);
     Page<Vendor> findByTenantIdAndStatus(UUID tenantId, VendorStatus status, Pageable pageable);

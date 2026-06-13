@@ -338,6 +338,15 @@ export interface MarketplaceProductCard {
   categoryName?: string | null
   /** Vendor store name, or null when LoyalSuit sells it directly (a house product). */
   soldBy?: string | null
+  /** Vendor storefront slug — set only for ACTIVE vendors, so the seller name can link safely. */
+  soldBySlug?: string | null
+}
+
+export interface VendorStorefront {
+  storeName: string
+  slug: string
+  description?: string | null
+  logoUrl?: string | null
 }
 
 export interface StoreVariant {
@@ -358,6 +367,8 @@ export interface StoreProductDetail {
   images: string[]
   variants: StoreVariant[]
   inStock: boolean
+  soldBy?: string | null
+  soldBySlug?: string | null
 }
 
 export interface CartItemView {
