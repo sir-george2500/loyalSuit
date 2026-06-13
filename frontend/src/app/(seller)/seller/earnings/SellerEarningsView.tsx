@@ -5,7 +5,7 @@ import { Wallet, Undo2 } from 'lucide-react'
 import { vendorCommissionApi } from '@/lib/api/commissions'
 import CommissionLedger from '@/components/commerce/CommissionLedger'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 export default function SellerEarningsView() {
   const { data: earnings, isLoading } = useQuery({

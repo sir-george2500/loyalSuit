@@ -10,7 +10,7 @@ import { variantApi } from '@/lib/api/catalog'
 import { variantSchema, type VariantFormData } from '@/lib/validations/catalog'
 import type { Product, ProductVariant } from '@/types'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 function errorMessage(err: unknown, fallback: string): string {
   return (err as AxiosError<{ message?: string }>)?.response?.data?.message ?? fallback

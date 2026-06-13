@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { Eye, EyeOff, Loader2, ShoppingCart } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import Logo from '@/components/Logo'
 import type { AxiosError } from 'axios'
 import { authApi } from '@/lib/api/auth'
 import { useAuthStore } from '@/stores/authStore'
@@ -92,12 +93,7 @@ function LoginForm() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-content">
-              <ShoppingCart className="h-6 w-6" />
-            </div>
-            <span className="text-2xl font-bold">LoyalSuit</span>
-          </Link>
+          <Logo href="/" className="mx-auto h-14" priority />
         </div>
 
         <div className="card bg-base-100 shadow-xl">

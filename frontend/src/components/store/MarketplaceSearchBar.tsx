@@ -12,9 +12,9 @@ export default function MarketplaceSearchBar({ defaultValue = '' }: { defaultVal
         type="search"
         name="q"
         defaultValue={defaultValue}
-        placeholder="Search products on LoyalSuit…"
-        aria-label="Search products on LoyalSuit"
-        className="w-full rounded-full border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        placeholder="Search parts on Loyal Spare Parts…"
+        aria-label="Search parts on Loyal Spare Parts"
+        className="w-full rounded-full border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
       />
     </form>
   )

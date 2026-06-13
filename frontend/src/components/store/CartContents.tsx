@@ -18,7 +18,7 @@ export default function CartContents({ slug }: { slug: string }) {
 
   const money = new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: cart?.currency || 'USD',
+    currency: cart?.currency || 'RWF',
   })
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: cartKey })

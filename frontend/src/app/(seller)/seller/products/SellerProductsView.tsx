@@ -10,7 +10,7 @@ import { categoryApi, productApi } from '@/lib/api/catalog'
 import { productSchema, slugify, type ProductFormData } from '@/lib/validations/catalog'
 import type { Category, Product, ProductStatus } from '@/types'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 const STATUS_BADGE: Record<ProductStatus, string> = {
   DRAFT: 'badge-ghost',

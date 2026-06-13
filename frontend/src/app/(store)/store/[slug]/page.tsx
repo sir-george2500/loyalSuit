@@ -36,7 +36,7 @@ export default async function StoreHomePage({
     getStoreProducts(slug, { category, page: pageIndex }),
   ])
 
-  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: store.currency || 'USD' })
+  const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: store.currency || 'RWF' })
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

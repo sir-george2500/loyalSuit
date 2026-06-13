@@ -5,7 +5,7 @@ import type { AxiosError } from 'axios'
 import { Share2, Loader2, Copy } from 'lucide-react'
 import { affiliateApi } from '@/lib/api/affiliate'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 export default function AffiliateDashboard() {
   const { data, isLoading, isError, error } = useQuery({

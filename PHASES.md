@@ -597,6 +597,29 @@ experience at a single flagship tenant instead of a list of independent stores.
 
 ---
 
+## Phase 12 — Brand identity (Loyal Spare Parts)  ✅ COMPLETE
+
+Applied the official **Loyal Spare Parts** brand guideline (a Kigali, Rwanda automotive
+spare-parts marketplace; motto *“Trusted Parts. Loyal Service.”*).
+
+- [x] **Colors** — Deep Blue `#0d375b` (trust) + Vibrant Orange `#ff6600` (innovation),
+      plus the guideline's secondary/neutral palette. DaisyUI `loyalsuit` theme + Tailwind
+      `brand` (blue) and `flame` (orange) numbered scales. Fixed pre-existing broken
+      `primary-NNN` utilities in the store (they resolved to nothing).
+- [x] **Typography** — Montserrat (headings) + Roboto (body) via `next/font`.
+- [x] **Logo** — official asset in `public/logo.png`; reusable `<Logo>` component
+      (white-chip variant for dark surfaces) across landing, auth, store header, admin
+      sidebar, POS, and delivery shells. Central `lib/brand.ts` (name, motto, contact).
+- [x] **Copy** — landing page rebuilt as a spare-parts marketplace (values, mission,
+      vision, contact: Nyabugogo, Kigali); brand name swept app-wide.
+- [x] **Currency** — defaults to **RWF** (Rwanda): flagship store seed
+      (`app.marketplace.currency`) and all in-app money formatters.
+- [x] **Dashboards** — admin dashboard now formats in RWF; the seller dashboard is
+      now live (real vendor status + product count + a progress checklist), replacing
+      the old "coming soon" placeholders.
+
+---
+
 ## Test accounts (Phase 1, dev only)
 
 Seeded into Postgres by `DevDataSeeder` (idempotent, `dev` profile). All belong to

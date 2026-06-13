@@ -7,7 +7,7 @@ import { Loader2, X } from 'lucide-react'
 import { posShiftApi } from '@/lib/api/pos'
 import type { PosShift } from '@/types'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 function errorMessage(err: unknown, fallback: string): string {
   return (err as AxiosError<{ message?: string }>)?.response?.data?.message ?? fallback

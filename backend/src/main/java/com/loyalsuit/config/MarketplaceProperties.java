@@ -20,10 +20,10 @@ public class MarketplaceProperties {
     private String slug = "loyalsuit";
 
     /** Display name used when first seeding the flagship store. */
-    private String name = "LoyalSuit";
+    private String name = "Loyal Spare Parts";
 
-    /** Default currency for the flagship store. */
-    private String currency = "USD";
+    /** Default currency for the flagship store (Rwandan Franc — the brand is Kigali-based). */
+    private String currency = "RWF";
 
     /**
      * Optional operator admin, seeded once at startup so vendor applications can be approved.

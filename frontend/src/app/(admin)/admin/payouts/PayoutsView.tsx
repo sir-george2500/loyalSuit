@@ -7,7 +7,7 @@ import { Wallet, AlertCircle, Loader2, ChevronLeft, ChevronRight, Check, X } fro
 import { adminPayoutApi } from '@/lib/api/payouts'
 import type { Payout, PayoutStatus } from '@/types'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 const STATUS_BADGE: Record<PayoutStatus, string> = {
   PENDING: 'badge-warning',

@@ -13,7 +13,7 @@ import { useOfflineSales } from '@/lib/pos/useOfflineSales'
 import type { QueuedSale } from '@/lib/pos/offlineQueue'
 import CloseShiftDialog from './CloseShiftDialog'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 interface CartLine {
   id: string
@@ -129,7 +129,7 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
       cardAmount: cardNum,
       total,
       itemCount,
-      currency: 'USD',
+      currency: 'RWF',
       createdAt: new Date().toISOString(),
       status: 'pending',
       attempts: 0,
@@ -141,7 +141,7 @@ export default function PosTerminal({ shift, onShiftClosed }: { shift: PosShift;
       changeGiven: change,
       cardAmount: cardNum,
       itemCount,
-      currency: 'USD',
+      currency: 'RWF',
     }
 
     // Offline: the cash is physically taken now — record locally and sync on reconnect.
@@ -433,7 +433,7 @@ function FailedRow({
   sale: QueuedSale
   offline: ReturnType<typeof useOfflineSales>
 }) {
-  const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: sale.currency || 'USD' })
+  const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: sale.currency || 'RWF' })
   return (
     <div className="flex items-center gap-3 rounded-lg bg-gray-900 px-3 py-2 text-sm">
       <div className="min-w-0 flex-1">
@@ -456,7 +456,7 @@ function FailedRow({
 }
 
 function ReceiptOverlay({ receipt, onClose }: { receipt: Receipt; onClose: () => void }) {
-  const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: receipt.currency || 'USD' })
+  const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: receipt.currency || 'RWF' })
   const [printing, setPrinting] = useState(false)
   const [printError, setPrintError] = useState<string | null>(null)
 

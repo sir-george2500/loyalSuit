@@ -16,7 +16,7 @@ import VariantsModal from './VariantsModal'
 import ImagesModal from './ImagesModal'
 import StockModal from './StockModal'
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF' })
 
 const STATUS_BADGE: Record<ProductStatus, string> = {
   DRAFT: 'badge-ghost',

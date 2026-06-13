@@ -336,7 +336,7 @@ export interface MarketplaceProductCard {
   compareAtPrice?: number | null
   imageUrl?: string | null
   categoryName?: string | null
-  /** Vendor store name, or null when LoyalSuit sells it directly (a house product). */
+  /** Vendor store name, or null when Loyal Spare Parts sells it directly (a house product). */
   soldBy?: string | null
   /** Vendor storefront slug — set only for ACTIVE vendors, so the seller name can link safely. */
   soldBySlug?: string | null

@@ -7,8 +7,8 @@ import MarketplaceSearchBar from '@/components/store/MarketplaceSearchBar'
 import MarketplaceCard from '@/components/store/MarketplaceCard'
 
 export const metadata: Metadata = {
-  title: 'LoyalSuit — Shop',
-  description: 'Shop LoyalSuit and its sellers — one marketplace, no account needed.',
+  title: 'Loyal Spare Parts — Shop',
+  description: 'Shop Loyal Spare Parts and its sellers — one marketplace, no account needed.',
 }
 
 type Search = { category?: string; page?: string }
@@ -33,7 +33,7 @@ export default async function MarketplacePage({
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <header className="mb-8 text-center">
         <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">{store.name}</h1>
-        <p className="mt-2 text-gray-500">Everything from LoyalSuit and our sellers, in one place.</p>
+        <p className="mt-2 text-gray-500">Everything from Loyal Spare Parts and our sellers, in one place.</p>
         <div className="mx-auto mt-6 max-w-xl">
           <MarketplaceSearchBar />
         </div>
