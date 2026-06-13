@@ -620,6 +620,26 @@ spare-parts marketplace; motto *“Trusted Parts. Loyal Service.”*).
 
 ---
 
+## Phase 13 — Completing the vendor experience  ⟵ IN PROGRESS
+
+Closing real gaps found by self-review (sellers could list products but couldn't see
+what they sold; several dashboard items were still "coming soon").
+
+- [x] **13a — Seller orders.** A vendor can now see the orders that contain their
+      products (`GET /api/v1/vendor/orders` + `/{id}`), showing **only their own lines
+      and earnings** — never other sellers' lines or the order grand total. Keyed off
+      `OrderItem.vendorId` (the Vendor PK, post-11e), so multi-vendor carts attribute
+      correctly. Frontend `/seller/orders` page; seller nav "Orders" flipped from
+      "soon" → available; the seller dashboard gained a real **Orders** count.
+      Service unit tests (attribution, subtotal, 404 when an order isn't the vendor's).
+- [ ] **13b — Seller settings.** Vendor self-edit of store profile (name, description,
+      logo) — removes the "soon" Settings item; delivers the vendor logo/profile editor.
+- [ ] **13c — Admin customers.** Read-only customer list — removes a "soon" item.
+- [ ] **13d — Brand polish.** Horizontal logo lockup for headers (drop the white chip);
+      bootstrap reconciles an existing flagship store's name/currency so RWF actually shows.
+
+---
+
 ## Test accounts (Phase 1, dev only)
 
 Seeded into Postgres by `DevDataSeeder` (idempotent, `dev` profile). All belong to

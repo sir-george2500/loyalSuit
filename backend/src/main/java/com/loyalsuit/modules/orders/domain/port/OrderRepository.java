@@ -18,6 +18,9 @@ public interface OrderRepository {
     Page<Order> findByTenantId(UUID tenantId, Pageable pageable);
     Page<Order> findByTenantIdAndStatus(UUID tenantId, OrderStatus status, Pageable pageable);
 
+    /** Orders that contain at least one line sold by this vendor — the vendor's order list. */
+    Page<Order> findOrdersForVendor(UUID tenantId, UUID vendorId, Pageable pageable);
+
     /** A customer's own orders — for their personal-data export and erasure. */
     List<Order> findByTenantIdAndCustomerId(UUID tenantId, UUID customerId);
 }

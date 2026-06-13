@@ -71,6 +71,27 @@ export interface Order {
   createdAt: string
 }
 
+export interface VendorOrderItem {
+  productId: string
+  productName: string
+  variantId?: string | null
+  quantity: number
+  unitPrice: number
+  total: number
+}
+
+export interface VendorOrder {
+  orderId: string
+  orderNumber: string
+  status: OrderStatus
+  paymentStatus: string
+  customerName?: string | null
+  currency: string
+  vendorSubtotal: number
+  items: VendorOrderItem[]
+  createdAt: string
+}
+
 export interface Tenant {
   id: string
   name: string

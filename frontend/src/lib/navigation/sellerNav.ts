@@ -27,7 +27,7 @@ export interface SellerNavItem {
 export const SELLER_NAV: SellerNavItem[] = [
   { label: 'Dashboard', href: '/seller/dashboard', icon: LayoutDashboard, status: 'available' },
   { label: 'Products', href: '/seller/products', icon: Package, status: 'available' },
-  { label: 'Orders', href: '/seller/orders', icon: ShoppingCart, status: 'soon' },
+  { label: 'Orders', href: '/seller/orders', icon: ShoppingCart, status: 'available' },
   { label: 'Earnings', href: '/seller/earnings', icon: Wallet, status: 'available' },
   { label: 'Payouts', href: '/seller/payouts', icon: Banknote, status: 'available' },
   { label: 'Reviews', href: '/seller/reviews', icon: Star, status: 'soon' },
