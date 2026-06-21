@@ -632,8 +632,18 @@ what they sold; several dashboard items were still "coming soon").
       correctly. Frontend `/seller/orders` page; seller nav "Orders" flipped from
       "soon" → available; the seller dashboard gained a real **Orders** count.
       Service unit tests (attribution, subtotal, 404 when an order isn't the vendor's).
-- [ ] **13b — Seller settings.** Vendor self-edit of store profile (name, description,
-      logo) — removes the "soon" Settings item; delivers the vendor logo/profile editor.
+- [x] **13b — Seller settings.** A vendor self-edits their storefront profile (name,
+      description) via `PATCH /api/v1/vendor/me` and uploads/replaces their logo via
+      `POST /api/v1/vendor/me/logo` (`VendorService.updateMine` / `updateLogo`,
+      VENDOR-only). The **slug is deliberately immutable** so storefront links stay
+      stable. Image storage was promoted to a shared `common/media` capability
+      (`MediaStorage` port + `CloudinaryMediaStorage` adapter + `ImageBytes` magic-byte
+      validation), reused by product media and now vendor logos without a catalog↔
+      marketplace cycle; replacing a logo deletes the prior Cloudinary asset
+      (`vendors.logo_public_id`, V36). Frontend `/seller/settings` page (logo card +
+      profile form, client-side type/size guard mirroring the server). Seller nav
+      "Settings" flipped "soon" → available. Service unit tests (trim, slug-immutability,
+      logo store/replace/cleanup, non-image rejection) + media tests moved to the shared port.
 - [ ] **13c — Admin customers.** Read-only customer list — removes a "soon" item.
 - [ ] **13d — Brand polish.** Horizontal logo lockup for headers (drop the white chip);
       bootstrap reconciles an existing flagship store's name/currency so RWF actually shows.

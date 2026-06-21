@@ -2,8 +2,8 @@ package com.loyalsuit.modules.catalog.application;
 
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
+import com.loyalsuit.common.media.MediaStorage;
 import com.loyalsuit.modules.catalog.application.dto.MediaResponse;
-import com.loyalsuit.modules.catalog.application.port.MediaStorage;
 import com.loyalsuit.modules.catalog.domain.Product;
 import com.loyalsuit.modules.catalog.domain.ProductMedia;
 import com.loyalsuit.modules.catalog.domain.port.ProductMediaRepository;

@@ -1,9 +1,11 @@
-package com.loyalsuit.modules.catalog.application.port;
+package com.loyalsuit.common.media;
 
 /**
- * Abstraction over the external media store (Cloudinary). Keeping it behind a port
- * lets the application layer be unit-tested without network calls, and isolates the
- * vendor SDK to one adapter.
+ * Abstraction over the external media store (Cloudinary). Object storage is a
+ * cross-cutting capability — product images, vendor logos, proof-of-delivery photos
+ * all need it — so the port lives in {@code common}. Keeping it behind a port lets
+ * application code be unit-tested without network calls and isolates the vendor SDK
+ * to one adapter.
  */
 public interface MediaStorage {
 
