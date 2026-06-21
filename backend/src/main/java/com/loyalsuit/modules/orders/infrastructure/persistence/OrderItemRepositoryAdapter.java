@@ -29,4 +29,9 @@ public class OrderItemRepositoryAdapter implements OrderItemRepository {
     public List<OrderItem> findByOrderIdInAndVendorId(Collection<UUID> orderIds, UUID vendorId) {
         return orderIds.isEmpty() ? List.of() : jpa.findByOrderIdInAndVendorId(orderIds, vendorId);
     }
+
+    @Override
+    public List<OrderItem> findDeliveredItems(UUID tenantId, UUID customerId, UUID productId) {
+        return jpa.findDeliveredItems(tenantId, customerId, productId);
+    }
 }

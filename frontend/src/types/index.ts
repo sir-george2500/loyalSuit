@@ -801,3 +801,41 @@ export interface AppNotification {
   read: boolean
   createdAt: string
 }
+
+export interface ReviewSummary {
+  averageRating: number
+  count: number
+}
+
+export interface ProductReview {
+  id: string
+  rating: number
+  comment?: string | null
+  authorName: string
+  createdAt: string
+}
+
+export interface ProductReviews {
+  summary: ReviewSummary
+  reviews: PageResponse<ProductReview>
+}
+
+export interface VendorReview {
+  id: string
+  productId: string
+  productName: string
+  rating: number
+  comment?: string | null
+  authorName: string
+  createdAt: string
+}
+
+export interface VendorReviews {
+  summary: ReviewSummary
+  reviews: PageResponse<VendorReview>
+}
+
+export interface ReviewEligibility {
+  canReview: boolean
+  alreadyReviewed: boolean
+}

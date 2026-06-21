@@ -1,6 +1,9 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    # Unique DB name per Spring context (${random.uuid} is resolved once when the DataSource
+    # is built). Each @SpringBootTest context gets an isolated schema, so one context's
+    # create-drop teardown can never empty the in-memory DB another cached context is using.
+    url: jdbc:h2:mem:testdb-${random.uuid};DB_CLOSE_DELAY=-1;MODE=PostgreSQL
     driver-class-name: org.h2.Driver
     username: sa
     password:
