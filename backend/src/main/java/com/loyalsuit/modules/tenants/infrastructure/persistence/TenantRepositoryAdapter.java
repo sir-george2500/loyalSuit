@@ -3,6 +3,8 @@ package com.loyalsuit.modules.tenants.infrastructure.persistence;
 import com.loyalsuit.modules.tenants.domain.Tenant;
 import com.loyalsuit.modules.tenants.domain.port.TenantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -38,5 +40,10 @@ public class TenantRepositoryAdapter implements TenantRepository {
     @Override
     public List<Tenant> findAllActive() {
         return jpa.findByActiveTrueOrderByNameAsc();
+    }
+
+    @Override
+    public Page<Tenant> findAll(Pageable pageable) {
+        return jpa.findAll(pageable);
     }
 }

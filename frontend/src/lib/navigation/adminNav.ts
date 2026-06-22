@@ -116,32 +116,32 @@ export const ADMIN_NAV: NavSection[] = [
       { label: 'Leave', href: '/admin/leave', icon: CalendarOff, roles: OWNER_ROLES, status: 'available' },
       { label: 'Payroll', href: '/admin/payroll', icon: Banknote, roles: OWNER_ROLES, status: 'available' },
       { label: 'Awards', href: '/admin/awards', icon: AwardIcon, roles: OWNER_ROLES, status: 'available' },
-      { label: 'Customers', href: '/admin/customers', icon: Users, roles: STORE_ROLES, status: 'soon' },
-      { label: 'Staff & Roles', href: '/admin/staff', icon: UserCog, roles: OWNER_ROLES, status: 'soon' },
+      { label: 'Customers', href: '/admin/customers', icon: Users, roles: STORE_ROLES, status: 'available' },
+      { label: 'Staff & Roles', href: '/admin/staff', icon: UserCog, roles: OWNER_ROLES, status: 'available' },
     ],
   },
   {
     title: 'Finance',
     items: [
-      { label: 'Payments', href: '/admin/payments', icon: CreditCard, roles: OWNER_ROLES, status: 'soon' },
-      { label: 'Invoices', href: '/admin/invoices', icon: FileText, roles: OWNER_ROLES, status: 'soon' },
+      { label: 'Payments', href: '/admin/payments', icon: CreditCard, roles: OWNER_ROLES, status: 'available' },
+      { label: 'Invoices', href: '/admin/invoices', icon: FileText, roles: OWNER_ROLES, status: 'available' },
     ],
   },
   {
     title: 'Platform',
     items: [
-      { label: 'Tenants', href: '/admin/tenants', icon: Building2, roles: PLATFORM_ROLES, status: 'soon' },
-      { label: 'Subscription Plans', href: '/admin/plans', icon: Layers, roles: PLATFORM_ROLES, status: 'soon' },
-      { label: 'System Health', href: '/admin/system', icon: Activity, roles: PLATFORM_ROLES, status: 'soon' },
-      { label: 'Feature Flags', href: '/admin/flags', icon: Flag, roles: PLATFORM_ROLES, status: 'soon' },
+      { label: 'Tenants', href: '/admin/tenants', icon: Building2, roles: PLATFORM_ROLES, status: 'available' },
+      { label: 'Subscription Plans', href: '/admin/plans', icon: Layers, roles: PLATFORM_ROLES, status: 'available' },
+      { label: 'System Health', href: '/admin/system', icon: Activity, roles: PLATFORM_ROLES, status: 'available' },
+      { label: 'Feature Flags', href: '/admin/flags', icon: Flag, roles: PLATFORM_ROLES, status: 'available' },
     ],
   },
   {
     title: 'Security & Access',
     items: [
-      { label: 'Roles & Permissions', href: '/admin/roles', icon: ShieldCheck, roles: OWNER_ROLES, status: 'soon' },
+      { label: 'Roles & Permissions', href: '/admin/roles', icon: ShieldCheck, roles: OWNER_ROLES, status: 'available' },
       { label: 'Audit Log', href: '/admin/audit', icon: ScrollText, roles: OWNER_ROLES, status: 'available' },
-      { label: 'API Keys', href: '/admin/api-keys', icon: KeyRound, roles: OWNER_ROLES, status: 'soon' },
+      { label: 'API Keys', href: '/admin/api-keys', icon: KeyRound, roles: OWNER_ROLES, status: 'available' },
     ],
   },
   {
@@ -149,7 +149,7 @@ export const ADMIN_NAV: NavSection[] = [
     items: [
       { label: 'General', href: '/admin/settings', icon: Settings, roles: STORE_ROLES, status: 'available' },
       { label: 'Security', href: '/admin/settings/security', icon: ShieldCheck, roles: STORE_ROLES, status: 'available' },
-      { label: 'Notifications', href: '/admin/settings/notifications', icon: Bell, roles: STORE_ROLES, status: 'soon' },
+      { label: 'Notifications', href: '/admin/settings/notifications', icon: Bell, roles: STORE_ROLES, status: 'available' },
     ],
   },
 ]
