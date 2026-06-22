@@ -1,9 +1,9 @@
 package com.loyalsuit.modules.catalog.application;
 
-import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.NotFoundException;
+import com.loyalsuit.common.media.ImageBytes;
+import com.loyalsuit.common.media.MediaStorage;
 import com.loyalsuit.modules.catalog.application.dto.MediaResponse;
-import com.loyalsuit.modules.catalog.application.port.MediaStorage;
 import com.loyalsuit.modules.catalog.domain.ProductMedia;
 import com.loyalsuit.modules.catalog.domain.port.ProductMediaRepository;
 import com.loyalsuit.modules.catalog.domain.port.ProductRepository;
@@ -29,8 +29,6 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class MediaUploadService {
 
-    private static final long MAX_BYTES = 5L * 1024 * 1024; // 5 MB
-
     private final ProductMediaRepository mediaRepository;
     private final ProductRepository productRepository;
     private final MediaStorage mediaStorage;
@@ -45,16 +43,7 @@ public class MediaUploadService {
     @Transactional
     public MediaResponse upload(UUID productId, UUID tenantId, byte[] data) {
         requireOwnedProduct(productId, tenantId);
-
-        if (data == null || data.length == 0) {
-            throw new BusinessException("The uploaded file is empty");
-        }
-        if (data.length > MAX_BYTES) {
-            throw new BusinessException("Image is too large (max 5 MB)");
-        }
-        if (detectImageType(data) == null) {
-            throw new BusinessException("Only JPEG, PNG, GIF, or WEBP images are allowed");
-        }
+        ImageBytes.validate(data);
 
         String folder = "loyalsuit/" + tenantId + "/products/" + productId;
         MediaStorage.StoredAsset asset = mediaStorage.upload(data, folder);
@@ -93,29 +82,5 @@ public class MediaUploadService {
     private void requireOwnedProduct(UUID productId, UUID tenantId) {
         productRepository.findByIdAndTenantId(productId, tenantId)
                 .orElseThrow(() -> new NotFoundException("Product", productId));
-    }
-
-    /**
-     * Returns the detected image format, or null if the bytes are not one of the
-     * accepted image types. Sniffs the file's leading magic bytes — never trusts a
-     * client-supplied content type.
-     */
-    private static String detectImageType(byte[] d) {
-        if (d.length >= 3 && (d[0] & 0xFF) == 0xFF && (d[1] & 0xFF) == 0xD8 && (d[2] & 0xFF) == 0xFF) {
-            return "jpeg";
-        }
-        if (d.length >= 8 && (d[0] & 0xFF) == 0x89 && d[1] == 'P' && d[2] == 'N' && d[3] == 'G'
-                && d[4] == 0x0D && d[5] == 0x0A && d[6] == 0x1A && d[7] == 0x0A) {
-            return "png";
-        }
-        if (d.length >= 6 && d[0] == 'G' && d[1] == 'I' && d[2] == 'F' && d[3] == '8'
-                && (d[4] == '7' || d[4] == '9') && d[5] == 'a') {
-            return "gif";
-        }
-        if (d.length >= 12 && d[0] == 'R' && d[1] == 'I' && d[2] == 'F' && d[3] == 'F'
-                && d[8] == 'W' && d[9] == 'E' && d[10] == 'B' && d[11] == 'P') {
-            return "webp";
-        }
-        return null;
     }
 }

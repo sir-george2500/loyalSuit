@@ -35,6 +35,10 @@ public class Vendor extends TenantScopedEntity {
     @Column(name = "logo_url")
     private String logoUrl;
 
+    /** Cloudinary public id of the current logo, kept so a replaced logo can be deleted. */
+    @Column(name = "logo_public_id")
+    private String logoPublicId;
+
     @Column(name = "commission_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal commissionRate = BigDecimal.valueOf(10);
 

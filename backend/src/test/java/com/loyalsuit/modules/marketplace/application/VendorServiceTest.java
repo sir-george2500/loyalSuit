@@ -2,7 +2,10 @@ package com.loyalsuit.modules.marketplace.application;
 
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.ConflictException;
+import com.loyalsuit.common.exception.NotFoundException;
+import com.loyalsuit.common.media.MediaStorage;
 import com.loyalsuit.modules.marketplace.application.dto.ApplyVendorRequest;
+import com.loyalsuit.modules.marketplace.application.dto.UpdateStorefrontRequest;
 import com.loyalsuit.modules.marketplace.application.dto.VendorResponse;
 import com.loyalsuit.modules.marketplace.domain.Vendor;
 import com.loyalsuit.modules.marketplace.domain.VendorStatus;
@@ -13,6 +16,7 @@ import com.loyalsuit.modules.users.domain.port.AppUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -35,6 +39,7 @@ class VendorServiceTest {
 
     @Mock private VendorRepository vendorRepository;
     @Mock private AppUserRepository appUserRepository;
+    @Mock private MediaStorage mediaStorage;
 
     @InjectMocks private VendorService vendorService;
 
@@ -176,5 +181,99 @@ class VendorServiceTest {
         VendorResponse response = vendorService.setCommission(vendorId, tenantId, BigDecimal.valueOf(15));
 
         assertThat(response.commissionRate()).isEqualByComparingTo("15");
+    }
+
+    // ---- self-service profile editing (Seller Settings) ---------------------
+
+    private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+
+    private UpdateStorefrontRequest storefront(String name, String description) {
+        var r = new UpdateStorefrontRequest();
+        r.setStoreName(name);
+        r.setDescription(description);
+        return r;
+    }
+
+    @Test
+    void updateMine_changesNameAndDescription_butNeverTheSlug() {
+        // Arrange
+        Vendor existing = vendor(VendorStatus.ACTIVE); // slug "acme-goods"
+        when(vendorRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(vendorRepository.save(any(Vendor.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        VendorResponse response = vendorService.updateMine(userId, storefront("  Acme Spare Parts  ", "  We sell parts  "));
+
+        // Assert — trimmed name/description, slug untouched (storefront URL stays stable)
+        assertThat(response.storeName()).isEqualTo("Acme Spare Parts");
+        assertThat(response.description()).isEqualTo("We sell parts");
+        assertThat(response.slug()).isEqualTo("acme-goods");
+    }
+
+    @Test
+    void updateMine_blankDescriptionBecomesNull() {
+        Vendor existing = vendor(VendorStatus.ACTIVE);
+        when(vendorRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(vendorRepository.save(any(Vendor.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VendorResponse response = vendorService.updateMine(userId, storefront("Acme", "   "));
+
+        assertThat(response.description()).isNull();
+    }
+
+    @Test
+    void updateMine_rejectsWhenNoVendorProfile() {
+        when(vendorRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> vendorService.updateMine(userId, storefront("Acme", null)))
+                .isInstanceOf(NotFoundException.class);
+        verify(vendorRepository, never()).save(any());
+    }
+
+    @Test
+    void updateLogo_storesAssetUnderVendorFolder_andSetsUrlAndPublicId() {
+        // Arrange
+        Vendor existing = vendor(VendorStatus.ACTIVE);
+        when(vendorRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(mediaStorage.upload(any(byte[].class), any(String.class)))
+                .thenReturn(new MediaStorage.StoredAsset("pid-new", "https://cdn/logo.png"));
+        when(vendorRepository.save(any(Vendor.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        VendorResponse response = vendorService.updateLogo(userId, PNG);
+
+        // Assert
+        ArgumentCaptor<String> folder = ArgumentCaptor.forClass(String.class);
+        verify(mediaStorage).upload(any(byte[].class), folder.capture());
+        assertThat(folder.getValue()).isEqualTo("loyalsuit/" + tenantId + "/vendors/" + vendorId);
+        assertThat(response.logoUrl()).isEqualTo("https://cdn/logo.png");
+        assertThat(existing.getLogoPublicId()).isEqualTo("pid-new");
+    }
+
+    @Test
+    void updateLogo_deletesPreviousAssetOnReplace() {
+        // Arrange — vendor already has a logo
+        Vendor existing = vendor(VendorStatus.ACTIVE);
+        existing.setLogoPublicId("pid-old");
+        when(vendorRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
+        when(mediaStorage.upload(any(byte[].class), any(String.class)))
+                .thenReturn(new MediaStorage.StoredAsset("pid-new", "https://cdn/new.png"));
+        when(vendorRepository.save(any(Vendor.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        vendorService.updateLogo(userId, PNG);
+
+        // Assert — old asset cleaned up, never the freshly stored one
+        verify(mediaStorage).delete("pid-old");
+    }
+
+    @Test
+    void updateLogo_rejectsNonImageBytes_beforeAnyUpload() {
+        byte[] notAnImage = "definitely not an image".getBytes();
+
+        assertThatThrownBy(() -> vendorService.updateLogo(userId, notAnImage))
+                .isInstanceOf(BusinessException.class);
+        verify(mediaStorage, never()).upload(any(), any());
+        verify(vendorRepository, never()).save(any());
     }
 }

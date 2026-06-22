@@ -801,3 +801,200 @@ export interface AppNotification {
   read: boolean
   createdAt: string
 }
+
+export interface ReviewSummary {
+  averageRating: number
+  count: number
+}
+
+export interface ProductReview {
+  id: string
+  rating: number
+  comment?: string | null
+  authorName: string
+  createdAt: string
+}
+
+export interface ProductReviews {
+  summary: ReviewSummary
+  reviews: PageResponse<ProductReview>
+}
+
+export interface VendorReview {
+  id: string
+  productId: string
+  productName: string
+  rating: number
+  comment?: string | null
+  authorName: string
+  createdAt: string
+}
+
+export interface VendorReviews {
+  summary: ReviewSummary
+  reviews: PageResponse<VendorReview>
+}
+
+export interface ReviewEligibility {
+  canReview: boolean
+  alreadyReviewed: boolean
+}
+
+// ── Admin: Customers ──────────────────────────────────────────────────────
+export interface Customer {
+  id: string
+  fullName: string
+  email: string
+  phone?: string | null
+  active: boolean
+  joinedAt: string
+  orderCount: number
+  totalSpent: number
+}
+
+// ── Admin: Staff & Roles ──────────────────────────────────────────────────
+export interface StaffMember {
+  id: string
+  fullName: string
+  email: string
+  role: UserRole
+  active: boolean
+  joinedAt: string
+}
+
+export interface RolePermissions {
+  role: UserRole
+  label: string
+  description: string
+  permissions: string[]
+}
+
+// ── Admin: Payments & Invoices ────────────────────────────────────────────
+export type PaymentMethod = 'CASH' | 'CARD' | 'SPLIT'
+
+export interface Payment {
+  orderId: string
+  orderNumber: string
+  customerName?: string | null
+  method: PaymentMethod
+  status: PaymentStatus
+  amount: number
+  currency: string
+  date: string
+}
+
+export interface InvoiceSummary {
+  orderId: string
+  invoiceNumber: string
+  orderNumber: string
+  customerName?: string | null
+  status: PaymentStatus
+  total: number
+  currency: string
+  issuedAt: string
+}
+
+export interface InvoiceLine {
+  description: string
+  quantity: number
+  unitPrice: number
+  total: number
+}
+
+export interface Invoice {
+  orderId: string
+  invoiceNumber: string
+  orderNumber: string
+  issuedAt: string
+  customerName?: string | null
+  customerEmail?: string | null
+  customerPhone?: string | null
+  method: PaymentMethod
+  status: PaymentStatus
+  currency: string
+  items: InvoiceLine[]
+  subtotal: number
+  shippingAmount: number
+  taxAmount: number
+  discountAmount: number
+  total: number
+}
+
+// ── Admin: Notification settings ──────────────────────────────────────────
+export interface NotificationPreferences {
+  orderConfirmationEmail: boolean
+  orderStatusEmail: boolean
+  lowStockAlert: boolean
+  newReviewAlert: boolean
+  payoutAlert: boolean
+  marketingEmail: boolean
+}
+
+// ── Platform: Tenants ─────────────────────────────────────────────────────
+export interface TenantAdmin {
+  id: string
+  name: string
+  slug: string
+  subscriptionPlan: SubscriptionPlan
+  active: boolean
+  currency: string
+  country?: string | null
+  onboarded: boolean
+  createdAt: string
+}
+
+// ── Platform: Subscription plans ──────────────────────────────────────────
+export type BillingInterval = 'MONTHLY' | 'YEARLY'
+
+export interface Plan {
+  id: string
+  code: string
+  name: string
+  description?: string | null
+  price: number
+  currency: string
+  billingInterval: BillingInterval
+  maxProducts?: number | null
+  maxStaff?: number | null
+  active: boolean
+  createdAt: string
+}
+
+// ── Platform: System health ───────────────────────────────────────────────
+export interface SystemHealth {
+  databaseUp: boolean
+  counts: Record<string, number>
+  jvm: {
+    uptimeMs: number
+    memoryUsedMb: number
+    memoryMaxMb: number
+    availableProcessors: number
+    javaVersion: string
+  }
+}
+
+// ── Platform: Feature flags ───────────────────────────────────────────────
+export interface FeatureFlag {
+  id: string
+  flagKey: string
+  description?: string | null
+  enabled: boolean
+  createdAt: string
+}
+
+// ── Admin: API keys ───────────────────────────────────────────────────────
+export interface ApiKey {
+  id: string
+  name: string
+  keyPrefix: string
+  lastFour: string
+  active: boolean
+  createdAt: string
+  lastUsedAt?: string | null
+  revokedAt?: string | null
+}
+
+export interface CreatedApiKey {
+  key: ApiKey
+  plaintext: string
+}

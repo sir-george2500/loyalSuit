@@ -632,9 +632,53 @@ what they sold; several dashboard items were still "coming soon").
       correctly. Frontend `/seller/orders` page; seller nav "Orders" flipped from
       "soon" → available; the seller dashboard gained a real **Orders** count.
       Service unit tests (attribution, subtotal, 404 when an order isn't the vendor's).
-- [ ] **13b — Seller settings.** Vendor self-edit of store profile (name, description,
-      logo) — removes the "soon" Settings item; delivers the vendor logo/profile editor.
-- [ ] **13c — Admin customers.** Read-only customer list — removes a "soon" item.
+- [x] **13b — Seller settings.** A vendor self-edits their storefront profile (name,
+      description) via `PATCH /api/v1/vendor/me` and uploads/replaces their logo via
+      `POST /api/v1/vendor/me/logo` (`VendorService.updateMine` / `updateLogo`,
+      VENDOR-only). The **slug is deliberately immutable** so storefront links stay
+      stable. Image storage was promoted to a shared `common/media` capability
+      (`MediaStorage` port + `CloudinaryMediaStorage` adapter + `ImageBytes` magic-byte
+      validation), reused by product media and now vendor logos without a catalog↔
+      marketplace cycle; replacing a logo deletes the prior Cloudinary asset
+      (`vendors.logo_public_id`, V36). Frontend `/seller/settings` page (logo card +
+      profile form, client-side type/size guard mirroring the server). Seller nav
+      "Settings" flipped "soon" → available. Service unit tests (trim, slug-immutability,
+      logo store/replace/cleanup, non-image rejection) + media tests moved to the shared port.
+- [x] **13c — Admin customers.** Read-only customer list — removed a "soon" item. (Folded
+      into 13f below, which completed the entire back office.)
+- [x] **13e — Product reviews.** Verified-purchase ratings: a customer who received a
+      product can rate it once (`POST /api/v1/reviews`, delivered-purchase gate in the
+      service); product reviews are public (`GET /api/v1/store/products/{id}/reviews`),
+      and a vendor sees their own feed (`GET /api/v1/vendor/reviews`, VENDOR-only).
+      Author names are privacy-minimised ("Jane D."); vendor + rating snapshotted at
+      write time. Storefront + seller "Reviews" surfaces. Service + authorization tests.
+- [x] **13f — Back-office completion (no more "soon").** Every remaining admin/platform
+      nav item marked "soon" was built as a real vertical slice, so the dashboard ships
+      with **zero placeholder links**. No payment gateways were added.
+      - **People** — *Customers* (read model joining `app_users` role=CUSTOMER with a
+        per-customer `GROUP BY` order aggregate: count + lifetime spend; searchable),
+        *Staff & Roles* (roster + role reassignment + activate/deactivate, with guards:
+        can't change your own role, can't touch the SUPER_ADMIN owner, only
+        TENANT_ADMIN/STAFF assignable).
+      - **Security & Access** — *Roles & Permissions* (static capability catalogue per
+        role) and *API Keys* (random 30-byte `lsk_` secret, **only the SHA-256 hash
+        stored**, plaintext shown exactly once; prefix+last4 for display; revoke is
+        idempotent; V41).
+      - **Finance** — *Payments* and *Invoices* as read views over orders (single source
+        of truth; invoice line product names resolved via `ProductRepository`), not a
+        separate billing store.
+      - **Settings** — *Notifications* (six per-tenant toggles; defaults returned when
+        unset, upsert on save; V38).
+      - **Platform (SUPER_ADMIN only)** — *Tenants* (list + suspend/reactivate + change
+        plan), *Subscription Plans* (new `subscription_plans` table/`PlatformPlan`,
+        distinct from the legacy tenant `SubscriptionPlan` enum; dup-code → 409; V39),
+        *System Health* (DB liveness + record counts + JVM via `JdbcTemplate`/JMX), and
+        *Feature Flags* (keyed toggles, CRUD; V40).
+      All 11 nav items flipped "soon" → available. Authorization tests pin the security
+      wiring of every new surface (store-staff vs owner-only vs SUPER_ADMIN-only, plus
+      anonymous = 403); service unit tests cover API-key hashing/revocation, staff guards,
+      and plan code-uniqueness. Suite: **1126 green** (was 1040). Frontend: `tsc`, lint,
+      and production build all clean.
 - [ ] **13d — Brand polish.** Horizontal logo lockup for headers (drop the white chip);
       bootstrap reconciles an existing flagship store's name/currency so RWF actually shows.
 

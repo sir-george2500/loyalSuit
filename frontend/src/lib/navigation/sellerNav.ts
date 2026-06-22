@@ -30,6 +30,6 @@ export const SELLER_NAV: SellerNavItem[] = [
   { label: 'Orders', href: '/seller/orders', icon: ShoppingCart, status: 'available' },
   { label: 'Earnings', href: '/seller/earnings', icon: Wallet, status: 'available' },
   { label: 'Payouts', href: '/seller/payouts', icon: Banknote, status: 'available' },
-  { label: 'Reviews', href: '/seller/reviews', icon: Star, status: 'soon' },
-  { label: 'Settings', href: '/seller/settings', icon: Settings, status: 'soon' },
+  { label: 'Reviews', href: '/seller/reviews', icon: Star, status: 'available' },
+  { label: 'Settings', href: '/seller/settings', icon: Settings, status: 'available' },
 ]

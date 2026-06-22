@@ -1,13 +1,17 @@
 package com.loyalsuit.modules.orders.infrastructure.persistence;
 
+import com.loyalsuit.modules.orders.domain.CustomerOrderStat;
 import com.loyalsuit.modules.orders.domain.Order;
 import com.loyalsuit.modules.orders.domain.OrderStatus;
+import com.loyalsuit.modules.orders.domain.PaymentStatus;
 import com.loyalsuit.modules.orders.domain.port.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,6 +58,11 @@ public class OrderRepositoryAdapter implements OrderRepository {
     }
 
     @Override
+    public Page<Order> findByTenantIdAndPaymentStatus(UUID tenantId, PaymentStatus paymentStatus, Pageable pageable) {
+        return jpa.findByTenantIdAndPaymentStatusOrderByCreatedAtDesc(tenantId, paymentStatus, pageable);
+    }
+
+    @Override
     public Page<Order> findOrdersForVendor(UUID tenantId, UUID vendorId, Pageable pageable) {
         return jpa.findOrdersForVendor(tenantId, vendorId, pageable);
     }
@@ -61,5 +70,18 @@ public class OrderRepositoryAdapter implements OrderRepository {
     @Override
     public List<Order> findByTenantIdAndCustomerId(UUID tenantId, UUID customerId) {
         return jpa.findByTenantIdAndCustomerIdOrderByCreatedAtDesc(tenantId, customerId);
+    }
+
+    @Override
+    public List<CustomerOrderStat> aggregateOrdersByCustomer(UUID tenantId, Collection<UUID> customerIds) {
+        if (customerIds.isEmpty()) {
+            return List.of();
+        }
+        return jpa.aggregateOrdersByCustomer(tenantId, customerIds).stream()
+                .map(r -> new CustomerOrderStat(
+                        (UUID) r[0],
+                        ((Number) r[1]).longValue(),
+                        r[2] == null ? BigDecimal.ZERO : (BigDecimal) r[2]))
+                .toList();
     }
 }

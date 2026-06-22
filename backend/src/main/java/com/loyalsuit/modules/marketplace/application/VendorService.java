@@ -3,8 +3,11 @@ package com.loyalsuit.modules.marketplace.application;
 import com.loyalsuit.common.exception.BusinessException;
 import com.loyalsuit.common.exception.ConflictException;
 import com.loyalsuit.common.exception.NotFoundException;
+import com.loyalsuit.common.media.ImageBytes;
+import com.loyalsuit.common.media.MediaStorage;
 import com.loyalsuit.common.response.PageResponse;
 import com.loyalsuit.modules.marketplace.application.dto.ApplyVendorRequest;
+import com.loyalsuit.modules.marketplace.application.dto.UpdateStorefrontRequest;
 import com.loyalsuit.modules.marketplace.application.dto.VendorResponse;
 import com.loyalsuit.modules.marketplace.domain.Vendor;
 import com.loyalsuit.modules.marketplace.domain.VendorStatus;
@@ -35,6 +38,7 @@ public class VendorService {
 
     private final VendorRepository vendorRepository;
     private final AppUserRepository appUserRepository;
+    private final MediaStorage mediaStorage;
 
     @Transactional
     public VendorResponse apply(UUID tenantId, UUID userId, ApplyVendorRequest request) {
@@ -50,6 +54,48 @@ public class VendorService {
     public VendorResponse getMine(UUID userId) {
         return vendorRepository.findByUserId(userId)
                 .map(VendorResponse::from)
+                .orElseThrow(() -> new NotFoundException("Vendor", userId));
+    }
+
+    /**
+     * A vendor edits their own storefront profile (display name + description). The slug
+     * is deliberately left untouched so the public storefront URL stays stable. Allowed
+     * for any vendor that owns a profile (including PENDING) — it changes nothing a
+     * shopper sees until the vendor is ACTIVE.
+     */
+    @Transactional
+    public VendorResponse updateMine(UUID userId, UpdateStorefrontRequest request) {
+        Vendor vendor = requireOwnProfile(userId);
+        vendor.setStoreName(request.getStoreName().trim());
+        vendor.setDescription(trimToNull(request.getDescription()));
+        return VendorResponse.from(vendorRepository.save(vendor));
+    }
+
+    /**
+     * A vendor replaces their storefront logo. Bytes are validated as a real image
+     * (magic number + size cap) before upload. On success the previously stored asset is
+     * deleted best-effort so replacing a logo doesn't orphan files in the media store.
+     */
+    @Transactional
+    public VendorResponse updateLogo(UUID userId, byte[] data) {
+        ImageBytes.validate(data);
+        Vendor vendor = requireOwnProfile(userId);
+        String folder = "loyalsuit/" + vendor.getTenantId() + "/vendors/" + vendor.getId();
+        MediaStorage.StoredAsset asset = mediaStorage.upload(data, folder);
+
+        String previousPublicId = vendor.getLogoPublicId();
+        vendor.setLogoUrl(asset.secureUrl());
+        vendor.setLogoPublicId(asset.publicId());
+        Vendor saved = vendorRepository.save(vendor);
+
+        if (previousPublicId != null && !previousPublicId.equals(asset.publicId())) {
+            mediaStorage.delete(previousPublicId);
+        }
+        return VendorResponse.from(saved);
+    }
+
+    private Vendor requireOwnProfile(UUID userId) {
+        return vendorRepository.findByUserId(userId)
                 .orElseThrow(() -> new NotFoundException("Vendor", userId));
     }
 

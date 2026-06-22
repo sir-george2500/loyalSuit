@@ -1,9 +1,8 @@
-package com.loyalsuit.modules.catalog.infrastructure.media;
+package com.loyalsuit.common.media;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.loyalsuit.common.exception.BusinessException;
-import com.loyalsuit.modules.catalog.application.port.MediaStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

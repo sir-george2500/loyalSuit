@@ -6,6 +6,7 @@ import { Package, ArrowLeft, Check, X } from 'lucide-react'
 import { getStore, getStoreProduct } from '@/lib/api/storefront'
 import AddToCart from '@/components/store/AddToCart'
 import CartLink from '@/components/store/CartLink'
+import ProductReviews from '@/components/store/ProductReviews'
 
 type Params = { slug: string; productSlug: string }
 
@@ -113,6 +114,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<Pa
           )}
         </div>
       </div>
+
+      <ProductReviews productId={product.id} />
     </div>
   )
 }
